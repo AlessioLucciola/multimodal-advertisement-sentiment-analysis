@@ -1,0 +1,6 @@
+name: mi_project
+dependencies:
+  - python=3.10.6
+  - pip
+  - pip:
+    - -r requirements.txt
