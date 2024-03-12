@@ -18,7 +18,7 @@ conda activate mi_project
 
 ## Data
 
-You can download the needed data from this [Google Drive Link]()
+You can download the needed data from this [Google Drive Link](https://drive.google.com/drive/folders/1BgkLk7GfHc8lLyqnabeT4jpEQQALClcQ)
 
 Inside the `data` folder, there should be these elements:
 
