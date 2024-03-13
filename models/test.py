@@ -10,7 +10,7 @@ def audio_model():
 
     for batch in train_loader:
         tr_audio, tr_emotion, tr_emotion_intensity, tr_statement, tr_repetition, tr_actor = batch['audio'], batch['emotion'], batch['emotion_intensity'], batch['statement'], batch['repetition'], batch['actor']
-        print(tr_audio, tr_emotion, tr_emotion_intensity, tr_statement, tr_repetition, tr_actor)
+        print(tr_audio.shape)
 
 if __name__ == "__main__":
     audio_model()

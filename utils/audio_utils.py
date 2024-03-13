@@ -13,3 +13,17 @@ def extract_waveform_from_audio_file(file, desired_length_seconds, trim_seconds,
         # If the waveform is longer than desired, truncate it from the beginning
         waveform_padded = waveform[-desired_length_samples:]
     return waveform_padded
+
+def extract_audio_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window='hamming'):
+    # Extract the Mel-frequency cepstral coefficients (MFCCs)
+    mfccs = librosa.feature.mfcc(
+        y=waveform, 
+        sr=sample_rate,
+        n_mfcc=n_mfcc,
+        n_fft=n_fft,
+        win_length=win_length,
+        n_mels=n_mels,
+        window=window,
+        fmax=sample_rate/2
+    )
+    return mfccs
