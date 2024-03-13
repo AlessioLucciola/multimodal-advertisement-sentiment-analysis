@@ -1,8 +1,10 @@
 from pathlib import Path
 from torch.utils.data import Dataset
+from utils.audio_utils import extract_waveform_from_audio_file
+from config import AUDIO_SAMPLE_RATE, AUDIO_TRIM, AUDIO_DURATION, RAVDESS_FILES
 import pandas as pd
+import os
 
-# TO DO: It is necessary to handle the audio files. It must be transformed into a tensor with the audio wavelength.
 class RAVDESSCustomDataset(Dataset):
     def __init__(self, csv_file, files_dir, transform=None):
         self.data = pd.read_csv(csv_file)
@@ -13,7 +15,12 @@ class RAVDESSCustomDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        audio_file = self.data.iloc[idx, 0] # Handle the audio file here
+        audio_file = extract_waveform_from_audio_file(
+            file=os.path.join(RAVDESS_FILES, self.data.iloc[idx, 0]),
+            desired_length_seconds=AUDIO_DURATION,
+            trim_seconds=AUDIO_TRIM,
+            desired_sample_rate=AUDIO_SAMPLE_RATE
+        )
         emotion = self.data.iloc[idx, 1]
         emotion_intensity = self.data.iloc[idx, 2]
         statement = self.data.iloc[idx, 3]

@@ -9,3 +9,8 @@ RAVDESS_DF_SPLITTING = [0.8, 0.15] #[train/test splitting, test/val splitting]
 
 # Train configurations
 BATCH_SIZE = 32
+
+# Audio configurations
+AUDIO_SAMPLE_RATE = 48000
+AUDIO_DURATION = 3
+AUDIO_TRIM = 0.5

@@ -5,3 +5,4 @@ tqdm
 wandb
 scikit-learn
 torch-directml
+librosa
