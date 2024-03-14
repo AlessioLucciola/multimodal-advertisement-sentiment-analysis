@@ -29,9 +29,9 @@ Make sure you have the following libraries installed:
 
 ## Repository Structure
 This repository is organized as follows:
-- [`main`](/main.py): Contains setup for the dataset and training loop.
-- [`visualize`](/visualize.py): Includes source code for evaluating the model on test data and real-time testing using a webcam.
-- [`deep_emotion`](/deep_emotion.py): Defines the model class.
+- [`main`](/train.py): Contains setup for the dataset and training loop.
+- [`visualize`](/test.py): Includes source code for evaluating the model on test data and real-time testing using a webcam.
+- [`deep_emotion`](/models.py): Defines the models class.
 - [`data_loaders`](/data_loaders.py): Contains the dataset class.
 - [`generate_data`](/generate_data.py): Sets up the [dataset](https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge/data).
 
@@ -53,7 +53,7 @@ python main.py [-s [True]] [-d [data_path]]
 
 **To train the model**
 ```
-python main.py [-t] [--data [data_path]] [--hparams [hyperparams]]
+python train.py [-t [True]] [--data [data_path]] [--hparams [hyperparams]]
               [--epochs] [--learning_rate] [--batch_size]
 
 --data                  Data folder that contains training and validation files
@@ -66,10 +66,9 @@ python main.py [-t] [--data [data_path]] [--hparams [hyperparams]]
 
 **To validate the model**
 ```
-python visualize.py [-t] [-c] [--data [data_path]] [--model [model_path]]
+python test.py [-t [True]] [-c [True]] [--data [data_path]]
 
 --data                  Data folder that contains test images and test CSV file
---model                 Path to pretrained model
 --test_cc               Calculate the test accuracy
 --cam                   Test the model in real-time with webcam connected via USB
 ```
