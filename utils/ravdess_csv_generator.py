@@ -12,11 +12,11 @@ def create_ravdess_csv():
     for file in os.listdir(RAVDESS_FILES):
         file_names.append(file)
         file_info = file.split("-")
-        emotion.append(int(file_info[2]))
-        emotion_intensity.append(int(file_info[3]))
-        statement.append(int(file_info[4]))
-        repetition.append(int(file_info[5]))
-        actor.append(int(file_info[6].split(".")[0]))
+        emotion.append(int(file_info[2])-1)
+        emotion_intensity.append(int(file_info[3])-1)
+        statement.append(int(file_info[4])-1)
+        repetition.append(int(file_info[5])-1)
+        actor.append(int(file_info[6].split(".")[0])-1)
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor}
     df = pd.DataFrame(data)
