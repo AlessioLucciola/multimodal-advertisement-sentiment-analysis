@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from config import RAVDESS_DF_SPLITTING
+from config import RAVDESS_DF_SPLITTING, RANDOM_SEED
 from tqdm import tqdm
 
 class RAVDESSDataLoader(DataLoader):
@@ -12,9 +12,10 @@ class RAVDESSDataLoader(DataLoader):
 
     def get_dataloader(self):
         return DataLoader(self.dataset, batch_size=self.batch_size)
-        
+
+# TO DO: Fix dataloader (the splitting process)
 def get_train_val_dataloaders(dataset, batch_size):
-    train_df, val_df = train_test_split(dataset, test_size=RAVDESS_DF_SPLITTING[0])
+    train_df, val_df = train_test_split(dataset, test_size=RAVDESS_DF_SPLITTING[0], random_state=RANDOM_SEED)
     train_loader = tqdm(RAVDESSDataLoader(train_df, batch_size).get_dataloader(), desc="Loading Train Dataloader", leave=False)
     val_loader = tqdm(RAVDESSDataLoader(val_df, batch_size).get_dataloader(), desc="Loading Validation Dataloader", leave=False)
     return train_loader, val_loader, val_df

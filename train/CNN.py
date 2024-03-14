@@ -1,5 +1,5 @@
 import torch
-from config import BATCH_SIZE, LR, N_EPOCHS, RANDOM_SEED, RAVDESS_CSV, RAVDESS_FILES, REG, RESUME_TRAINING, USE_WANDB
+from config import BATCH_SIZE, LR, N_EPOCHS, RANDOM_SEED, RAVDESS_CSV, RAVDESS_FILES, REG, RESUME_TRAINING, USE_WANDB, RAVDESS_NUM_CLASSES
 from dataloaders.RAVDESS_dataloader import get_train_val_dataloaders
 from datasets.RAVDESS_dataset import RAVDESSCustomDataset
 from models.CNN import CNN
@@ -11,12 +11,13 @@ def main():
     device = select_device()
     ravdess_dataset = RAVDESSCustomDataset(csv_file=RAVDESS_CSV, files_dir=RAVDESS_FILES)
     train_loader, val_loader, _ = get_train_val_dataloaders(ravdess_dataset, batch_size=BATCH_SIZE)
-    model = CNN(num_emotions=8).to(device)
+    model = CNN(num_classes=RAVDESS_NUM_CLASSES).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=REG)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=N_EPOCHS, eta_min=1e-4, verbose=True)
     criterion = torch.nn.CrossEntropyLoss()
 
+    # TO DO: Complete the configuration of the model
     config = {
         "architecture": "CNN",
         "scope": "voice_emotion_recognition",

@@ -25,7 +25,8 @@ RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "path/to/model"
 RESUME_EPOCH = 0
 
-# Audio configurations
+# Audio configurations (RAVDESS dataset)
 AUDIO_SAMPLE_RATE = 48000
 AUDIO_DURATION = 3
 AUDIO_TRIM = 0.5
+RAVDESS_NUM_CLASSES = 8

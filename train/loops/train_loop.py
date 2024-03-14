@@ -67,13 +67,13 @@ def train_eval_loop(device,
         for tr_i, tr_batch in enumerate(tqdm(train_loader, desc="Training", leave=False)):
             if config["scope"] == "voice_emotion_recognition":
                 tr_data, tr_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
-                tr_data = tr_data.to(device)
-                tr_labels = tr_labels.to(device)
+            tr_data = tr_data.to(device)
+            tr_labels = tr_labels.to(device)
 
-                tr_logits, tr_outputs = model(tr_data)  # Prediction
+            tr_outputs = model(tr_data)  # Prediction
 
-                # Multiclassification loss considering all classes
-                tr_epoch_loss = criterion(tr_logits, tr_labels)
+            # Multiclassification loss considering all classes
+            tr_epoch_loss = criterion(tr_outputs, tr_labels)
 
             optimizer.zero_grad()
             tr_epoch_loss.backward()
@@ -105,16 +105,16 @@ def train_eval_loop(device,
             for _, val_batch in enumerate(val_loader):
                 if config["scope"] == "voice_emotion_recognition":
                     val_data, val_labels = val_batch['audio'], val_batch['emotion'] # data = audio, labels = emotions
-                    val_data = val_data.to(device)
-                    val_labels = val_labels.to(device)
+                val_data = val_data.to(device)
+                val_labels = val_labels.to(device)
 
-                    val_logits, val_outputs = model(val_data)
-                    val_preds = torch.argmax(val_outputs, -1).detach()
-                    epoch_val_preds = torch.cat((epoch_val_preds, val_preds), 0)
-                    epoch_val_labels = torch.cat((epoch_val_labels, val_labels), 0)
+                val_outputs = model(val_data).to(device)
+                val_preds = torch.argmax(val_outputs, -1).detach()
+                epoch_val_preds = torch.cat((epoch_val_preds, val_preds), 0)
+                epoch_val_labels = torch.cat((epoch_val_labels, val_labels), 0)
 
-                    # Multiclassification loss considering all classes
-                    val_epoch_loss = criterion(val_logits, val_labels)
+                # Multiclassification loss considering all classes
+                val_epoch_loss = criterion(val_outputs, val_labels)
 
             val_accuracy = accuracy_score(
                 epoch_val_labels.cpu().numpy(), epoch_val_preds.cpu().numpy()) * 100
