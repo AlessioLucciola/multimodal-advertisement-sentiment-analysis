@@ -11,12 +11,12 @@ import json
 # Parameters
 path_to_fer_csv = 'data/fer2013/fer2013.csv'
 tr_batch_sz = 1024 
-val_batch_sz = 64
+val_batch_sz = 128
 
 criterion_loss = nn.NLLLoss() # Default: nn.NLLLoss()
-epochs = 200 
-lr = 1e-4
-weight_decay = 1e-3
+epochs = 50
+lr = 1e-5
+weight_decay = 1e-5
 visualize_learning_curve = True 
 
 # Create directory to save models and plots with os module
