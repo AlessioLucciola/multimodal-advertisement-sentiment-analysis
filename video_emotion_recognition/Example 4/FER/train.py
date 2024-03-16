@@ -10,8 +10,8 @@ import json
 
 # Parameters
 path_to_fer_csv = 'data/fer2013/fer2013.csv'
-tr_batch_sz = 2500
-val_batch_sz = 250
+tr_batch_sz = 64
+val_batch_sz = 32
 
 criterion_loss = nn.NLLLoss()
 epochs = 200
