@@ -10,14 +10,14 @@ import json
 
 # Parameters
 path_to_fer_csv = 'data/fer2013/fer2013.csv'
-tr_batch_sz = 64
-val_batch_sz = 32
+tr_batch_sz = 512 # Default: 3000
+val_batch_sz = 32 # Default: 500
 
-criterion_loss = nn.NLLLoss()
-epochs = 200
-lr = 1e-5
-weight_decay = 1e-5
-visualize_learning_curve = True
+criterion_loss = nn.NLLLoss() # Default: nn.NLLLoss()
+epochs = 200 # Default: 200
+lr = 1e-5 # Default: 1e-5
+weight_decay = 1e-5 # Default: 1e-5
+visualize_learning_curve = True # Default: True
 
 # Create directory to save models and plots with os module
 now = datetime.datetime.now()
