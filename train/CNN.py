@@ -1,7 +1,6 @@
 import torch
 from config import BATCH_SIZE, LR, N_EPOCHS, RANDOM_SEED, RAVDESS_CSV, RAVDESS_FILES, REG, RESUME_TRAINING, USE_WANDB, RAVDESS_NUM_CLASSES
-from dataloaders.RAVDESS_dataloader import get_train_val_dataloaders
-from datasets.RAVDESS_dataset import RAVDESSCustomDataset
+from dataloaders.RAVDESS_dataloader import RAVDESSDataLoader
 from models.CNN import CNN
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -9,8 +8,9 @@ from utils.utils import set_seed, select_device
 def main():
     set_seed(RANDOM_SEED)
     device = select_device()
-    ravdess_dataset = RAVDESSCustomDataset(csv_file=RAVDESS_CSV, files_dir=RAVDESS_FILES)
-    train_loader, val_loader, _ = get_train_val_dataloaders(ravdess_dataset, batch_size=BATCH_SIZE)
+    ravdess_dataloader = RAVDESSDataLoader(csv_file=RAVDESS_CSV, audio_files_dir=RAVDESS_FILES, batch_size=BATCH_SIZE, seed=RANDOM_SEED)
+    train_loader = ravdess_dataloader.get_train_dataloader()
+    val_loader = ravdess_dataloader.get_val_dataloader()
     model = CNN(num_classes=RAVDESS_NUM_CLASSES).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=REG)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(

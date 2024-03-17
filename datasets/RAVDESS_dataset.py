@@ -7,10 +7,17 @@ import numpy as np
 import os
 
 class RAVDESSCustomDataset(Dataset):
-    def __init__(self, csv_file, files_dir, transform=None):
-        self.data = pd.read_csv(csv_file)
+    def __init__(self,
+                 data: pd.DataFrame,
+                 files_dir: str,
+                 transform: any = None,
+                 isTrainDataset: bool =True):
+        self.data = data
         self.files_dir = Path(files_dir)
         self.transform = transform
+        self.isTrain = isTrainDataset
+        self.dataset_size = len(self.data)
+        self.dataset_indices = list(range(self.dataset_size))
 
     def __len__(self):
         return len(self.data)

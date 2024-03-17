@@ -6,7 +6,7 @@ PATH_TO_SAVE_RESULTS = 'results'
 RAVDESS_DIR = os.path.join(DATA_DIR, "RAVDESS")
 RAVDESS_CSV = os.path.join(RAVDESS_DIR, "ravdess.csv")
 RAVDESS_FILES = os.path.join(RAVDESS_DIR, "files")
-RAVDESS_DF_SPLITTING = [0.70, 0.50] #[train/test splitting, test/val splitting]
+RAVDESS_DF_SPLITTING = [0.80, 0.50] #[train/test splitting, test/val splitting]
 
 # Miscellanous configurations
 RANDOM_SEED = 42
@@ -16,11 +16,11 @@ USE_WANDB = False
 
 # Train configurations
 BATCH_SIZE = 32
-N_EPOCHS = 10
+N_EPOCHS = 500
 LR = 1e-3
-REG = 1e-2
+REG = 1e-3
 SAVE_RESULTS = True
-SAVE_MODELS = True
+SAVE_MODELS = False
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "path/to/model"
 RESUME_EPOCH = 0
