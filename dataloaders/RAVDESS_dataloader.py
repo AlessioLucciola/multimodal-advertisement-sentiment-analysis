@@ -10,12 +10,20 @@ class RAVDESSDataLoader(DataLoader):
                  csv_file: str,
                  batch_size: int,
                  audio_files_dir: str,
-                 seed: int = RANDOM_SEED):
+                 seed: int = RANDOM_SEED,
+                 limit: int = None):
         self.batch_size = batch_size
         self.data = pd.read_csv(csv_file)
         self.dataset_size = len(self.data)
         self.audio_files_dir = audio_files_dir
         self.seed = seed
+        self.limit = limit
+
+        if self.limit is not None and self.limit <= 0 and self.limit >= 1:
+            return ValueError("Limit must be a float in the range (0, 1] or None")
+        else:
+            self.data = self.data.sample(frac=self.limit, random_state=self.seed)
+            print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
         self.train_df, temp_df = train_test_split(self.data, test_size=RAVDESS_DF_SPLITTING[0], random_state=self.seed)
         self.val_df, self.test_df = train_test_split(temp_df, test_size=RAVDESS_DF_SPLITTING[1], random_state=self.seed)

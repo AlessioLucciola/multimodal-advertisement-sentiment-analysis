@@ -1,5 +1,5 @@
 import torch
-from config import BATCH_SIZE, LR, N_EPOCHS, RANDOM_SEED, RAVDESS_CSV, RAVDESS_FILES, REG, RESUME_TRAINING, USE_WANDB, RAVDESS_NUM_CLASSES
+from config import BATCH_SIZE, LR, N_EPOCHS, RANDOM_SEED, RAVDESS_CSV, RAVDESS_FILES, REG, RESUME_TRAINING, USE_WANDB, RAVDESS_NUM_CLASSES, LIMIT
 from dataloaders.RAVDESS_dataloader import RAVDESSDataLoader
 from models.CNN import CNN
 from train.loops.train_loop import train_eval_loop
@@ -8,7 +8,7 @@ from utils.utils import set_seed, select_device
 def main():
     set_seed(RANDOM_SEED)
     device = select_device()
-    ravdess_dataloader = RAVDESSDataLoader(csv_file=RAVDESS_CSV, audio_files_dir=RAVDESS_FILES, batch_size=BATCH_SIZE, seed=RANDOM_SEED)
+    ravdess_dataloader = RAVDESSDataLoader(csv_file=RAVDESS_CSV, audio_files_dir=RAVDESS_FILES, batch_size=BATCH_SIZE, seed=RANDOM_SEED, limit=LIMIT)
     train_loader = ravdess_dataloader.get_train_dataloader()
     val_loader = ravdess_dataloader.get_val_dataloader()
     model = CNN(num_classes=RAVDESS_NUM_CLASSES).to(device)

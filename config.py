@@ -7,6 +7,7 @@ RAVDESS_DIR = os.path.join(DATA_DIR, "RAVDESS")
 RAVDESS_CSV = os.path.join(RAVDESS_DIR, "ravdess.csv")
 RAVDESS_FILES = os.path.join(RAVDESS_DIR, "files")
 RAVDESS_DF_SPLITTING = [0.80, 0.50] #[train/test splitting, test/val splitting]
+LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 
 # Miscellanous configurations
 RANDOM_SEED = 42
