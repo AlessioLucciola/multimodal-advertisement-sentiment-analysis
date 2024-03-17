@@ -11,13 +11,12 @@ class RAVDESSCustomDataset(Dataset):
                  data: pd.DataFrame,
                  files_dir: str,
                  transform: any = None,
-                 isTrainDataset: bool =True):
+                 isTrainDataset: bool = True):
         self.data = data
         self.files_dir = Path(files_dir)
         self.transform = transform
         self.isTrain = isTrainDataset
         self.dataset_size = len(self.data)
-        self.dataset_indices = list(range(self.dataset_size))
 
     def __len__(self):
         return len(self.data)
@@ -31,6 +30,7 @@ class RAVDESSCustomDataset(Dataset):
         repetition = self.data.iloc[idx, 4]
         actor = self.data.iloc[idx, 5]
 
+        # Only audios and emotions are used for training. The other features are not used but they are left to possibly make further predictions.
         sample = {'audio': audio_file, 'emotion': emotion, 'emotion_intensity': emotion_intensity,
                   'statement': statement, 'repetition': repetition, 'actor': actor}
 

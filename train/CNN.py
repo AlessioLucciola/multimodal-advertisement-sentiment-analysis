@@ -8,13 +8,22 @@ from utils.utils import set_seed, select_device
 def main():
     set_seed(RANDOM_SEED)
     device = select_device()
-    ravdess_dataloader = RAVDESSDataLoader(csv_file=RAVDESS_CSV, audio_files_dir=RAVDESS_FILES, batch_size=BATCH_SIZE, seed=RANDOM_SEED, limit=LIMIT)
+    ravdess_dataloader = RAVDESSDataLoader(csv_file=RAVDESS_CSV,
+                                           audio_files_dir=RAVDESS_FILES,
+                                           batch_size=BATCH_SIZE,
+                                           seed=RANDOM_SEED,
+                                           limit=LIMIT)
     train_loader = ravdess_dataloader.get_train_dataloader()
     val_loader = ravdess_dataloader.get_val_dataloader()
     model = CNN(num_classes=RAVDESS_NUM_CLASSES).to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=REG)
+    optimizer = torch.optim.AdamW(model.parameters(),
+                                  lr=LR,
+                                  weight_decay=REG)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=N_EPOCHS, eta_min=1e-4, verbose=True)
+        optimizer,
+        T_max=N_EPOCHS,
+        eta_min=1e-4,
+        verbose=True)
     criterion = torch.nn.CrossEntropyLoss()
 
     # TO DO: Complete the configuration of the model
