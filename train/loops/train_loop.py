@@ -1,12 +1,11 @@
-from sklearn.metrics import recall_score, accuracy_score
-from utils.utils import save_results, save_model, save_configurations
 from tqdm import tqdm
 import torch
-import torch.nn as nn
 import wandb
 from datetime import datetime
 import copy
 from config import SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH
+from sklearn.metrics import recall_score, accuracy_score
+from utils.utils import save_results, save_model, save_configurations
 
 
 def train_eval_loop(device,
@@ -146,4 +145,4 @@ def train_eval_loop(device,
             if epoch == config["epochs"]-1 and SAVE_MODELS:
                 save_model(data_name, best_model, epoch=None, is_best=True)
 
-        scheduler.step()
+        #scheduler.step()

@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from config import RAVDESS_DF_SPLITTING, RANDOM_SEED
+from config import DF_SPLITTING, RANDOM_SEED
 import pandas as pd
 from datasets.RAVDESS_dataset import RAVDESSCustomDataset
 
@@ -25,8 +25,8 @@ class RAVDESSDataLoader(DataLoader):
                 self.data = self.data.sample(frac=self.limit, random_state=self.seed)
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
-        self.train_df, temp_df = train_test_split(self.data, test_size=RAVDESS_DF_SPLITTING[0], random_state=self.seed)
-        self.val_df, self.test_df = train_test_split(temp_df, test_size=RAVDESS_DF_SPLITTING[1], random_state=self.seed)
+        self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
+        self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)
 
     def get_train_dataloader(self):
         train_dataset = RAVDESSCustomDataset(data=self.train_df, files_dir=self.audio_files_dir, isTrainDataset=True)
