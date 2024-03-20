@@ -25,3 +25,5 @@ Inside the `data` folder, there should be these elements:
 -   `RAVDESS` folder with:
     -   `ravdess.csv`: A file containing the (self-generated) metadata of the audio files;
     -   `files`: A folder in which to put the audio files (downloadable from Google Drive).
+- `FER` folder with:
+    - `fer2013.csv`: A file containing the metadata of the images.
