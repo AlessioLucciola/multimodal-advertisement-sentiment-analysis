@@ -56,6 +56,4 @@ def get_model(num_classes, device, model_name):
             nn.LogSoftmax(dim=1)
         )
     
-    model = model.to(device)
-    
     return model

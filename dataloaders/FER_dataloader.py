@@ -2,7 +2,7 @@ from datasets.FER_dataset import FERDataset
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 
-def get_dataloaders(data_dir, val_size=0.2, batch_size=32, shuffle=True, transformations=None): # TODO: change into a class
+def FERDataloader(data_dir, val_size=0.2, batch_size=32, shuffle=True, transformations=None): # TODO: change into a class
     '''This is function to load the dataset and returns the dataloaders
         Args:
             data_dir: path to the dataset

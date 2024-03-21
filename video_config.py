@@ -7,6 +7,12 @@ PATH_TO_SAVE_RESULTS = 'results'
 METADATA_CSV = os.path.join(DATA_DIR, DATASET_NAME + ".csv")
 SHUFFLE = True
 
+# Miscellanous configurations
+RANDOM_SEED = 42
+USE_DML = False
+USE_MPS = False
+USE_WANDB = True
+
 # Train configurations
 BATCH_SIZE = 64
 N_EPOCHS = 200
