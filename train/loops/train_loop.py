@@ -64,6 +64,7 @@ def train_eval_loop(device,
         epoch_tr_preds = torch.tensor([]).to(device)
         epoch_tr_labels = torch.tensor([]).to(device)
         for tr_i, tr_batch in enumerate(tqdm(train_loader, desc="Training", leave=False)):
+            print(tr_batch['audio'].shape)
             if config["scope"] == "voice_emotion_recognition":
                 tr_data, tr_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
             tr_data = tr_data.to(device)
