@@ -29,13 +29,13 @@ class RAVDESSDataLoader(DataLoader):
         self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)
 
     def get_train_dataloader(self):
-        train_dataset = RAVDESSCustomDataset(data=self.train_df, files_dir=self.audio_files_dir, isTrainDataset=True)
+        train_dataset = RAVDESSCustomDataset(data=self.train_df, files_dir=self.audio_files_dir, is_train_dataset=True)
         return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
     
     def get_val_dataloader(self):
-        val_dataset = RAVDESSCustomDataset(data=self.val_df, files_dir=self.audio_files_dir, isTrainDataset=False)
+        val_dataset = RAVDESSCustomDataset(data=self.val_df, files_dir=self.audio_files_dir, is_train_dataset=False)
         return DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
     
     def get_test_dataloader(self):
-        test_dataset = RAVDESSCustomDataset(data=self.test_df, files_dir=self.audio_files_dir, isTrainDataset=False)
+        test_dataset = RAVDESSCustomDataset(data=self.test_df, files_dir=self.audio_files_dir, is_train_dataset=False)
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
