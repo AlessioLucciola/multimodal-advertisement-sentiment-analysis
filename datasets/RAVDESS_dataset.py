@@ -3,7 +3,7 @@ from pathlib import Path
 import random
 from torch.utils.data import Dataset
 from utils.audio_utils import apply_AWGN, extract_waveform_from_audio_file, extract_zcr_features, extract_rmse_features, extract_mfcc_features
-from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, AUDIO_FILES_DIR, FRAME_LENGTH, HOP_LENGTH, USE_RAVDESS_ONLY, RAVDESS_FILES_DIR, BALANCE_DATASET
+from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, AUDIO_FILES_DIR, FRAME_LENGTH, HOP_LENGTH, USE_RAVDESS_ONLY, RAVDESS_FILES_DIR
 import pandas as pd
 import numpy as np
 import os
@@ -24,6 +24,10 @@ class RAVDESSCustomDataset(Dataset):
 
         if self.balance_dataset and self.is_train_dataset:
             self.data = self.apply_balance_dataset(self.data)
+        if self.is_train_dataset:
+            print(f"--Dataset-- Training dataset size: {self.dataset_size}")
+        else:
+            print(f"--Dataset-- Validation dataset size: {self.dataset_size}")
 
     def __len__(self):
         return len(self.data)

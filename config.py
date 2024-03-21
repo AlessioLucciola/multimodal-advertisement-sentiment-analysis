@@ -3,11 +3,11 @@ import os
 # Dataset configurations
 DATA_DIR = "data"
 PATH_TO_SAVE_RESULTS = 'results'
-AUDIO_FILES_DIR = os.path.join(DATA_DIR, "merged_audio_files")
+AUDIO_FILES_DIR = os.path.join(DATA_DIR, "merged_datasets_files")
 RAVDESS_FILES_DIR = os.path.join(DATA_DIR, "ravdess_files")
 METADATA_RAVDESS_CSV = os.path.join(DATA_DIR, "metadata_ravdess.csv")
 METADATA_ALL_CSV = os.path.join(DATA_DIR, "metadata_all.csv")
-DF_SPLITTING = [0.80, 0.50] #[train/test splitting, test/val splitting]
+DF_SPLITTING = [0.30, 0.50] #[train/test splitting, test/val splitting]
 LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 USE_RAVDESS_ONLY = True # Use only RAVDESS dataset if True, use all datasets if False
 BALANCE_DATASET = True # Balance the dataset if True, use the original dataset if False
