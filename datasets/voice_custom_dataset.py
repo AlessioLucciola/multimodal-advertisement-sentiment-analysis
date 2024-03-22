@@ -72,8 +72,8 @@ class RAVDESSCustomDataset(Dataset):
                 aug_indices = random.choices(label_indices.tolist(), k=num_files_to_add)
                 self.metadata = pd.concat([self.data, self.data.loc[aug_indices]])
                 # Apply data augmentation only to the augmented subset
-                self.data.loc[aug_indices, 'augmented'] = True
-                label_indices = self.data[self.data['emotion'] == label].index
-        self.data['augmented'].fillna(False, inplace=True)
+                self.data.loc[aug_indices, "augmented"] = True
+                label_indices = self.data[self.data["emotion"] == label].index
+        self.data.fillna({"augmented": False}, inplace=True)
 
         return data

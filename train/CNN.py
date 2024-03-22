@@ -1,6 +1,6 @@
 import torch
 from config import BATCH_SIZE, LR, N_EPOCHS, RANDOM_SEED, USE_RAVDESS_ONLY, METADATA_RAVDESS_CSV, METADATA_ALL_CSV, RAVDESS_FILES_DIR, AUDIO_FILES_DIR, REG, RESUME_TRAINING, USE_WANDB, NUM_CLASSES, LIMIT, BALANCE_DATASET
-from dataloaders.RAVDESS_dataloader import RAVDESSDataLoader
+from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
 from models.CNN import CNN
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -23,7 +23,7 @@ def main():
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
         T_max=N_EPOCHS,
-        eta_min=1e-4,
+        eta_min=1e-2,
         verbose=True)
     criterion = torch.nn.CrossEntropyLoss()
 

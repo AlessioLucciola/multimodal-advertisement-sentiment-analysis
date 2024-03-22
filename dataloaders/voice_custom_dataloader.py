@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from config import DF_SPLITTING, RANDOM_SEED
 import pandas as pd
-from datasets.RAVDESS_dataset import RAVDESSCustomDataset
+from datasets.voice_custom_dataset import RAVDESSCustomDataset
 
 class RAVDESSDataLoader(DataLoader):
     def __init__(self,
