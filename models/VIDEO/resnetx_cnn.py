@@ -146,34 +146,3 @@ class ResNet101(nn.Module):
             param.requires_grad = False
         for param in self.model.fc.parameters():
             param.requires_grad = True
-
-# def get_model(num_classes, device, model_name):
-#     '''This function returns the model to be used for training'''
-#     if model_name == 'resnet18':
-#         model = models.resnet18(pretrained=True)
-#         out_features = 512
-#     elif model_name == 'resnet34':
-#         model = models.resnet34(pretrained=True)
-#         out_features = 512
-#     elif model_name == 'resnet50':
-#         model = models.resnet50(pretrained=True)
-#         out_features = 2048
-#     elif model_name == 'resnet101':
-#         model = models.resnet101(pretrained=True)
-#         out_features = 2048
-#     else:
-#         raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101]')
-    
-#     # add first layer to have input channels as 1
-#     model.conv1 = nn.Conv2d(1, 64, kernel_size=7,
-#                             stride=2, padding=3, bias=False)
-
-#     model.fc = nn.Sequential(
-#         nn.Linear(out_features, 256),
-#         nn.ReLU(),
-#         nn.Dropout(0.2),
-#         nn.Linear(256, num_classes),
-#         nn.LogSoftmax(dim=1)
-#     )
-    
-#     return model

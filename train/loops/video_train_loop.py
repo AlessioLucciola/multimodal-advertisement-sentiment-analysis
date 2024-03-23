@@ -49,10 +49,12 @@ def train_eval_loop(model, train_loader, val_loader, device, params):
 
             curr_loss = running_loss/curr_len
             curr_acc = running_acc/batch_id
-            print('\t\t'+'-'*70)
-            print(
-                f"\t\t| Batch: {batch_id:>{len(str(len(train_loader)))}}/{len(train_loader)} | Training Loss: {curr_loss:.4f} | Training Accuracy: {curr_acc:.4f} |")
-            print('\t\t'+'-'*70)
+
+            if batch_id % 10 == 0:
+                print('\t\t'+'-'*70)
+                print(
+                    f"\t\t| Batch: {batch_id:>{len(str(len(train_loader)))}}/{len(train_loader)} | Training Loss: {curr_loss:.4f} | Training Accuracy: {curr_acc:.4f} |")
+                print('\t\t'+'-'*70)
 
         running_loss /= len(train_loader.dataset)
         running_acc /= len(train_loader)
@@ -63,21 +65,21 @@ def train_eval_loop(model, train_loader, val_loader, device, params):
         val_losses.append(val_loss)
         val_accuracies.append(val_acc)
 
-        # Save the model only if the validation loss has decreased
+        # Save the model if the validation loss has decreased
         if val_loss < best_loss:
             best_loss = val_loss
             best_model_state = copy.deepcopy(model.state_dict())
             model.load_state_dict(best_model_state)
+            torch.save(model.state_dict(), 'checkpoints/video/' + params['model_name'] + '_best.pt')
+
+        # Save the model every 5 epochs and plot the results
+        if SAVE_MODELS and (epoch != 0 or epoch % 5 == 0):
             torch.save(model.state_dict(), 'checkpoints/video/' + params['model_name'] + '_' + str(epoch+1) + '.pt')
+            plot_results((train_losses, train_accuracies, val_losses, val_accuracies), params['model_name'])
 
         print('-'*120)
         print(f"Epoch: {epoch+1:>{len(str(params['num_epochs']))}}/{params['num_epochs']} | Training Loss: {running_loss:.4f} | Training Accuracy: {running_acc:.4f} | Validation Loss: {val_loss:.4f} | Validation Accuracy: {val_acc:.4f}")
         print('-'*120)
         print("-"*130 + '-|')
-
-        # Plot results every 5 epochs
-        plot_results((train_losses, train_accuracies, val_losses, val_accuracies), params['model_name'])
-        # if epoch != 0 and epoch % 5 == 0:
-        #     plot_results((train_losses, train_accuracies, val_losses, val_accuracies), params['model_name'])
 
     return model, (train_losses, train_accuracies, val_losses, val_accuracies)

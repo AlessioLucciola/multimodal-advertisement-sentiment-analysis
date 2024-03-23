@@ -36,12 +36,12 @@ RAVDESS_NUM_CLASSES = 8
 
 # VIDEO
 # Dataset configurations (FER2013 dataset)
-DATASET_NAME = "fer2013"
-DATA_DIR = "data/VIDEO/FER"
+DATASET_NAME = "fer2013" # fer2013, ferplus
+DATA_DIR = "data/VIDEO/FER" # data/VIDEO/FER, data/VIDEO/FERPLUS
 PATH_TO_SAVE_RESULTS = 'results'
 METADATA_CSV = os.path.join(DATA_DIR, DATASET_NAME + ".csv")
-# DF_SPLITTING = [0.80, 0.50] #[train/test splitting, test/val splitting]
-# LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
+VAL_SIZE = 0.2
+LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 SHUFFLE = True
 
 # Train configurations (FER2013 dataset)

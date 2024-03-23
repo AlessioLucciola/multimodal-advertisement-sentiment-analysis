@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES 
+from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES 
 from dataloaders.FER_dataloader import FERDataloader
 from train.loops.video_train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -13,8 +13,14 @@ from models.VIDEO.custom_cnn import CustomCNN
 def main():
     set_seed(RANDOM_SEED)
     device = select_device()
-    train_loader, val_loader, test_loader = FERDataloader(data_dir=METADATA_CSV,
-                                           batch_size=BATCH_SIZE)
+    fer_dataloader = FERDataloader(csv_file=METADATA_CSV,
+                                   batch_size=BATCH_SIZE,
+                                   val_size=VAL_SIZE,
+                                   seed=RANDOM_SEED,
+                                   limit=LIMIT)
+    
+    train_loader, val_loader = fer_dataloader.get_train_val_dataloader()
+    test_loader = fer_dataloader.get_test_dataloader()
     
     if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
         model = ResNetX(MODEL_NAME, NUM_CLASSES)

@@ -12,7 +12,6 @@ from models.VIDEO.resnetx_cnn import ResNetX
 from models.VIDEO.custom_cnn import CustomCNN
 
 def load_trained_model(model_path):
-    # device
     device = select_device()
 
 
@@ -35,7 +34,7 @@ def load_trained_model(model_path):
     return model
 
 def FER_live_cam():
-    model = load_trained_model('./checkpoints/video/dense121_1.pt') # change this to the path of the trained model
+    model = load_trained_model('./checkpoints/video/'+ MODEL_NAME + '_best.pt') # change this to the path of the trained model
 
     val_transform = transforms.Compose([
         transforms.ToTensor()])

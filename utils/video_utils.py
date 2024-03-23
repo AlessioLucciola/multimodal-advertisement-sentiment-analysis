@@ -1,5 +1,3 @@
-# TODO: add only the necessary methods
-
 from torch.utils.data import Dataset
 from torchvision import transforms
 import matplotlib.pyplot as plt
@@ -9,6 +7,7 @@ from torchvision import transforms
 import numpy as np
 from sklearn.metrics import roc_curve, roc_auc_score
 
+# TODO: use only the necessary methods
 # Transformations
 def get_transformations():
     '''
