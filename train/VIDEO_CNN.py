@@ -1,10 +1,14 @@
 import torch
-from video_config import RANDOM_SEED, USE_WANDB, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES 
+from config import RANDOM_SEED, USE_WANDB, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES 
 from dataloaders.FER_dataloader import FERDataloader
-from models.VIDEO_CNN import get_model
 from train.loops.video_train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
 from utils.video_utils import plot_results, evaluate_model
+
+from models.VIDEO.densenet121 import DenseNet121
+from models.VIDEO.inception_v3 import InceptionV3
+from models.VIDEO.resnetx_cnn import ResNetX
+from models.VIDEO.custom_cnn import CustomCNN
 
 def main():
     set_seed(RANDOM_SEED)
@@ -12,15 +16,25 @@ def main():
     train_loader, val_loader, test_loader = FERDataloader(data_dir=METADATA_CSV,
                                            batch_size=BATCH_SIZE)
     
-    model = get_model(NUM_CLASSES, device, model_name=MODEL_NAME).to(device)
+    if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
+        model = ResNetX(MODEL_NAME, NUM_CLASSES)
+    elif MODEL_NAME == 'dense121':
+        model = DenseNet121(NUM_CLASSES)
+    elif MODEL_NAME == 'inception_v3':
+        model = InceptionV3(NUM_CLASSES)
+    elif MODEL_NAME == 'custom_cnn':
+        model = CustomCNN(NUM_CLASSES)
+    else:
+        raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, inception_v3, custom_cnn]')
+    
+    model = model.to(device)
     optimizer = torch.optim.Adam(
         model.parameters(), lr=LR, weight_decay=REG)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=LR,
                                                     epochs=N_EPOCHS,
                                                     steps_per_epoch=len(train_loader))                                   
     criterion = torch.nn.CrossEntropyLoss()
-
-    # TODO: use the next one
+    
     params = {
         'model_name': MODEL_NAME,
         'lr': LR,
@@ -35,7 +49,8 @@ def main():
                                          val_loader, 
                                          device, 
                                          params)
-
+    
+    # TODO: use this
     # config = {
     #     "architecture": "VIDEO_CNN",
     #     "scope": "video_emotion_recognition",
@@ -61,7 +76,7 @@ def main():
     #                 criterion=criterion,
     #                 resume=False)
     
-    # plot the results
+    # Plot the results
     plot_results(history)
 
     # Test

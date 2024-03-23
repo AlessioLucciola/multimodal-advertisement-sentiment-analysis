@@ -2,9 +2,14 @@ import cv2
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-from video_config import MODEL_NAME, NUM_CLASSES
+from config import MODEL_NAME, NUM_CLASSES
 from utils.utils import select_device
-from models.VIDEO_CNN import get_model
+from shared.constants import FER_emotion_mapping
+
+from models.VIDEO.densenet121 import DenseNet121
+from models.VIDEO.inception_v3 import InceptionV3
+from models.VIDEO.resnetx_cnn import ResNetX
+from models.VIDEO.custom_cnn import CustomCNN
 
 def load_trained_model(model_path):
     # device
@@ -12,7 +17,17 @@ def load_trained_model(model_path):
 
 
     # load the model
-    model = get_model(NUM_CLASSES, device, model_name=MODEL_NAME)
+    if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
+        model = ResNetX(MODEL_NAME, NUM_CLASSES)
+    elif MODEL_NAME == 'dense121':
+        model = DenseNet121(NUM_CLASSES)
+    elif MODEL_NAME == 'inception_v3':
+        model = InceptionV3(NUM_CLASSES)
+    elif MODEL_NAME == 'custom_cnn':
+        model = CustomCNN(NUM_CLASSES)
+    else:
+        raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, inception_v3, custom_cnn]')
+
     model = model.to(device)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -20,12 +35,7 @@ def load_trained_model(model_path):
     return model
 
 def FER_live_cam():
-    model = load_trained_model('./checkpoints/video/resnet18_4.pt')
-
-    
-    emotion_dict = {0: 'neutral', 1: 'happiness', 2: 'surprise', 3: 'sadness',
-                    4: 'anger', 5: 'disguest', 6: 'fear'}
-
+    model = load_trained_model('./checkpoints/video/dense121_1.pt') # change this to the path of the trained model
 
     val_transform = transforms.Compose([
         transforms.ToTensor()])
@@ -49,7 +59,7 @@ def FER_live_cam():
                 log_ps = model.cpu()(X)
                 ps = torch.exp(log_ps)
                 top_p, top_class = ps.topk(1, dim=1)
-                pred = emotion_dict[int(top_class.numpy())]
+                pred = FER_emotion_mapping[int(top_class.numpy())]
             cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
         
         cv2.imshow('frame', frame)

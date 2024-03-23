@@ -6,6 +6,8 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 import seaborn as sns
+from shared.constants import FER_emotion_mapping
+
 
 class FERDataset(Dataset):
     '''This is the dataset class for the Facial Emotion Recognition Dataset
@@ -22,15 +24,7 @@ class FERDataset(Dataset):
         if self.transform is None:
             self.transform = train_tfms if split == 'train' else val_tfms
         self.tensor_transform = transforms.ToTensor()
-        self.emotions = { # TODO: move to constants.py
-            0: 'Angry',
-            1: 'Disgust',
-            2: 'Fear',
-            3: 'Happy',
-            4: 'Sad',
-            5: 'Surprise',
-            6: 'Neutral'
-        }
+        self.emotions = FER_emotion_mapping
         # read the dataset
         dataset = pd.read_csv(data_dir)  # read the dataset
         if self.split == 'train':
@@ -52,6 +46,7 @@ class FERDataset(Dataset):
 #             pixels_values.append(values)
 
 #         pixels_values = np.array(pixels_values)
+        
         pixels_values = [[int(i) for i in pix.split()]
                          for pix in dataset.pixels]   # for storing pixel values
         pixels_values = np.array(pixels_values)
@@ -61,8 +56,10 @@ class FERDataset(Dataset):
         self.pix_cols = []  # for keeping track of column names
 
         # add each pixel value as a column
+        # TODO: fix -> PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
         for i in range(pixels_values.shape[1]):
             self.pix_cols.append(f'pixel_{i}')
+            
             dataset[f'pixel_{i}'] = pixels_values[:, i]
 
         self.df = dataset

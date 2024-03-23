@@ -10,7 +10,7 @@ from utils.video_utils import plot_results, evaluate_model, get_accuracy
 import numpy as np
 import torch.nn as nn
 
-# TODO: use the next one
+# TODO: change structure
 def train_eval_loop(model, train_loader, val_loader, device, params):
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(

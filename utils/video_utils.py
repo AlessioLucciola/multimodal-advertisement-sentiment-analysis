@@ -1,3 +1,5 @@
+# TODO: add only the necessary methods
+
 from torch.utils.data import Dataset
 from torchvision import transforms
 import matplotlib.pyplot as plt

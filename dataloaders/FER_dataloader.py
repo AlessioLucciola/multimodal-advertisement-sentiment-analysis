@@ -9,7 +9,6 @@ def FERDataloader(data_dir, val_size=0.2, batch_size=32, shuffle=True, transform
             batch_size: batch size for the dataloader
             num_workers: number of workers for the dataloader
             shuffle: whether to shuffle the dataset or not
-            debug: whether to run in debug mode or not
         Returns:
             train_loader: dataloader for the training set
             val_loader: dataloader for the validation set
