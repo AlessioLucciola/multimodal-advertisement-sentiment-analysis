@@ -2,7 +2,6 @@ import torch.nn as nn
 import torch
 from torchvision import models
 
-# TODO: to fix the following code
 class CustomCNN(nn.Module):
   def __init__(self, num_classes):
     super(CustomCNN, self).__init__()

@@ -1,11 +1,7 @@
 import torch.nn as nn
 from torchvision import models
 from enum import Enum
-
-class DenseNet121_Weights(Enum):
-    DEFAULT = 'torchvision'
-    IMAGENET = 'imagenet'
-    PLACES365 = 'places365'
+from torchvision.models import DenseNet121_Weights
 
 class DenseNet121(nn.Module):
     def __init__(self, num_classes):

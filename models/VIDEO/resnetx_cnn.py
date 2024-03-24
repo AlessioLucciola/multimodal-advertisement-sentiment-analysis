@@ -1,26 +1,7 @@
 import torch.nn as nn
 from torchvision import models
 from enum import Enum
-
-class ResNet18_Weights(Enum):
-    DEFAULT = 'torchvision'
-    IMAGENET = 'imagenet'
-    PLACES365 = 'places365'
-
-class ResNet34_Weights(Enum):
-    DEFAULT = 'torchvision'
-    IMAGENET = 'imagenet'
-    PLACES365 = 'places365'
-
-class ResNet50_Weights(Enum):
-    DEFAULT = 'torchvision'
-    IMAGENET = 'imagenet'
-    PLACES365 = 'places365'
-
-class ResNet101_Weights(Enum):
-    DEFAULT = 'torchvision'
-    IMAGENET = 'imagenet'
-    PLACES365 = 'places365'
+from torchvision.models import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, ResNet101_Weights
 
 
 def ResNetX(model_name, num_classes):

@@ -1,17 +1,13 @@
 import torch.nn as nn
 from torchvision import models
 from enum import Enum
+from torchvision.models import Inception_V3_Weights
 
 # TODO: to fix -> `index 1 is out of bounds for dimension 1 with size 1`
-class InceptionV3_Weights(Enum):
-    DEFAULT = 'torchvision'
-    IMAGENET = 'imagenet'
-    PLACES365 = 'places365'
-
 class InceptionV3(nn.Module):
     def __init__(self, num_classes):
         super(InceptionV3, self).__init__()
-        self.model = models.inception_v3(weights=InceptionV3_Weights.DEFAULT)
+        self.model = models.inception_v3(weights=Inception_V3_Weights.DEFAULT)
         out_features = 2048
         self.model.aux_logits = False
         self.model.fc = nn.Sequential(
