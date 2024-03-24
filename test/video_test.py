@@ -1,10 +1,8 @@
-import cv2
 import torch
-import torchvision.transforms as transforms
-from PIL import Image
-from config import MODEL_NAME, NUM_CLASSES
-from utils.utils import select_device
-from shared.constants import FER_emotion_mapping
+from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES 
+from dataloaders.FER_dataloader import FERDataloader
+from utils.utils import set_seed, select_device
+from utils.video_utils import evaluate_model, plot_confusion_matrix, plot_roc
 
 from models.VIDEO.densenet121 import DenseNet121
 from models.VIDEO.inception_v3 import InceptionV3
@@ -33,40 +31,43 @@ def load_trained_model(model_path):
 
     return model
 
-def FER_live_cam():
+
+def main():
+    set_seed(RANDOM_SEED)
+    device = select_device()
+    fer_dataloader = FERDataloader(csv_file=METADATA_CSV,
+                                   batch_size=BATCH_SIZE,
+                                   val_size=VAL_SIZE,
+                                   seed=RANDOM_SEED,
+                                   limit=LIMIT)
+    
+    test_loader = fer_dataloader.get_test_dataloader()
+    
+    if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
+        model = ResNetX(MODEL_NAME, NUM_CLASSES)
+    elif MODEL_NAME == 'dense121':
+        model = DenseNet121(NUM_CLASSES)
+    elif MODEL_NAME == 'inception_v3':
+        model = InceptionV3(NUM_CLASSES)
+    elif MODEL_NAME == 'custom_cnn':
+        model = CustomCNN(NUM_CLASSES)
+    else:
+        raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, inception_v3, custom_cnn]')
+    
+    # Load the trained model
     model = load_trained_model('./checkpoints/video/'+ MODEL_NAME + '_best.pt') # change this to the path of the trained model
+    criterion = torch.nn.CrossEntropyLoss()
+    
+    test_loss, test_acc, test_cm  = evaluate_model(
+        model, test_loader, criterion, device)
 
-    val_transform = transforms.Compose([
-        transforms.ToTensor()])
+    print("-"*100)
+    print(f"| Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.4f} |")
+    print("-"*100)
 
-    cap = cv2.VideoCapture(0)
-
-    while True:
-        ret, frame = cap.read()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
-        faces = face_cascade.detectMultiScale(frame)
-        for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
-            resize_frame = cv2.resize(gray[y:y + h, x:x + w], (48, 48))
-            X = resize_frame/256
-            X = Image.fromarray((X))
-            X = val_transform(X).unsqueeze(0)
-            with torch.no_grad():
-                model.eval()
-                log_ps = model.cpu()(X)
-                ps = torch.exp(log_ps)
-                top_p, top_class = ps.topk(1, dim=1)
-                pred = FER_emotion_mapping[int(top_class.numpy())]
-            cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
-        
-        cv2.imshow('frame', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
+    # Plot the results
+    plot_roc(model, test_loader, device, model_name=MODEL_NAME)
+    plot_confusion_matrix(test_cm, model_name=MODEL_NAME)
 
 if __name__ == "__main__":
-    FER_live_cam()
+    main()
