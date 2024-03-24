@@ -3,7 +3,6 @@ from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SI
 from dataloaders.FER_dataloader import FERDataloader
 from train.loops.video_train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
-from utils.video_utils import plot_results, evaluate_model
 
 from models.VIDEO.densenet121 import DenseNet121
 from models.VIDEO.inception_v3 import InceptionV3
@@ -20,7 +19,6 @@ def main():
                                    limit=LIMIT)
     
     train_loader, val_loader = fer_dataloader.get_train_val_dataloader()
-    test_loader = fer_dataloader.get_test_dataloader()
     
     if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
         model = ResNetX(MODEL_NAME, NUM_CLASSES)
@@ -41,57 +39,45 @@ def main():
                                                     steps_per_epoch=len(train_loader))                                   
     criterion = torch.nn.CrossEntropyLoss()
     
-    params = {
-        'model_name': MODEL_NAME,
-        'lr': LR,
-        'weight_decay': REG,
-        'num_epochs': N_EPOCHS,
-        'num_classes': NUM_CLASSES,
-        'batch_size': BATCH_SIZE,
-    }
-
-    trained_model, history = train_eval_loop(model, 
-                                         train_loader, 
-                                         val_loader, 
-                                         device, 
-                                         params)
-    
-    # TODO: use this
-    # config = {
-    #     "architecture": "VIDEO_CNN",
-    #     "scope": "video_emotion_recognition",
-    #     "learning_rate": LR,
-    #     "epochs": N_EPOCHS,
-    #     'reg': REG,
+    # params = {
+    #     'model_name': MODEL_NAME,
+    #     'lr': LR,
+    #     'weight_decay': REG,
+    #     'num_epochs': N_EPOCHS,
+    #     'num_classes': NUM_CLASSES,
     #     'batch_size': BATCH_SIZE,
-    #     "hidden_size": "",
-    #     "num_classes": "",
-    #     "dataset": "",
-    #     "optimizer": "",
-    #     "dropout_p": "",
-    #     "use_wandb": USE_WANDB,
     # }
 
-    # train_eval_loop(device=device,
-    #                 train_loader=train_loader,
-    #                 val_loader=val_loader,
-    #                 model=model,
-    #                 config=config,
-    #                 optimizer=optimizer,
-    #                 scheduler=scheduler,
-    #                 criterion=criterion,
-    #                 resume=False)
+    # trained_model, history = train_eval_loop(model, 
+    #                                      train_loader, 
+    #                                      val_loader, 
+    #                                      device, 
+    #                                      params)
     
-    # Plot the results
-    plot_results(history)
+    config = {
+        "architecture": MODEL_NAME,
+        "scope": "video_emotion_recognition",
+        "learning_rate": LR,
+        "epochs": N_EPOCHS,
+        'weight_decay': REG,
+        'batch_size': BATCH_SIZE,
+        "hidden_size": "",
+        "num_classes": NUM_CLASSES,
+        "dataset": "",
+        "optimizer": "",
+        "dropout_p": "",
+        "use_wandb": USE_WANDB,
+    }
 
-    # Test
-    test_loss, test_acc = evaluate_model(
-        trained_model, test_loader, criterion, device)
-
-    print("-"*100)
-    print(f"| Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.4f} |")
-    print("-"*100)
+    train_eval_loop(device=device,
+                    train_loader=train_loader,
+                    val_loader=val_loader,
+                    model=model,
+                    config=config,
+                    optimizer=optimizer,
+                    scheduler=scheduler,
+                    criterion=criterion,
+                    resume=False)
 
 if __name__ == "__main__":
     main()

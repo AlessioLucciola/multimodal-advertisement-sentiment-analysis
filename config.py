@@ -4,7 +4,7 @@ import os
 RANDOM_SEED = 42
 USE_DML = False
 USE_MPS = False
-USE_WANDB = True
+USE_WANDB = False
 
 # AUDIO
 # Dataset configurations (RAVDESS dataset)
@@ -36,26 +36,26 @@ RAVDESS_NUM_CLASSES = 8
 
 # VIDEO
 # Dataset configurations (FER2013 dataset)
-DATASET_NAME = "fer2013" # fer2013, ferplus
-DATA_DIR = "data/VIDEO/FER" # data/VIDEO/FER, data/VIDEO/FERPLUS
+DATASET_NAME = "fer2013" # Datasets: fer2013
+DATA_DIR = "data/VIDEO/FER" # Directory: data/VIDEO/FER
 PATH_TO_SAVE_RESULTS = 'results'
 METADATA_CSV = os.path.join(DATA_DIR, DATASET_NAME + ".csv")
-VAL_SIZE = 0.2
+VAL_SIZE = 0.2 # Validation size
 LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
-SHUFFLE = True
+SHUFFLE = True # Shuffle the dataset
 
 # Train configurations (FER2013 dataset)
-BATCH_SIZE = 256
+BATCH_SIZE = 256 # Default: 64
 N_EPOCHS = 100
 LR = 1e-5
 REG = 1e-5
 SAVE_RESULTS = True
 SAVE_MODELS = False
-MODEL_NAME = 'resnet18' # resnet18, resnet34, resnet50, resnet101, dense121, inception_v3, custom_cnn
+MODEL_NAME = 'resnet18' # Models: resnet18, resnet34, resnet50, resnet101, dense121, inception_v3, custom_cnn
 # RESUME_TRAINING = False
 # PATH_MODEL_TO_RESUME = "path/to/model"
 # RESUME_EPOCH = 0
 
 # Video configurations (FER2013 dataset)
-NUM_CLASSES = 7
-NUM_WORKERS = 1
+NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
+NUM_WORKERS = 1 # Number of workers for dataloader (default: 1)

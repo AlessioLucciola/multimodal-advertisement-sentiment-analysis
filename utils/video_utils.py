@@ -6,19 +6,11 @@ import torch
 from torchvision import transforms
 import numpy as np
 from sklearn.metrics import roc_curve, roc_auc_score
+from shared.constants import FER_emotion_mapping
 
 # TODO: use only the necessary methods
 # Transformations
 def get_transformations():
-    '''
-        Return transformations to be applied.
-        Input:
-            None
-        Output:
-            train_transforms: transformations to be applied on the training set
-            valid_transforms: transformations to be applied on the validation or test set
-    '''
-
     train_trans = [
         transforms.RandomCrop(48, padding=4, padding_mode='reflect'),
         transforms.RandomRotation(15),
@@ -40,6 +32,7 @@ def get_transformations():
 
     return train_transforms, valid_transforms
 
+# Plot results
 def plot_results(results, model_name):
     train_losses, train_accuracies, val_losses, val_accuracies = results
     fig, ax = plt.subplots(1, 2, figsize=(16, 8))
@@ -58,8 +51,7 @@ def plot_results(results, model_name):
     ax[1].legend()
 
     plt.suptitle('Training and Validation Results', y=0.95, fontsize=20)
-    # Save figure as .png
-    plt.savefig('plots/video/' + model_name + '_loss_and_accuracy.png')
+    plt.savefig('plots/video/' + model_name + '_train_and_valid_loss_and_accuracy.png')
     # plt.show()
 
 # Show images
@@ -92,7 +84,6 @@ def confusion_matrix(labels, outputs):
 
 # Evaluate model
 def evaluate_model(model, dataloader, criterion, device):
-    model.to(device)
     model.eval()
     running_loss = 0.0
     running_acc = 0.0
@@ -115,8 +106,8 @@ def evaluate_model(model, dataloader, criterion, device):
     return running_loss, running_acc, matrix
 
 
-# plot confusion matrix
-def plot_confusion_matrix(confusion_matrix, title="", model_name="resnet18"):
+# Plot confusion matrix
+def plot_confusion_matrix(confusion_matrix, model_name):
     fig, ax = plt.subplots(figsize=(8, 8))
     im = ax.matshow(confusion_matrix, cmap=plt.cm.Blues, alpha=0.6)
     fig.colorbar(im, ax=ax)
@@ -127,21 +118,13 @@ def plot_confusion_matrix(confusion_matrix, title="", model_name="resnet18"):
 
     plt.xlabel('Predictions', fontsize=12)
     plt.ylabel('Labels', fontsize=12)
-    plt.title(f'Confusion Matrix {title}', y=1.08,  fontsize=18)
-    plt.savefig('plots/' + model_name + '_confusion_matrix.png')
+    plt.title(f'Confusion Matrix {model_name}', y=1.08,  fontsize=18)
+    plt.savefig('plots/video/' + model_name + '_test_confusion_matrix.png')
     # plt.show()
 
-# plot roc curve
-def plot_roc(model, dataloader, device, cls=0, model_name="resnet18"):
-    emotions = {
-        0: 'Angry',
-        1: 'Disgust',
-        2: 'Fear',
-        3: 'Happy',
-        4: 'Sad',
-        5: 'Surprise',
-        6: 'Neutral'
-    }
+# Plot roc curve
+def plot_roc(model, dataloader, device, cls=0, model_name='resnet18'):
+    emotions = FER_emotion_mapping
     labels = []
     predicted = []
     model.to(device)
@@ -166,5 +149,5 @@ def plot_roc(model, dataloader, device, cls=0, model_name="resnet18"):
     plt.ylabel('True Positive Rate', fontsize=12)
     plt.title(f'ROC Curve: {emotions[cls]} vs Others', fontsize=16)
     plt.legend(loc='best')
-    plt.savefig('plots/' + model_name + 'roc_curve.png')
+    plt.savefig('plots/video/' + model_name + '_test_roc_curve.png')
     # plt.show()
