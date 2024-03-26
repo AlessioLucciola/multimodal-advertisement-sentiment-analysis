@@ -1,7 +1,7 @@
 import torch
 from config import BATCH_SIZE, LR, N_EPOCHS, RANDOM_SEED, USE_RAVDESS_ONLY, METADATA_RAVDESS_CSV, METADATA_ALL_CSV, RAVDESS_FILES_DIR, AUDIO_FILES_DIR, REG, RESUME_TRAINING, USE_WANDB, NUM_CLASSES, LIMIT, BALANCE_DATASET, PRELOAD_AUDIO_FILES, SCALE_AUDIO_FILES
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
-from models.CNN import CNN
+from models.AudioNet import AudioNet
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
 
@@ -19,7 +19,7 @@ def main():
                                            )
     train_loader = ravdess_dataloader.get_train_dataloader()
     val_loader = ravdess_dataloader.get_val_dataloader()
-    model = CNN(num_classes=NUM_CLASSES).to(device)
+    model = AudioNet(num_classes=NUM_CLASSES).to(device)
     optimizer = torch.optim.AdamW(model.parameters(),
                                   lr=LR,
                                   weight_decay=REG)
@@ -30,21 +30,28 @@ def main():
         verbose=True)
     criterion = torch.nn.CrossEntropyLoss()
 
+    if PRELOAD_AUDIO_FILES and SCALE_AUDIO_FILES:
+        scaler = ravdess_dataloader.scaler
+
     # TO DO: Complete the configuration of the model
     config = {
-        "architecture": "CNN",
-        "scope": "voice_emotion_recognition",
+        "architecture": "AudioNet",
+        "scope": "AudioNet",
         "learning_rate": LR,
         "epochs": N_EPOCHS,
         'reg': REG,
         'batch_size': BATCH_SIZE,
         "hidden_size": "",
-        "num_classes": "",
-        "dataset": "",
-        "optimizer": "",
+        "num_classes": NUM_CLASSES,
+        "dataset": "RAVDESS" if USE_RAVDESS_ONLY else "ALL_VOICE_DATASETS",
+        "optimizer": "AdamW",
         "dropout_p": "",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
+        "balance_dataset": BALANCE_DATASET,
+        "preload_audio_files": PRELOAD_AUDIO_FILES,
+        "scale_audio_files": SCALE_AUDIO_FILES,
+        "limit": LIMIT
     }
 
     train_eval_loop(device=device,
@@ -55,6 +62,7 @@ def main():
                     optimizer=optimizer,
                     scheduler=scheduler,
                     criterion=criterion,
+                    scaler=scaler,
                     resume=RESUME_TRAINING)
 
 if __name__ == "__main__":

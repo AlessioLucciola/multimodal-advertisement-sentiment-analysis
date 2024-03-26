@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 
-class CNN(nn.Module):
+class AudioNet(nn.Module):
     def __init__(self, num_classes):
         super().__init__() 
         # Define all layers present in the network

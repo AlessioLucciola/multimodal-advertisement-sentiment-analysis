@@ -44,6 +44,6 @@ class RAVDESSDataLoader(DataLoader):
         val_dataset = RAVDESSCustomDataset(data=self.val_df, files_dir=self.audio_files_dir, is_train_dataset=False, preload_audio_files=self.preload_audio_files, scale_audio_files=self.scale_audio_files, scaler=self.scaler)
         return DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
     
-    def get_test_dataloader(self):
-        test_dataset = RAVDESSCustomDataset(data=self.test_df, files_dir=self.audio_files_dir, is_train_dataset=False, preload_audio_files=self.preload_audio_files, scale_audio_files=self.scale_audio_files, scaler=self.scaler)
+    def get_test_dataloader(self, scaler):
+        test_dataset = RAVDESSCustomDataset(data=self.test_df, files_dir=self.audio_files_dir, is_train_dataset=False, preload_audio_files=self.preload_audio_files, scale_audio_files=self.scale_audio_files, scaler=scaler)
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)

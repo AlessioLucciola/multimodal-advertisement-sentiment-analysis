@@ -1,3 +1,4 @@
+import pickle
 from config import USE_DML, USE_MPS, PATH_TO_SAVE_RESULTS
 import random
 import numpy as np
@@ -66,3 +67,20 @@ def save_model(data_name, model, epoch=None, is_best=False):
     else:
         torch.save(model.state_dict(),
                    f'{path}/mi_project_{epoch+1}.pt')
+        
+def save_scaler(data_name, scaler):
+    path = PATH_TO_SAVE_RESULTS + f"/{data_name}/"
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+
+    with open(path + 'scaler.pkl', 'wb') as f:
+        pickle.dump(scaler, f)
+
+def upload_scaler(data_name):
+    path = PATH_TO_SAVE_RESULTS + f"/{data_name}/"
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+
+    with open(path + 'scaler.pkl', 'rb') as f:
+        scaler = pickle.load(f)
+    return scaler

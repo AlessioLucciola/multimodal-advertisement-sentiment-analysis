@@ -5,7 +5,7 @@ from datetime import datetime
 import copy
 from config import SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH
 from sklearn.metrics import recall_score, accuracy_score
-from utils.utils import save_results, save_model, save_configurations
+from utils.utils import save_results, save_model, save_configurations, save_scaler
 
 
 def train_eval_loop(device,
@@ -16,6 +16,7 @@ def train_eval_loop(device,
                     optimizer,
                     scheduler,
                     criterion,
+                    scaler,
                     resume=False):
 
     if resume:
@@ -42,11 +43,13 @@ def train_eval_loop(device,
         # Definition of the parameters to create folders where to save data (plots and models)
         current_datetime = datetime.now()
         current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
-        data_name = f"{config['scope']}_{config['architecture']}_{current_datetime_str}"
+        data_name = f"{config['architecture']}_{current_datetime_str}"
 
         if SAVE_RESULTS:
             # Save configurations in JSON
             save_configurations(data_name, config)
+            if scaler is not None:
+                save_scaler(data_name, scaler)
 
         if config["use_wandb"]:
             wandb.init(
@@ -64,7 +67,7 @@ def train_eval_loop(device,
         epoch_tr_preds = torch.tensor([]).to(device)
         epoch_tr_labels = torch.tensor([]).to(device)
         for tr_i, tr_batch in enumerate(tqdm(train_loader, desc="Training", leave=False)):
-            if config["scope"] == "voice_emotion_recognition":
+            if config["scope"] == "AudioNet":
                 tr_data, tr_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
             tr_data = tr_data.to(device)
             tr_labels = tr_labels.to(device)
@@ -102,7 +105,7 @@ def train_eval_loop(device,
             epoch_val_preds = torch.tensor([]).to(device)
             epoch_val_labels = torch.tensor([]).to(device)
             for _, val_batch in enumerate(val_loader):
-                if config["scope"] == "voice_emotion_recognition":
+                if config["scope"] == "AudioNet":
                     val_data, val_labels = val_batch['audio'], val_batch['emotion'] # data = audio, labels = emotions
                 val_data = val_data.to(device)
                 val_labels = val_labels.to(device)
