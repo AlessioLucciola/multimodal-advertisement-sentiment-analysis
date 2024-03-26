@@ -1,16 +1,16 @@
-from config import DROPOUT_P
+from config import DROPOUT_P, NUM_MFCC
 import torch.nn as nn
 import torch
 
 class AudioNet(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, num_mfcc=NUM_MFCC, dropout_p=DROPOUT_P):
         super().__init__() 
         self.transformer_maxpool = nn.MaxPool2d(kernel_size=[1,4], stride=[1,4])
         transformer_layer = nn.TransformerEncoderLayer(
-            d_model=40,
+            d_model=num_mfcc,
             nhead=4,
             dim_feedforward=512,
-            dropout=DROPOUT_P, 
+            dropout=dropout_p, 
             activation='relu'
         )
         self.transformer_encoder = nn.TransformerEncoder(transformer_layer, num_layers=4)
@@ -25,7 +25,7 @@ class AudioNet(nn.Module):
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout(p=DROPOUT_P),
+            nn.Dropout(p=dropout_p),
             nn.Conv2d(
                 in_channels=16, 
                 out_channels=32,
@@ -36,7 +36,7 @@ class AudioNet(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(p=DROPOUT_P), 
+            nn.Dropout(p=dropout_p), 
             nn.Conv2d(
                 in_channels=32,
                 out_channels=64,
@@ -47,7 +47,7 @@ class AudioNet(nn.Module):
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(p=DROPOUT_P),
+            nn.Dropout(p=dropout_p),
         )
        
         self.conv2Dblock2 = nn.Sequential(
@@ -61,7 +61,7 @@ class AudioNet(nn.Module):
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Dropout(p=DROPOUT_P),
+            nn.Dropout(p=dropout_p),
             nn.Conv2d(
                 in_channels=16, 
                 out_channels=32,
@@ -72,7 +72,7 @@ class AudioNet(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(p=DROPOUT_P), 
+            nn.Dropout(p=dropout_p), 
             nn.Conv2d(
                 in_channels=32,
                 out_channels=64,
@@ -83,10 +83,10 @@ class AudioNet(nn.Module):
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(p=DROPOUT_P),
+            nn.Dropout(p=dropout_p),
         )
 
-        self.fc1_linear = nn.Linear(512*2+40,num_classes) 
+        self.fc1_linear = nn.Linear(512*2+num_mfcc, num_classes) 
         self.softmax_out = nn.Softmax(dim=1)
         
     def forward(self, x):
@@ -95,10 +95,10 @@ class AudioNet(nn.Module):
         conv2d_embedding2 = self.conv2Dblock2(x)
         conv2d_embedding2 = torch.flatten(conv2d_embedding2, start_dim=1) 
         x_maxpool = self.transformer_maxpool(x)
-        x_maxpool_reduced = torch.squeeze(x_maxpool,1)
+        x_maxpool_reduced = torch.squeeze(x_maxpool, 1)
         x = x_maxpool_reduced.permute(2,0,1) 
         transformer_output = self.transformer_encoder(x)
         transformer_embedding = torch.mean(transformer_output, dim=0)
-        complete_embedding = torch.cat([conv2d_embedding1, conv2d_embedding2,transformer_embedding], dim=1)  
+        complete_embedding = torch.cat([conv2d_embedding1, conv2d_embedding2,transformer_embedding], dim=1)
         output_logits = self.fc1_linear(complete_embedding)  
         return output_logits
