@@ -104,8 +104,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "AudioNet_2024-03-26_15-54-42"
+    model_path = "AudioNet_2024-03-26_16-05-55"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "5"
+    epoch = "487"
 
     main(model_path, epoch)
