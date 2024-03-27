@@ -6,3 +6,5 @@ plots
 checkpoints
 wandb
 TEMP
+**/*.npy
+**/*.pth
