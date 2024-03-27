@@ -21,7 +21,10 @@ conda activate mi_project
 You can download the needed data from this [Google Drive Link](https://drive.google.com/drive/folders/1BgkLk7GfHc8lLyqnabeT4jpEQQALClcQ)
 
 Inside the `data` folder, there should be these elements:
+- For the audio models:
+    -   `audio_metadata_ravdess.csv`: A file containing the (self-generated) metadata of the ravdess audio files;
+    -   `audio_metadata_all.csv`: A file containing the (self-generated) metadata of the merged datasets audio files;
+    -   `audio_ravdess_files`: A folder in which to put the ravdess audio files (downloadable from Google Drive);
+    -   `audio_merged_datasets_files`: A folder in which to put the merged datasets audio files (downloadable from Google Drive).
 
--   `RAVDESS` folder with:
-    -   `ravdess.csv`: A file containing the (self-generated) metadata of the audio files;
-    -   `files`: A folder in which to put the audio files (downloadable from Google Drive).
+All the files required for the audio model are zipped in the "audio_files.zip" file in Google Drive.
