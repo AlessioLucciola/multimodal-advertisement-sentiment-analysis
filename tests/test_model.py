@@ -2,7 +2,7 @@ from utils.utils import save_results, set_seed, select_device, upload_scaler
 from config import AUDIO_FILES_DIR, BALANCE_DATASET, LIMIT, METADATA_ALL_CSV, METADATA_RAVDESS_CSV, PRELOAD_AUDIO_FILES, RAVDESS_FILES_DIR, REG, SAVE_RESULTS, RANDOM_SEED, PATH_TO_SAVE_RESULTS, NUM_CLASSES, BATCH_SIZE, SCALE_AUDIO_FILES, USE_RAVDESS_ONLY
 from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
-from models.AudioNet import AudioNet
+from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from tqdm import tqdm
 import torch
 import os
@@ -78,7 +78,7 @@ def get_model_and_dataloader(model_path, device):
     scaler = None
     if type == "AudioNet":
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
-        model = AudioNet(
+        model = AudioNetCT(
             num_classes=num_classes).to(device)
         dataloader = RAVDESSDataLoader(csv_file=METADATA_RAVDESS_CSV if USE_RAVDESS_ONLY else METADATA_ALL_CSV,
                                         audio_files_dir=RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR,

@@ -2,7 +2,7 @@ from config import DROPOUT_P, NUM_MFCC
 import torch.nn as nn
 import torch
 
-class AudioNet(nn.Module):
+class AudioNet_CNN_Transformers(nn.Module):
     def __init__(self, num_classes, num_mfcc=NUM_MFCC, dropout_p=DROPOUT_P):
         super().__init__() 
         self.transformer_maxpool = nn.MaxPool2d(kernel_size=[1,4], stride=[1,4])
