@@ -2,7 +2,7 @@ import os
 
 # Dataset configurations
 DATA_DIR = "data"
-PATH_TO_SAVE_RESULTS = 'results'
+PATH_TO_SAVE_RESULTS = "results"
 AUDIO_FILES_DIR = os.path.join(DATA_DIR, "audio_merged_datasets_files")
 RAVDESS_FILES_DIR = os.path.join(DATA_DIR, "audio_ravdess_files")
 METADATA_RAVDESS_CSV = os.path.join(DATA_DIR, "audio_metadata_ravdess.csv")
@@ -15,7 +15,7 @@ PRELOAD_AUDIO_FILES = True
 
 # Miscellanous configurations
 RANDOM_SEED = 42
-USE_DML = False
+USE_DML = True
 USE_MPS = False
 USE_WANDB = False
 

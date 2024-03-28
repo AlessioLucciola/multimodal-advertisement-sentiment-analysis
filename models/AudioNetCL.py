@@ -5,22 +5,12 @@ import torch
 class AudioNet_CNN_LSTM(nn.Module):
     def __init__(self, num_classes, num_mfcc=NUM_MFCC, num_layers=LSTM_NUM_LAYERS, hidden_size=LSTM_HIDDEN_SIZE, dropout_p=DROPOUT_P):
         super().__init__() 
-        self.transformer_maxpool = nn.MaxPool2d(kernel_size=[1,4], stride=[1,4])
-        transformer_layer = nn.TransformerEncoderLayer(
-            d_model=num_mfcc,
-            nhead=4,
-            dim_feedforward=512,
-            dropout=dropout_p, 
-            activation='relu'
-        )
-        self.transformer_encoder = nn.TransformerEncoder(transformer_layer, num_layers=4)
-
         self.lstm = nn.LSTM(input_size=num_mfcc,
                             hidden_size=hidden_size,
                             num_layers=num_layers,
                             batch_first=True,
                             dropout=dropout_p,
-                            bidirectional=True
+                            bidirectional=False
                             )
         self.CNN_block = nn.Sequential(
             nn.Conv2d(
@@ -58,13 +48,14 @@ class AudioNet_CNN_LSTM(nn.Module):
             nn.Dropout(p=dropout_p),
         )
 
-        self.fc = nn.Linear(hidden_size+num_mfcc, num_classes) 
+        self.fc = nn.Linear((512+hidden_size+1), num_classes) 
         
     def forward(self, x):
         CNN_embedding = self.CNN_block(x)
         CNN_embedding = torch.flatten(CNN_embedding, start_dim=1) 
 
-        x_lstm = x.permute(0, 2, 1)  # Reshape to (batch_size, num_features, sequence_length)
+        x_lstm = torch.squeeze(x, 1)
+        x_lstm = x_lstm.permute(0, 2, 1)
         lstm_output, _ = self.lstm(x_lstm)
         lstm_embedding = lstm_output[:, -1, :]
 
