@@ -3,7 +3,7 @@ from torchvision import models
 from enum import Enum
 from torchvision.models import Inception_V3_Weights
 
-# TODO: to fix -> `index 1 is out of bounds for dimension 1 with size 1`
+# TODO: FIX THIS -> index 1 is out of bounds for dimension 1 with size 1
 class InceptionV3(nn.Module):
     def __init__(self, num_classes, dropout_p):
         super(InceptionV3, self).__init__()

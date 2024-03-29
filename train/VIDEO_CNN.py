@@ -43,7 +43,7 @@ def main():
     
     config = {
         "architecture": MODEL_NAME,
-        "scope": "Video_Emotion_Recognition",
+        "scope": "VideoNet",
         "learning_rate": LR,
         "epochs": N_EPOCHS,
         "reg": REG,
