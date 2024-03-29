@@ -63,12 +63,13 @@ BATCH_SIZE = 256 # Default: 64
 N_EPOCHS = 100
 LR = 1e-5
 REG = 1e-5
+DROPOUT_P = 0.2
 SAVE_RESULTS = True
-SAVE_MODELS = False
+SAVE_MODELS = True
 MODEL_NAME = 'resnet18' # Models: resnet18, resnet34, resnet50, resnet101, dense121, inception_v3, custom_cnn
-# RESUME_TRAINING = False
-# PATH_MODEL_TO_RESUME = "path/to/model"
-# RESUME_EPOCH = 0
+RESUME_TRAINING = False
+PATH_MODEL_TO_RESUME = "path/to/model"
+RESUME_EPOCH = 0
 
 # Video configurations (FER2013 dataset)
 NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)

@@ -4,22 +4,22 @@ from enum import Enum
 from torchvision.models import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, ResNet101_Weights
 
 
-def ResNetX(model_name, num_classes):
+def ResNetX(model_name, num_classes, dropout_p):
     if model_name == 'resnet18':
-        model = ResNet18(num_classes)
+        model = ResNet18(num_classes, dropout_p)
     elif model_name == 'resnet34':
-        model = ResNet34(num_classes)
+        model = ResNet34(num_classes, dropout_p)
     elif model_name == 'resnet50':
-        model = ResNet50(num_classes)
+        model = ResNet50(num_classes, dropout_p)
     elif model_name == 'resnet101':
-        model = ResNet101(num_classes)
+        model = ResNet101(num_classes, dropout_p)
     else:
         raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101]')
     
     return model
 
 class ResNet18(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, dropout_p):
         super(ResNet18, self).__init__()
         self.model = models.resnet18(weights=ResNet18_Weights.DEFAULT)
         self.model.fc = nn.Linear(512, num_classes)
@@ -31,7 +31,7 @@ class ResNet18(nn.Module):
         self.model.fc = nn.Sequential(
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(dropout_p),
             nn.Linear(256, num_classes),
             nn.LogSoftmax(dim=1)
         )
@@ -46,7 +46,7 @@ class ResNet18(nn.Module):
             param.requires_grad = True
 
 class ResNet34(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, dropout_p):
         super(ResNet34, self).__init__()
         self.model = models.resnet34(weights=ResNet34_Weights.DEFAULT)
         self.model.fc = nn.Linear(512, num_classes)
@@ -58,7 +58,7 @@ class ResNet34(nn.Module):
         self.model.fc = nn.Sequential(
             nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(dropout_p),
             nn.Linear(256, num_classes),
             nn.LogSoftmax(dim=1)
         )
@@ -74,7 +74,7 @@ class ResNet34(nn.Module):
 
 
 class ResNet50(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, dropout_p):
         super(ResNet50, self).__init__()
         self.model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         self.model.fc = nn.Linear(2048, num_classes)
@@ -86,7 +86,7 @@ class ResNet50(nn.Module):
         self.model.fc = nn.Sequential(
             nn.Linear(2048, 256),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(dropout_p),
             nn.Linear(256, num_classes),
             nn.LogSoftmax(dim=1)
     )
@@ -102,7 +102,7 @@ class ResNet50(nn.Module):
 
 
 class ResNet101(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, dropout_p):
         super(ResNet101, self).__init__()
         self.model = models.resnet101(weights=ResNet101_Weights.DEFAULT)
         self.model.fc = nn.Linear(2048, num_classes)
@@ -114,7 +114,7 @@ class ResNet101(nn.Module):
         self.model.fc = nn.Sequential(
             nn.Linear(2048, 256),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(dropout_p),
             nn.Linear(256, num_classes),
             nn.LogSoftmax(dim=1)
         )

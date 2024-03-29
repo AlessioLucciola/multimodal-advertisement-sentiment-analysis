@@ -14,7 +14,6 @@ from models.VIDEO.custom_cnn import CustomCNN
 def load_trained_model(model_path):
     device = select_device()
 
-
     # load the model
     if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
         model = ResNetX(MODEL_NAME, NUM_CLASSES)

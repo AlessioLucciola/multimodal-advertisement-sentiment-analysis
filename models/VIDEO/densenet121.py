@@ -4,7 +4,7 @@ from enum import Enum
 from torchvision.models import DenseNet121_Weights
 
 class DenseNet121(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, dropout_p):
         super(DenseNet121, self).__init__()
         self.model = models.densenet121(weights=DenseNet121_Weights.DEFAULT)
         out_features = 1024
@@ -12,7 +12,7 @@ class DenseNet121(nn.Module):
         self.model.classifier = nn.Sequential(
             nn.Linear(out_features, 256),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(dropout_p),
             nn.Linear(256, num_classes),
             nn.LogSoftmax(dim=1)   
         )

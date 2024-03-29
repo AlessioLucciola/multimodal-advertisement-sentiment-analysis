@@ -3,7 +3,7 @@ import torch
 from torchvision import models
 
 class CustomCNN(nn.Module):
-  def __init__(self, num_classes):
+  def __init__(self, num_classes, dropout_p):
     super(CustomCNN, self).__init__()
     self.cnn1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=3)
     self.cnn2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3)
@@ -25,7 +25,7 @@ class CustomCNN(nn.Module):
     self.fc1 = nn.Linear(1024, 512)
     self.fc2 = nn.Linear(512, 256)
     self.fc3 = nn.Linear(256, num_classes)
-    self.dropout = nn.Dropout(0.3)
+    self.dropout = nn.Dropout(dropout_p) # Default: 0.3
     self.log_softmax = nn.LogSoftmax(dim=1)
     
   def forward(self, x):

@@ -3,10 +3,9 @@ import torch
 import wandb
 from datetime import datetime
 import copy
-from config import SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, N_EPOCHS
-from sklearn.metrics import recall_score
+from config import SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH
 from utils.utils import save_results, save_model, save_configurations
-from utils.video_utils import evaluate_model, get_accuracy
+from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 
 def train_eval_loop(device,
                     train_loader: torch.utils.data.DataLoader,
@@ -42,7 +41,7 @@ def train_eval_loop(device,
         # Definition of the parameters to create folders where to save data (plots and models)
         current_datetime = datetime.now()
         current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
-        data_name = f"{config['scope']}_{config['architecture']}_{current_datetime_str}"
+        data_name = f"{config['architecture']}_{current_datetime_str}"
 
         if SAVE_RESULTS:
             # Save configurations in JSON
@@ -59,149 +58,112 @@ def train_eval_loop(device,
     total_step = len(train_loader)
     best_model = None
     best_accuracy = None
-    train_losses = []
-    train_accuracies = []
-    val_losses = []
-    val_accuracies = []
-    for epoch in range(N_EPOCHS):
+    accuracy_metric = Accuracy(task="multiclass", num_classes=config['num_classes']).to(device)
+    recall_metric = Recall(task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
+    precision_metric = Precision(task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
+    f1_metric = F1Score(task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
+    auroc_metric = AUROC(task="multiclass", num_classes=config['num_classes']).to(device)
+    for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
         model.train()
-        running_loss = 0.0
-        running_acc = 0.0
-        curr_len = 0
-        batch_id = 0
-        for images, labels in tqdm(train_loader, ascii=True, desc=f"Epoch: {epoch+1:>{len(str(N_EPOCHS))}}/{N_EPOCHS}"):
-            images, labels = images.to(device), labels.to(device)
+        epoch_tr_preds = torch.tensor([]).to(device)
+        epoch_tr_labels = torch.tensor([]).to(device)
+        for tr_i, tr_batch in enumerate(tqdm(train_loader, desc="Training", leave=False)):
+            if config["scope"] == "AudioNet":
+                tr_data, tr_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
+            if config["scope"] == "Video_Emotion_Recognition":
+                tr_data, tr_labels = tr_batch[0], tr_batch[1] # data = pixel, labels = emotions
+            tr_data = tr_data.to(device)
+            tr_labels = tr_labels.to(device)
+
+            tr_outputs = model(tr_data)  # Prediction
+
+            # Multiclassification loss considering all classes
+            tr_epoch_loss = criterion(tr_outputs, tr_labels)
+
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            acc = get_accuracy(outputs, labels)
-            loss.backward()
+            tr_epoch_loss.backward()
             optimizer.step()
-            scheduler.step()
-            running_loss += loss.item() * images.shape[0]
-            running_acc += acc
-            curr_len += images.shape[0]
-            batch_id += 1
 
+            with torch.no_grad():
+                tr_preds = torch.argmax(tr_outputs, -1).detach()
+                epoch_tr_preds = torch.cat((epoch_tr_preds, tr_preds), 0)
+                epoch_tr_labels = torch.cat((epoch_tr_labels, tr_labels), 0)
 
-            curr_loss = running_loss/curr_len
-            curr_acc = running_acc/batch_id
-            cur_recall = recall_score(labels.cpu().numpy(), torch.argmax(outputs, -1).cpu().numpy(), average='macro')
+                tr_accuracy = accuracy_metric(tr_preds, tr_labels) * 100
+                tr_recall = recall_metric(tr_preds, tr_labels) * 100
+                tr_precision = precision_metric(tr_preds, tr_labels) * 100
+                tr_f1 = f1_metric(tr_preds, tr_labels) * 100
+                tr_auroc = auroc_metric(tr_outputs.softmax(dim=1), tr_labels)*100
 
-            if (epoch+1) % 5 == 0:
-                    print('Training -> Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%'
-                            .format(epoch+1, config["epochs"], epoch+1, total_step, curr_loss, curr_acc, cur_recall))
+                if (tr_i+1) % 50 == 0:
+                    print('Training -> Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'
+                            .format(epoch+1, config["epochs"], tr_i+1, total_step, tr_epoch_loss, tr_accuracy, tr_recall, tr_precision, tr_f1, tr_auroc))
+
+        if config["use_wandb"]:
+            wandb.log({"Training Loss": tr_epoch_loss.item()})
+            wandb.log({"Training Accuracy": tr_accuracy.item()})
+            wandb.log({"Training Recall": tr_recall.item()})
+            wandb.log({"Training Precision": tr_precision.item()})
+            wandb.log({"Training F1": tr_f1.item()})
+            wandb.log({"Training AUROC": tr_auroc.item()})
+
+        model.eval()
+        with torch.no_grad():
+            epoch_val_preds = torch.tensor([]).to(device)
+            epoch_val_labels = torch.tensor([]).to(device)
+            for _, val_batch in enumerate(val_loader):
+                if config["scope"] == "AudioNet":
+                    val_data, val_labels = val_batch['audio'], val_batch['emotion'] # data = audio, labels = emotions
+                if config["scope"] == "Video_Emotion_Recognition":
+                    val_data, val_labels = val_batch[0], val_batch[1] # data = pixel, labels = emotions
+                val_data = val_data.to(device)
+                val_labels = val_labels.to(device)
+
+                val_outputs = model(val_data).to(device)
+                val_preds = torch.argmax(val_outputs, -1).detach()
+                epoch_val_preds = torch.cat((epoch_val_preds, val_preds), 0)
+                epoch_val_labels = torch.cat((epoch_val_labels, val_labels), 0)
+
+                # Multiclassification loss considering all classes
+                val_epoch_loss = criterion(val_outputs, val_labels)
+
+            val_accuracy = accuracy_metric(epoch_val_preds, epoch_val_labels) * 100
+            val_recall = recall_metric(epoch_val_preds, epoch_val_labels) * 100
+            val_precision = precision_metric(epoch_val_preds, epoch_val_labels) * 100
+            val_f1 = f1_metric(epoch_val_preds, epoch_val_labels) * 100
+            val_auroc = auroc_metric(val_outputs.softmax(dim=1), val_labels)*100
         
-        if config["use_wandb"]:
-            wandb.log({"Training Loss": curr_loss.item()})
-            wandb.log({"Training Accuracy": curr_acc})
-            wandb.log({"Training Recall": cur_recall})
+            if config["use_wandb"]:
+                wandb.log({"Validation Loss": val_epoch_loss.item()})
+                wandb.log({"Validation Accuracy": val_accuracy.item()})
+                wandb.log({"Validation Recall": val_recall.item()})
+                wandb.log({"Validation Precision": val_precision.item()})
+                wandb.log({"Validation F1": val_f1.item()})
+                wandb.log({"Validation AUROC": val_auroc.item()})
+            print('Validation -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'
+                  .format(epoch+1, config["epochs"], val_epoch_loss, val_accuracy, val_recall, val_precision, val_f1, val_auroc))
 
-        running_loss /= len(train_loader.dataset)
-        running_acc /= len(train_loader)
-        train_losses.append(running_loss)
-        train_accuracies.append(running_acc)
-        val_loss, val_acc, cm = evaluate_model(
-            model, val_loader, criterion, device)
-        val_losses.append(val_loss)
-        val_accuracies.append(val_acc)
-        val_recall = 0 # TODO: TO BE IMPLEMENTED
-
-        if config["use_wandb"]:
-                wandb.log({"Validation Loss": val_loss.item()})
-                wandb.log({"Validation Accuracy": val_acc})
-                wandb.log({"Validation Recall": val_recall})
-        print('Validation -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%'
-                .format(epoch+1, config["epochs"], val_loss, val_acc, val_recall))
-
-        if best_accuracy is None or val_acc < best_accuracy:
-                best_accuracy = val_acc
+            if best_accuracy is None or val_accuracy < best_accuracy:
+                best_accuracy = val_accuracy
                 best_model = copy.deepcopy(model)
-        current_results = {
-            'epoch': epoch+1,
-            'validation_loss': val_loss.item(),
-            'training_loss': curr_loss.item(),
-            'validation_accuracy': val_acc,
-            'training_accuracy': curr_acc,
-            'validation_recall': val_recall,
-            'training_recall': cur_recall
-        }
-        if SAVE_RESULTS:
-            save_results(data_name, current_results)
-        if SAVE_MODELS:
-            save_model(data_name, model, epoch)
-        if epoch == config["epochs"]-1 and SAVE_MODELS:
-            save_model(data_name, best_model, epoch=None, is_best=True)
-
-# def train_eval_loop(model, train_loader, val_loader, device, params):
-#     criterion = nn.CrossEntropyLoss()
-#     optimizer = torch.optim.Adam(
-#         model.parameters(), lr=params['lr'], weight_decay=params['weight_decay'])
-#     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer=optimizer, max_lr=params['lr'],
-#                                                     epochs=params['num_epochs'],
-#                                                     steps_per_epoch=len(train_loader))
-
-#     train_losses = []
-#     train_accuracies = []
-#     val_losses = []
-#     val_accuracies = []
-#     best_loss = np.inf
-
-#     for epoch in range(params['num_epochs']):
-#         print(f"|--------- Epoch: {epoch+1:>{len(str(params['num_epochs']))}}/{params['num_epochs']} " + "-"*110)
-#         model.train()
-#         running_loss = 0.0
-#         running_acc = 0.0
-#         curr_len = 0
-#         batch_id = 0
-#         for images, labels in tqdm(train_loader, ascii=True, desc=f"Epoch: {epoch+1:>{len(str(params['num_epochs']))}}/{params['num_epochs']}"):
-#             images, labels = images.to(device), labels.to(device)
-#             optimizer.zero_grad()
-#             outputs = model(images)
-#             loss = criterion(outputs, labels)
-#             acc = get_accuracy(outputs, labels)
-#             loss.backward()
-#             optimizer.step()
-#             scheduler.step()
-#             running_loss += loss.item() * images.shape[0]
-#             running_acc += acc
-#             curr_len += images.shape[0]
-#             batch_id += 1
-
-
-#             curr_loss = running_loss/curr_len
-#             curr_acc = running_acc/batch_id
-
-#             if batch_id % 10 == 0:
-#                 print('\t\t'+'-'*70)
-#                 print(
-#                     f"\t\t| Batch: {batch_id:>{len(str(len(train_loader)))}}/{len(train_loader)} | Training Loss: {curr_loss:.4f} | Training Accuracy: {curr_acc:.4f} |")
-#                 print('\t\t'+'-'*70)
-
-#         running_loss /= len(train_loader.dataset)
-#         running_acc /= len(train_loader)
-#         train_losses.append(running_loss)
-#         train_accuracies.append(running_acc)
-#         val_loss, val_acc, cm = evaluate_model(
-#             model, val_loader, criterion, device)
-#         val_losses.append(val_loss)
-#         val_accuracies.append(val_acc)
-
-#         # Save the model if the validation loss has decreased
-#         if val_loss < best_loss:
-#             best_loss = val_loss
-#             best_model_state = copy.deepcopy(model.state_dict())
-#             model.load_state_dict(best_model_state)
-#             torch.save(model.state_dict(), 'checkpoints/video/' + params['model_name'] + '_best.pt')
-
-#         # Save the model every 5 epochs and plot the results
-#         if SAVE_MODELS and (epoch != 0 or epoch % 5 == 0):
-#             torch.save(model.state_dict(), 'checkpoints/video/' + params['model_name'] + '_' + str(epoch+1) + '.pt')
-#             plot_results((train_losses, train_accuracies, val_losses, val_accuracies), params['model_name'])
-
-#         print('-'*120)
-#         print(f"Epoch: {epoch+1:>{len(str(params['num_epochs']))}}/{params['num_epochs']} | Training Loss: {running_loss:.4f} | Training Accuracy: {running_acc:.4f} | Validation Loss: {val_loss:.4f} | Validation Accuracy: {val_acc:.4f}")
-#         print('-'*120)
-#         print("-"*130 + '-|')
-
-#     return model, (train_losses, train_accuracies, val_losses, val_accuracies)
+            current_results = {
+                'epoch': epoch+1,
+                'training_loss': tr_epoch_loss.item(),
+                'training_accuracy': tr_accuracy.item(),
+                'training_recall': tr_recall.item(),
+                'training_precision': tr_precision.item(),
+                'training_f1': tr_f1.item(),
+                'training_auroc': tr_auroc.item(),
+                'validation_loss': val_epoch_loss.item(),
+                'validation_accuracy': val_accuracy.item(),
+                'validation_recall': val_recall.item(),
+                'validation_precision': val_precision.item(),
+                'validation_f1': val_f1.item(),
+                'validation_auroc': val_auroc.item()
+            }
+            if SAVE_RESULTS:
+                save_results(data_name, current_results)
+            if SAVE_MODELS:
+                save_model(data_name, model, epoch)
+            if epoch == config["epochs"]-1 and SAVE_MODELS:
+                save_model(data_name, best_model, epoch=None, is_best=True)
