@@ -38,7 +38,6 @@ def train_eval_loop(device,
                     resume=resume,
                     name=data_name
                 )
-
     else:
         # Definition of the parameters to create folders where to save data (plots and models)
         current_datetime = datetime.now()

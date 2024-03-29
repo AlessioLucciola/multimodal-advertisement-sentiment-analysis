@@ -48,7 +48,7 @@ class AudioNet_CNN_LSTM(nn.Module):
             nn.Dropout(p=dropout_p),
         )
 
-        self.fc = nn.Linear((512+hidden_size+1), num_classes) 
+        self.fc = nn.Linear((512+hidden_size), num_classes) 
         
     def forward(self, x):
         CNN_embedding = self.CNN_block(x)
