@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch
 from torchvision import models
 
-class CustomCNN(nn.Module):
+class VideoCustomCNN(nn.Module):
   def __init__(self, num_classes, dropout_p):
-    super(CustomCNN, self).__init__()
+    super(VideoCustomCNN, self).__init__()
     self.cnn1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=3)
     self.cnn2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3)
     self.cnn3 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3)

@@ -1,5 +1,5 @@
 from utils.utils import save_results, set_seed, select_device, upload_scaler
-from config import AUDIO_FILES_DIR, BALANCE_DATASET, DROPOUT_P, LIMIT, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, METADATA_ALL_CSV, METADATA_RAVDESS_CSV, NUM_MFCC, PRELOAD_AUDIO_FILES, RAVDESS_FILES_DIR, REG, SAVE_RESULTS, RANDOM_SEED, PATH_TO_SAVE_RESULTS, NUM_CLASSES, BATCH_SIZE, SCALE_AUDIO_FILES, USE_RAVDESS_ONLY
+from config import AUDIO_FILES_DIR, BALANCE_DATASET, DROPOUT_P, LIMIT, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, METADATA_ALL_CSV, METADATA_RAVDESS_CSV, NUM_MFCC, PRELOAD_AUDIO_FILES, RAVDESS_FILES_DIR, REG, SAVE_RESULTS, RANDOM_SEED, PATH_TO_SAVE_RESULTS, NUM_CLASSES, BATCH_SIZE, SCALE_AUDIO_FILES, USE_RAVDESS_ONLY, MODEL_NAME, METADATA_CSV, VAL_SIZE, LIVE_TEST
 from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
@@ -8,6 +8,14 @@ from tqdm import tqdm
 import torch
 import os
 import json
+import torchvision.transforms as transforms
+import cv2
+from PIL import Image
+from shared.constants import FER_emotion_mapping
+from dataloaders.FER_dataloader import FERDataloader
+from models.VideoDenseNet121 import VideoDenseNet121
+from models.VideoResnetX import VideoResNetX
+from models.VideoCustomCNN import VideoCustomCNN
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
     test_model.eval()
@@ -26,6 +34,8 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
             type = model_path.split('_')[0]
             if type == "AudioNet":
                 test_data, test_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
+            if type == "VideoNet":
+                test_data, test_labels = tr_batch[0], tr_batch[1] # data = pixel, labels = emotions
             test_data = test_data.to(device)
             test_labels = test_labels.to(device)
 
@@ -61,7 +71,7 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
         if SAVE_RESULTS:
             save_results(model_path, test_results, test=True)
 
-def get_model_and_dataloader(model_path, device):
+def get_model_and_dataloader(model_path, device, type):
     # Load configuration
     conf_path = PATH_TO_SAVE_RESULTS + f"/{model_path}/configurations.json"
     configurations = None
@@ -73,7 +83,6 @@ def get_model_and_dataloader(model_path, device):
     else:
         print("--Model-- Old configurations NOT found. Using configurations in the config for test.")
 
-    type = model_path.split('_')[0]
     model = None
     dataloader = None
     scaler = None
@@ -111,6 +120,26 @@ def get_model_and_dataloader(model_path, device):
                                         scale_audio_files=SCALE_AUDIO_FILES
                                         )
         scaler = upload_scaler(model_path)
+    elif type == "VideoNet":
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
+        dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
+        # Set the model
+        if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
+            model = VideoResNetX(MODEL_NAME, NUM_CLASSES, DROPOUT_P).to(device)
+        elif MODEL_NAME == 'dense121':
+            model = VideoDenseNet121(NUM_CLASSES, DROPOUT_P).to(device)
+        elif MODEL_NAME == 'custom_cnn':
+            model = VideoCustomCNN(NUM_CLASSES, DROPOUT_P).to(device)
+        else:
+            raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn]')
+        
+        dataloader = FERDataloader(csv_file=METADATA_CSV,
+                                   batch_size=BATCH_SIZE,
+                                   val_size=VAL_SIZE,
+                                   seed=RANDOM_SEED,
+                                   limit=LIMIT,
+                                   balance_dataset=BALANCE_DATASET)
+        scaler = None
     else:
         raise ValueError(f"Unknown architecture {type}")
 
@@ -123,20 +152,58 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
+def live_test(model):
+    val_transform = transforms.Compose([
+        transforms.ToTensor()])
+
+    cap = cv2.VideoCapture(0)
+
+    while True:
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(frame)
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
+            resize_frame = cv2.resize(gray[y:y + h, x:x + w], (48, 48))
+            X = resize_frame/256
+            X = Image.fromarray((X))
+            X = val_transform(X).unsqueeze(0)
+            with torch.no_grad():
+                model.eval()
+                log_ps = model.cpu()(X)
+                ps = torch.exp(log_ps)
+                top_p, top_class = ps.topk(1, dim=1)
+                pred = FER_emotion_mapping[int(top_class.numpy())]
+            cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
+        
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
 
 def main(model_path, epoch):
     set_seed(RANDOM_SEED)
     device = select_device()
-    model, dataloader, scaler, num_classes = get_model_and_dataloader(model_path, device)
+    type = model_path.split('_')[0]
+    model, dataloader, scaler, num_classes = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
-    test_loader = dataloader.get_test_dataloader(scaler=scaler)
-    criterion = torch.nn.CrossEntropyLoss()
-    test_loop(model, test_loader, device, model_path, criterion, num_classes)
 
+    if LIVE_TEST:
+        if type == "VideoNet":
+            live_test(model)
+    else:
+        test_loader = dataloader.get_test_dataloader(scaler=scaler) if type == "AudioNetCT" or type == "AudioNetCL" else dataloader.get_test_dataloader()
+        criterion = torch.nn.CrossEntropyLoss()
+        test_loop(model, test_loader, device, model_path, criterion, num_classes)
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "AudioNet_2024-03-27_10-23-10"
+    model_path = "VideoNet_2024-03-30_16-23-37"
     # Specify the epoch number (e.g. 2) or "best" to get best model
     epoch = "1"
 

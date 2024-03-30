@@ -4,7 +4,7 @@ from enum import Enum
 from torchvision.models import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, ResNet101_Weights
 
 
-def ResNetX(model_name, num_classes, dropout_p):
+def VideoResNetX(model_name, num_classes, dropout_p):
     if model_name == 'resnet18':
         model = ResNet18(num_classes, dropout_p)
     elif model_name == 'resnet34':

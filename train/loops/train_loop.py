@@ -73,6 +73,8 @@ def train_eval_loop(device,
         for tr_i, tr_batch in enumerate(tqdm(train_loader, desc="Training", leave=False)):
             if config["scope"] == "AudioNet":
                 tr_data, tr_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
+            elif config["scope"] == "VideoNet":
+                    tr_data, tr_labels = tr_batch[0], tr_batch[1] # data = pixel, labels = emotions
             tr_data = tr_data.to(device)
             tr_labels = tr_labels.to(device)
 
@@ -115,6 +117,8 @@ def train_eval_loop(device,
             for _, val_batch in enumerate(val_loader):
                 if config["scope"] == "AudioNet":
                     val_data, val_labels = val_batch['audio'], val_batch['emotion'] # data = audio, labels = emotions
+                elif config["scope"] == "VideoNet":
+                    val_data, val_labels = val_batch[0], val_batch[1] # data = pixel, labels = emotions
                 val_data = val_data.to(device)
                 val_labels = val_labels.to(device)
 

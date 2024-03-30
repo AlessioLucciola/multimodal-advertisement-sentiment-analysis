@@ -11,12 +11,15 @@ class FERDataloader:
                  batch_size: int, 
                  val_size: float,
                  seed: int = RANDOM_SEED,
-                 limit: int = None):
+                 limit: int = None,
+                 balance_dataset: bool = True):
         self.batch_size = batch_size
         self.data = pd.read_csv(csv_file)
         self.val_size = val_size
         self.seed = seed
         self.limit = limit
+        self.balance_dataset = balance_dataset
+
 
         if self.limit is not None:
             if self.limit <= 0 or self.limit > 1:
@@ -26,7 +29,7 @@ class FERDataloader:
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
     def get_train_val_dataloader(self):
-        train_dataset = FERDataset(data=self.data, split='train', transform=None)
+        train_dataset = FERDataset(data=self.data, is_train_dataset=True, transform=None, balance_dataset=self.balance_dataset)
         val_len = int(self.val_size*len(train_dataset))
         train_ds, val_ds = random_split(train_dataset, [len(train_dataset)-val_len, val_len])
         print(f"--Dataset-- Training dataset size: {len(train_ds)}")
@@ -34,6 +37,6 @@ class FERDataloader:
         return DataLoader(train_ds, batch_size=self.batch_size, shuffle=True), DataLoader(val_ds, batch_size=self.batch_size, shuffle=False)
     
     def get_test_dataloader(self):
-        test_dataset = FERDataset(data=self.data, split='test', transform=None)
+        test_dataset = FERDataset(data=self.data, is_train_dataset=False, transform=None, balance_dataset=self.balance_dataset)
         print(f"--Dataset-- Test dataset size: {len(test_dataset)}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)

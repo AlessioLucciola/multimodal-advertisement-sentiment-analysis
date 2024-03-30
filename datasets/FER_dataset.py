@@ -3,39 +3,42 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 from torchvision import transforms
-import matplotlib.pyplot as plt
-import seaborn as sns
+from collections import Counter
+import random
 from shared.constants import FER_emotion_mapping
+
 
 # FER Dataset
 class FERDataset(Dataset):
     def __init__(self, 
                  data: pd.DataFrame, 
-                 split: str, 
-                 transform: any = None):
+                 is_train_dataset: bool = True,
+                 transform: any = None,
+                 balance_dataset: bool = True):
         self.data = data
-        self.split = split
+        self.is_train_dataset = is_train_dataset
         self.transform = transform
+        self.balance_dataset = balance_dataset
+
+        if self.balance_dataset and self.is_train_dataset:
+            self.data = self.apply_balance_dataset(self.data)
 
         train_tfms, val_tfms = self.get_transformations()
         if self.transform is None:
-            self.transform = train_tfms if split == 'train' else val_tfms
+            self.transform = train_tfms if self.is_train_dataset else val_tfms
         self.tensor_transform = transforms.ToTensor()
         self.emotions = FER_emotion_mapping
 
         # Read the dataset
-        if self.split == 'train':
+        if self.is_train_dataset:
             self.data = self.data.loc[self.data.Usage.isin(
                 ['Training', 'PublicTest'])] # Train and val
             self.data.reset_index(drop=True, inplace=True)
             self.data = self.data.drop('Usage', axis=1)
-        elif self.split == 'test':
+        else:
             self.data = self.data.loc[self.data.Usage.isin(['PrivateTest'])] # Test
             self.data.reset_index(drop=True, inplace=True) 
             self.data = self.data.drop('Usage', axis=1)
-        else:
-            raise ValueError(
-                "Invalid split type: must be either train or test")
         
         # Convert pixels to numpy array 
         pixels_values = [[int(i) for i in pix.split()]
@@ -75,6 +78,30 @@ class FERDataset(Dataset):
         valid_transforms = transforms.Compose(val_trans)
 
         return train_transforms, valid_transforms
+    
+    def apply_balance_dataset(self, data):
+        print("--Data Balance-- balance_data set to True. Training data will be balanced.")
+        # Count images associated to each label
+        labels_counts = Counter(self.data['emotion'])
+        max_label, max_count = max(labels_counts.items(), key=lambda x: x[1])  # Majority class
+        print(f"--Data Balance-- The most common class is {max_label} with {max_count} images.")
+        
+        # Balance the dataset by oversampling the minority classes
+        for label in self.data['emotion'].unique():
+            label_indices = self.data[self.data['emotion'] == label].index
+            current_images = len(label_indices)
+
+            if current_images < max_count:
+                num_files_to_add = max_count - current_images
+                print(f"--Data Balance (Oversampling)-- Adding {num_files_to_add} to {label} class..")
+                aug_indices = random.choices(label_indices.tolist(), k=num_files_to_add)
+                self.metadata = pd.concat([self.data, self.data.loc[aug_indices]])
+                # Apply data augmentation only to the augmented subset
+                self.data.loc[aug_indices, "augmented"] = True
+                label_indices = self.data[self.data["emotion"] == label].index
+        self.data.fillna({"augmented": False}, inplace=True)
+
+        return data
     
     def __len__(self):
         return len(self.data)
