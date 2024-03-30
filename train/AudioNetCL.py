@@ -1,5 +1,5 @@
 import torch
-from config import BATCH_SIZE, DROPOUT_P, LR, N_EPOCHS, RANDOM_SEED, USE_RAVDESS_ONLY, METADATA_RAVDESS_CSV, METADATA_ALL_CSV, RAVDESS_FILES_DIR, AUDIO_FILES_DIR, REG, RESUME_TRAINING, USE_WANDB, NUM_CLASSES, LIMIT, BALANCE_DATASET, PRELOAD_AUDIO_FILES, SCALE_AUDIO_FILES, NUM_MFCC, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS
+from config import BATCH_SIZE, DROPOUT_P, LR, N_EPOCHS, PATH_MODEL_TO_RESUME, PATH_TO_SAVE_RESULTS, RANDOM_SEED, RESUME_EPOCH, USE_RAVDESS_ONLY, METADATA_RAVDESS_CSV, METADATA_ALL_CSV, RAVDESS_FILES_DIR, AUDIO_FILES_DIR, REG, RESUME_TRAINING, USE_WANDB, NUM_CLASSES, LIMIT, BALANCE_DATASET, PRELOAD_AUDIO_FILES, SCALE_AUDIO_FILES, NUM_MFCC, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from train.loops.train_loop import train_eval_loop
@@ -20,6 +20,9 @@ def main():
     train_loader = ravdess_dataloader.get_train_dataloader()
     val_loader = ravdess_dataloader.get_val_dataloader()
     model = AudioNetCL(num_classes=NUM_CLASSES, num_mfcc=NUM_MFCC).to(device)
+    if RESUME_TRAINING:
+        model.load_state_dict(torch.load(
+            f"{PATH_TO_SAVE_RESULTS}/{PATH_MODEL_TO_RESUME}/models/mi_project_{RESUME_EPOCH}.pt"))
     optimizer = torch.optim.AdamW(model.parameters(),
                                   lr=LR,
                                   weight_decay=REG)
