@@ -79,27 +79,25 @@ class FERDataset(Dataset):
 
         return train_transforms, valid_transforms
     
+    # TODO: to fix
     def apply_balance_dataset(self, data):
         print("--Data Balance-- balance_data set to True. Training data will be balanced.")
-        # Count images associated to each label
-        labels_counts = Counter(self.data['emotion'])
-        max_label, max_count = max(labels_counts.items(), key=lambda x: x[1])  # Majority class
-        print(f"--Data Balance-- The most common class is {max_label} with {max_count} images.")
-        
-        # Balance the dataset by oversampling the minority classes
-        for label in self.data['emotion'].unique():
-            label_indices = self.data[self.data['emotion'] == label].index
-            current_images = len(label_indices)
+        emotion_counts = Counter(data.emotion)
+        max_emotion, max_count = max(emotion_counts.items(), key=lambda x: x[1])
+        print(f"--Data Balance-- The most common class is {max_emotion} with {max_count} images.")
+
+        for emotion in data.emotion.unique():
+            emotion_indices = data[data.emotion == emotion].index
+            current_images = len(emotion_indices)
 
             if current_images < max_count:
-                num_files_to_add = max_count - current_images
-                print(f"--Data Balance (Oversampling)-- Adding {num_files_to_add} to {label} class..")
-                aug_indices = random.choices(label_indices.tolist(), k=num_files_to_add)
-                self.metadata = pd.concat([self.data, self.data.loc[aug_indices]])
-                # Apply data augmentation only to the augmented subset
-                self.data.loc[aug_indices, "augmented"] = True
-                label_indices = self.data[self.data["emotion"] == label].index
-        self.data.fillna({"augmented": False}, inplace=True)
+                num_images_to_add = max_count - current_images
+                print(f"--Data Balance (Oversampling)-- Adding {num_images_to_add} to {emotion} class..")
+                aug_indices = random.choices(emotion_indices.tolist(), k=num_images_to_add)
+                data = pd.concat([data, data.loc[aug_indices]])
+                data.loc[aug_indices, "augmented"] = True
+                emotion_indices = data[data["emotion"] == emotion].index
+        data.fillna({"augmented": False}, inplace=True)
 
         return data
     

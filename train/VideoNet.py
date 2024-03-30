@@ -40,7 +40,7 @@ def main():
         max_lr=LR,
         epochs=N_EPOCHS,
         steps_per_epoch=len(train_loader))                                   
-    criterion = torch.nn.CrossEntropyLoss() # CUSTOM_CNN: NLLLoss()
+    criterion = torch.nn.CrossEntropyLoss()
     
     config = {
         "architecture": "VideoNet",
@@ -60,7 +60,6 @@ def main():
         "dropout_p": DROPOUT_P
     }
 
-    
     train_eval_loop(device=device,
                     train_loader=train_loader,
                     val_loader=val_loader,
