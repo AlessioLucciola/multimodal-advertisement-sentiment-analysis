@@ -2,3 +2,7 @@
 __pycache__
 results
 data
+plots
+checkpoints
+wandb
+TEMP
