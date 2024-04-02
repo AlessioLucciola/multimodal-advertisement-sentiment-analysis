@@ -1,7 +1,6 @@
 from datasets.FER_dataset import FERDataset
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
 from config import RANDOM_SEED
 import pandas as pd
 

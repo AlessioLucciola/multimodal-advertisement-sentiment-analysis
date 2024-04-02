@@ -32,7 +32,8 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
         epoch_test_probs = torch.tensor([]).to(device)
         for _, tr_batch in enumerate(tqdm(test_loader, desc="Testing model..", leave=False)):
             type = model_path.split('_')[0]
-            if type == "AudioNet":
+            print(type)
+            if type == "AudioNetCT" or type == "AudioNetCL":
                 test_data, test_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
             if type == "VideoNet":
                 test_data, test_labels = tr_batch[0], tr_batch[1] # data = pixel, labels = emotions
@@ -152,7 +153,7 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
-def live_test(model):
+def video_live_test(model):
     val_transform = transforms.Compose([
         transforms.ToTensor()])
 
@@ -195,7 +196,7 @@ def main(model_path, epoch):
 
     if LIVE_TEST:
         if type == "VideoNet":
-            live_test(model)
+            video_live_test(model)
     else:
         test_loader = dataloader.get_test_dataloader(scaler=scaler) if type == "AudioNetCT" or type == "AudioNetCL" else dataloader.get_test_dataloader()
         criterion = torch.nn.CrossEntropyLoss()
@@ -203,7 +204,7 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "VideoNet_2024-03-30_16-23-37"
+    model_path = "AudioNetCL_2024-04-02_15-30-33"
     # Specify the epoch number (e.g. 2) or "best" to get best model
     epoch = "1"
 

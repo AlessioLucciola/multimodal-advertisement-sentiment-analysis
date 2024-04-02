@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET
+from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
 from dataloaders.FER_dataloader import FERDataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -43,19 +43,18 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
     
     config = {
-        "architecture": "VideoNet",
+        "architecture": "VideoNet_" + MODEL_NAME,
         "scope": "VideoNet",
-        "model_name": MODEL_NAME,
         "learning_rate": LR,
         "epochs": N_EPOCHS,
         "reg": REG,
         "batch_size": BATCH_SIZE,
         "num_classes": NUM_CLASSES,
-        "dataset": "FER2013",
+        "dataset": DATASET_NAME,
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
-        "balance_dataset": "",
+        "balance_dataset": BALANCE_DATASET,
         "limit": LIMIT,
         "dropout_p": DROPOUT_P
     }

@@ -7,8 +7,6 @@ from collections import Counter
 import random
 from shared.constants import FER_emotion_mapping
 
-
-# FER Dataset
 class FERDataset(Dataset):
     def __init__(self, 
                  data: pd.DataFrame, 
@@ -56,7 +54,7 @@ class FERDataset(Dataset):
             # TODO: FIX THIS -> PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
             self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
         
-    # Transformations
+    # TODO: to fix
     def get_transformations(self):
         train_trans = [
             transforms.RandomCrop(48, padding=4, padding_mode='reflect'),

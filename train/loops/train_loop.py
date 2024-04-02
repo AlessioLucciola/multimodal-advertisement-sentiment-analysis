@@ -7,7 +7,6 @@ import torch
 import wandb
 import copy
 
-
 def train_eval_loop(device,
                     train_loader: torch.utils.data.DataLoader,
                     val_loader: torch.utils.data.DataLoader,
