@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
+from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
 from dataloaders.FER_dataloader import FERDataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -21,11 +21,11 @@ def main():
     train_loader, val_loader = fer_dataloader.get_train_val_dataloader()
     
     if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
-        model = VideoResNetX(MODEL_NAME, NUM_CLASSES, DROPOUT_P).to(device)
+        model = VideoResNetX(MODEL_NAME, FER_NUM_CLASSES, DROPOUT_P).to(device)
     elif MODEL_NAME == 'dense121':
-        model = VideoDenseNet121(NUM_CLASSES, DROPOUT_P).to(device)
+        model = VideoDenseNet121(FER_NUM_CLASSES, DROPOUT_P).to(device)
     elif MODEL_NAME == 'custom_cnn':
-        model = VideoCustomCNN(NUM_CLASSES, DROPOUT_P).to(device)
+        model = VideoCustomCNN(FER_NUM_CLASSES, DROPOUT_P).to(device)
     else:
         raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn]')
     
@@ -49,7 +49,7 @@ def main():
         "epochs": N_EPOCHS,
         "reg": REG,
         "batch_size": BATCH_SIZE,
-        "num_classes": NUM_CLASSES,
+        "num_classes": FER_NUM_CLASSES,
         "dataset": DATASET_NAME,
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,

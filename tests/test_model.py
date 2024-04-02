@@ -87,7 +87,7 @@ def get_model_and_dataloader(model_path, device, type):
     dataloader = None
     scaler = None
     if type == "AudioNetCT":
-        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = AudioNetCT(
@@ -103,7 +103,7 @@ def get_model_and_dataloader(model_path, device, type):
                                         )
         scaler = upload_scaler(model_path)
     elif type == "AudioNetCL":
-        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         lstm_hidden_size = LSTM_HIDDEN_SIZE if configurations is None else configurations["lstm_hidden_size"]
         lstm_num_layers = LSTM_NUM_LAYERS if configurations is None else configurations["lstm_num_layers"]
@@ -121,15 +121,15 @@ def get_model_and_dataloader(model_path, device, type):
                                         )
         scaler = upload_scaler(model_path)
     elif type == "VideoNet":
-        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = FER_NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         # Set the model
         if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
-            model = VideoResNetX(MODEL_NAME, NUM_CLASSES, DROPOUT_P).to(device)
+            model = VideoResNetX(MODEL_NAME, FER_NUM_CLASSES, DROPOUT_P).to(device)
         elif MODEL_NAME == 'dense121':
-            model = VideoDenseNet121(NUM_CLASSES, DROPOUT_P).to(device)
+            model = VideoDenseNet121(FER_NUM_CLASSES, DROPOUT_P).to(device)
         elif MODEL_NAME == 'custom_cnn':
-            model = VideoCustomCNN(NUM_CLASSES, DROPOUT_P).to(device)
+            model = VideoCustomCNN(FER_NUM_CLASSES, DROPOUT_P).to(device)
         else:
             raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn]')
         

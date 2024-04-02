@@ -16,35 +16,39 @@ def extract_waveform_from_audio_file(file, desired_length_seconds, offset, desir
     return waveform_padded
 
 def extract_mfcc_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window):
-    mfcc = librosa.feature.mfcc(
-        y=waveform, 
-        sr=sample_rate,
-        n_mfcc=n_mfcc,
-        n_fft=n_fft,
-        win_length=win_length,
-        n_mels=n_mels,
-        window=window,
-        fmax=sample_rate/2
-    )
+    mfcc = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mfcc=n_mfcc, n_fft=n_fft, win_length=win_length, n_mels=n_mels, window=window, fmax=sample_rate/2)
     return mfcc
 
-def extract_rmse_features(waveform, frame_length, hop_length):
-    rmse = np.squeeze(librosa.feature.rms(y=waveform, frame_length=frame_length, hop_length=hop_length))
-    return rmse
+def extract_rms_features(waveform, frame_length, hop_length):
+    rms = librosa.feature.rms(y=waveform, frame_length=frame_length, hop_length=hop_length)
+    return rms
 
 def extract_zcr_features(waveform, frame_length, hop_length):
-    zcr = np.squeeze(librosa.feature.zero_crossing_rate(y=waveform, frame_length=frame_length, hop_length=hop_length))
+    zcr = librosa.feature.zero_crossing_rate(y=waveform, frame_length=frame_length, hop_length=hop_length)
+    return zcr
+
+def extract_chroma_features(waveform, sample_rate):
+    stft = np.abs(librosa.stft(waveform))
+    chroma = librosa.feature.chroma_stft(S=stft, sr=sample_rate)
+    return chroma
+
+def extract_mel_features(waveform, sample_rate):
+    mel = librosa.feature.melspectrogram(y=waveform, sr=sample_rate)
+    return mel
+
+def extract_zcr_features(waveform, frame_length, hop_length):
+    zcr = librosa.feature.zero_crossing_rate(y=waveform, frame_length=frame_length, hop_length=hop_length)
     return zcr
 
 def extract_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window, frame_length, hop_length):
     mfcc = extract_mfcc_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window)
-    rmse = extract_rmse_features(waveform, frame_length, hop_length)
+    rms = extract_rms_features(waveform, frame_length, hop_length)
     zcr = extract_zcr_features(waveform, frame_length, hop_length)
-    rmse = np.expand_dims(rmse, axis=0)
-    zcr = np.expand_dims(zcr, axis=0)
-    
-    # Concatenate all features along the first axis
-    return np.concatenate((mfcc, rmse, zcr), axis=0)
+    chroma = extract_chroma_features(waveform, sample_rate)
+    mel = extract_mel_features(waveform, sample_rate)
+    #features = np.hstack((mfcc.T, rms.T, zcr.T, chroma.T, mel.T))
+    features = mfcc
+    return features
 
 def apply_AWGN(waveform, bits=16, snr_min=15, snr_max=30): 
     wave_len = len(waveform) # Get length of waveform
