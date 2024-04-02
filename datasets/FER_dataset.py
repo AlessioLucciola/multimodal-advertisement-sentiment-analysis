@@ -6,20 +6,20 @@ from torchvision import transforms
 from collections import Counter
 import random
 from shared.constants import FER_emotion_mapping
+from config import DATASET_NAME, DATASET_DIR
 
 class FERDataset(Dataset):
     def __init__(self, 
                  data: pd.DataFrame, 
                  is_train_dataset: bool = True,
                  transform: any = None,
-                 balance_dataset: bool = True):
+                 balance_dataset: bool = True,
+                 augment_dataset: bool = True):
         self.data = data
         self.is_train_dataset = is_train_dataset
         self.transform = transform
         self.balance_dataset = balance_dataset
-
-        if self.balance_dataset and self.is_train_dataset:
-            self.data = self.apply_balance_dataset(self.data)
+        self.augment_dataset = augment_dataset
 
         train_tfms, val_tfms = self.get_transformations()
         if self.transform is None:
@@ -32,7 +32,12 @@ class FERDataset(Dataset):
             self.data = self.data.loc[self.data.Usage.isin(
                 ['Training', 'PublicTest'])] # Train and val
             self.data.reset_index(drop=True, inplace=True)
-            self.data = self.data.drop('Usage', axis=1)
+
+            if self.balance_dataset: # Balance the dataset
+                self.data = self.apply_balance_dataset(self.data)
+
+            # Remove unnecessary columns
+            self.data = self.data.drop(['Usage', 'augmented'], axis=1)
         else:
             self.data = self.data.loc[self.data.Usage.isin(['PrivateTest'])] # Test
             self.data.reset_index(drop=True, inplace=True) 
@@ -54,7 +59,7 @@ class FERDataset(Dataset):
             # TODO: FIX THIS -> PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
             self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
         
-    # TODO: to fix
+    # TODO: to test
     def get_transformations(self):
         train_trans = [
             transforms.RandomCrop(48, padding=4, padding_mode='reflect'),
@@ -77,7 +82,7 @@ class FERDataset(Dataset):
 
         return train_transforms, valid_transforms
     
-    # TODO: to fix
+
     def apply_balance_dataset(self, data):
         print("--Data Balance-- balance_data set to True. Training data will be balanced.")
         emotion_counts = Counter(data.emotion)
@@ -96,6 +101,9 @@ class FERDataset(Dataset):
                 data.loc[aug_indices, "augmented"] = True
                 emotion_indices = data[data["emotion"] == emotion].index
         data.fillna({"augmented": False}, inplace=True)
+
+        # Save augmented dataset to CSV
+        data.to_csv(DATASET_DIR + DATASET_NAME + "_augmented.csv", index=False)
 
         return data
     

@@ -62,11 +62,12 @@ METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv")
 VAL_SIZE = 0.2 # Validation size
 SHUFFLE = True # Shuffle the dataset
 LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
-BALANCE_DATASET = False # Balance the dataset if True, use the original dataset if False
+BALANCE_DATASET = True # Balance the dataset if True, use the original dataset if False
+DATA_AUGMENTATION = False # Apply data augmentation if True, do not apply data augmentation if False
 LIVE_TEST = False # Test the model on live video if True, test on a video file if False
 
 # Train configurations (FER dataset)
-BATCH_SIZE = 512 # Default: 64
+BATCH_SIZE = 1024 # Default: 64
 N_EPOCHS = 100
 LR = 1e-5
 REG = 1e-5
