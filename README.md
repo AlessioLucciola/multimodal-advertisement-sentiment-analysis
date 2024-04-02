@@ -26,5 +26,7 @@ Inside the `data` folder, there should be these elements:
     -   `audio_metadata_all.csv`: A file containing the (self-generated) metadata of the merged datasets audio files;
     -   `audio_ravdess_files`: A folder in which to put the ravdess audio files (downloadable from Google Drive);
     -   `audio_merged_datasets_files`: A folder in which to put the merged datasets audio files (downloadable from Google Drive).
+- For the video models:
+    - `fer2013.csv`: A file containing the metadata of the images.
 
-All the files required for the audio model are zipped in the "audio_files.zip" file in Google Drive.
+All the files required for the audio and video model are zipped in the "audio_files.zip" and "video_files.zip" file in Google Drive.
