@@ -79,4 +79,3 @@ RESUME_EPOCH = 0
 # Video configurations (FER dataset)
 NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
 NUM_WORKERS = 1 # Number of workers for dataloader (default: 1)
-

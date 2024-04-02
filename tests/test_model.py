@@ -32,7 +32,6 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
         epoch_test_probs = torch.tensor([]).to(device)
         for _, tr_batch in enumerate(tqdm(test_loader, desc="Testing model..", leave=False)):
             type = model_path.split('_')[0]
-            print(type)
             if type == "AudioNetCT" or type == "AudioNetCL":
                 test_data, test_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
             if type == "VideoNet":

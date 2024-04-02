@@ -1,6 +1,4 @@
 import torch.nn as nn
-import torch
-from torchvision import models
 
 class VideoCustomCNN(nn.Module):
   def __init__(self, num_classes, dropout_p):
