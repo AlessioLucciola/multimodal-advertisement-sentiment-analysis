@@ -1,5 +1,5 @@
 from utils.utils import save_results, set_seed, select_device, upload_scaler
-from config import AUDIO_FILES_DIR, BALANCE_DATASET, DROPOUT_P, LIMIT, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, METADATA_ALL_CSV, METADATA_RAVDESS_CSV, NUM_MFCC, PRELOAD_AUDIO_FILES, RAVDESS_FILES_DIR, REG, SAVE_RESULTS, RANDOM_SEED, PATH_TO_SAVE_RESULTS, NUM_CLASSES, BATCH_SIZE, SCALE_AUDIO_FILES, USE_RAVDESS_ONLY, MODEL_NAME, METADATA_CSV, VAL_SIZE, LIVE_TEST
+from config import *
 from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
@@ -203,7 +203,7 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "AudioNetCL_2024-04-02_15-30-33"
+    model_path = "VideoNet_resnet34_2024-04-02_15-09-04"
     # Specify the epoch number (e.g. 2) or "best" to get best model
     epoch = "1"
 

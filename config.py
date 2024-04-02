@@ -4,9 +4,16 @@ import os
 DATA_DIR = "data"
 PATH_TO_SAVE_RESULTS = "results"
 RANDOM_SEED = 42
+
 USE_DML = False
 USE_MPS = False
 USE_WANDB = False
+SAVE_RESULTS = True
+SAVE_MODELS = True
+
+RESUME_TRAINING = False
+PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
+RESUME_EPOCH = 67
 
 # ----------------------------
 
@@ -30,11 +37,6 @@ N_EPOCHS = 500
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2
-SAVE_RESULTS = True
-SAVE_MODELS = True
-RESUME_TRAINING = False
-PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
-RESUME_EPOCH = 67
 
 # Audio configurations (RAVDESS dataset)
 AUDIO_SAMPLE_RATE = 48000
@@ -71,10 +73,7 @@ REG = 1e-5
 DROPOUT_P = 0.2
 SAVE_RESULTS = True
 SAVE_MODELS = True
-MODEL_NAME = 'custom_cnn' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
-RESUME_TRAINING = False
-PATH_MODEL_TO_RESUME = "path/to/model"
-RESUME_EPOCH = 0
+MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
 
 # Video configurations (FER dataset)
 NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
