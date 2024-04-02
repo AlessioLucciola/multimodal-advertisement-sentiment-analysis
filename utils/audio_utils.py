@@ -36,6 +36,16 @@ def extract_zcr_features(waveform, frame_length, hop_length):
     zcr = np.squeeze(librosa.feature.zero_crossing_rate(y=waveform, frame_length=frame_length, hop_length=hop_length))
     return zcr
 
+def extract_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window, frame_length, hop_length):
+    mfcc = extract_mfcc_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window)
+    rmse = extract_rmse_features(waveform, frame_length, hop_length)
+    zcr = extract_zcr_features(waveform, frame_length, hop_length)
+    rmse = np.expand_dims(rmse, axis=0)
+    zcr = np.expand_dims(zcr, axis=0)
+    
+    # Concatenate all features along the first axis
+    return np.concatenate((mfcc, rmse, zcr), axis=0)
+
 def apply_AWGN(waveform, bits=16, snr_min=15, snr_max=30): 
     wave_len = len(waveform) # Get length of waveform
     noise = np.random.normal(size=wave_len) # Generate Gaussian noise

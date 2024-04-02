@@ -1,5 +1,5 @@
 import pickle
-from utils.audio_utils import apply_AWGN, extract_waveform_from_audio_file, extract_zcr_features, extract_rmse_features, extract_mfcc_features
+from utils.audio_utils import apply_AWGN, extract_waveform_from_audio_file, extract_zcr_features, extract_rmse_features, extract_mfcc_features, extract_features
 from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, AUDIO_FILES_DIR, FRAME_LENGTH, HOP_LENGTH, USE_RAVDESS_ONLY, RAVDESS_FILES_DIR, NUM_MFCC
 from collections import Counter
 from pathlib import Path
@@ -70,6 +70,7 @@ class RAVDESSCustomDataset(Dataset):
         return sample
     
     def get_audio_features(self, audio):
+        #return extract_features(waveform=audio, sample_rate=AUDIO_SAMPLE_RATE, n_mfcc=NUM_MFCC, n_fft=1024, win_length=512, n_mels=128, window='hamming', frame_length=FRAME_LENGTH, hop_length=HOP_LENGTH)
         return extract_mfcc_features(waveform=audio, sample_rate=AUDIO_SAMPLE_RATE, n_mfcc=NUM_MFCC, n_fft=1024, win_length=512, n_mels=128, window='hamming') 
     
     def get_waveform(self, audio):
