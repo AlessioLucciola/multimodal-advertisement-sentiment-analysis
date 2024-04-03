@@ -4,6 +4,7 @@ import os
 import pickle
 import torch
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from datasets.GREX_dataset import GREXDataset
 
@@ -32,11 +33,16 @@ class GREXDataLoader(DataLoader):
 
         df = []
         for i in range(len(self.ppg)):
-            df.append([self.ppg[i].tolist(), float(
-                self.valence[i]), float(self.arousal[i])])
+            if (self.ppg[i] == 0.0).all():
+                continue
+            if ((self.ppg[i] - self.ppg[i].mean()) == 0.0).all():
+                continue
+            df.append({"ppg": self.ppg[i].tolist(), "val": float(
+                self.valence[i]), "aro": float(self.arousal[i])})
 
         self.data = pd.DataFrame(df)
 
+        self.data.to_csv("data.csv", index=False)
         self.train_df, temp_df = train_test_split(self.data, test_size=0.2)
         self.val_df, self.test_df = train_test_split(temp_df, test_size=0.5)
 
