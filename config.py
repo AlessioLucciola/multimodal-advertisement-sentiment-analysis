@@ -21,10 +21,10 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-BATCH_SIZE = 128
+BATCH_SIZE = 512
 N_EPOCHS = 500
 LR = 1e-3
-REG = 1e-3
+REG = 1e-2
 DROPOUT_P = 0.2
 
 # ----------------------------

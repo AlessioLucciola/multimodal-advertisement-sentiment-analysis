@@ -1,48 +1,68 @@
-from config import BATCH_SIZE
+import math
 from pyteap.signals.bvp import get_bvp_features
 import numpy as np
 import torch
 from torch import nn
+from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 
 class EmotionNet(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, d_model=256, nhead=32, num_layers=4, dropout=0.2):
         super(EmotionNet, self).__init__()
         self.num_classes = num_classes
-        self.conv1 = nn.Conv1d(1, 64, kernel_size=5, stride=1, padding=2)
-        self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool1d(kernel_size=2)
-        self.conv2 = nn.Conv1d(64, 128, kernel_size=5, stride=1, padding=2)
-        # Adjust the dimensions in the fully connected layer
-        # 2 outputs * num_classes
-        self.fc1 = nn.Linear(128 * 500, 2 * num_classes)
+        self.model_type = 'Transformer'
+        self.src_mask = None
+        self.pos_encoder = PositionalEncoding(d_model, dropout)
+        encoder_layers = TransformerEncoderLayer(
+            d_model, nhead, d_model, dropout)
+        self.transformer_encoder = TransformerEncoder(
+            encoder_layers, num_layers)
+        self.encoder = nn.Linear(2000, d_model)
+        self.decoder = nn.Linear(d_model, num_classes * 2)
+        self.d_model = d_model
+        self.init_weights()
+
+    def _generate_square_subsequent_mask(self, sz):
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float(
+            '-inf')).masked_fill(mask == 1, float(0.0))
+        return mask
+
+    def init_weights(self):
+        initrange = 0.1
+        self.encoder.weight.data.uniform_(-initrange, initrange)
+        self.decoder.bias.data.zero_()
+        self.decoder.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x):
-        # Reshape to (batch_size, 1, sequence_length)
-        x = x.view(x.shape[0], 1, -1)
-        out = self.conv1(x)
-        out = self.relu(out)
-        out = self.maxpool(out)
-        out = self.conv2(out)
-        out = self.relu(out)
-        out = self.maxpool(out)
-        out = out.view(out.size(0), -1)  # Flatten the tensor
-        out = self.fc1(out)
-        # reshape to (batch_size, 2, num_classes)
-        return out.view(-1, 2, self.num_classes)
+        if self.src_mask is None or self.src_mask.size(0) != len(x):
+            device = x.device
+            mask = self._generate_square_subsequent_mask(len(x)).to(device)
+            self.src_mask = mask
 
-    # def forward(self, x):
-    #     out = torch.tensor([])
-    #     for i in range(x.shape[0]):
-    #         try:
-    #             result = torch.tensor(get_bvp_features(
-    #                 x[i].numpy(), sr=90)).to(torch.float32)
-    #         except Exception as e:
-    #             result = torch.zeros(17).to(torch.float32)
-    #         # print(f"result shape is {result.shape}")
-    #         out = torch.cat((out, result.unsqueeze(0)), 0)
-    #     # out = self.fc1(out)
-    #     # out = self.relu(out)
-    #     out = self.fc1(out)
-    #     # reshape to (batch_size, 2, num_classes)
-    #     return out.view(-1, 2, self.num_classes)
+        x = x.view(x.shape[0], 1, -1)
+        x = self.encoder(x)
+        x = x * math.sqrt(self.d_model)
+        x = self.pos_encoder(x)
+        output = self.transformer_encoder(x, self.src_mask)
+        output = self.decoder(output)
+        return output.view(-1, 2, self.num_classes)
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(
+            0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0).transpose(0, 1)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(0), :]
+        return self.dropout(x)
