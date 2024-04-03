@@ -5,7 +5,7 @@ import pickle
 import torch
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from datasets.GREX_dataset import GREXDataSet
+from datasets.GREX_dataset import GREXDataset
 
 
 class GREXDataLoader(DataLoader):
@@ -41,20 +41,25 @@ class GREXDataLoader(DataLoader):
         self.val_df, self.test_df = train_test_split(temp_df, test_size=0.5)
 
     def get_train_dataloader(self):
-        dataset = GREXDataSet(
-            self.train_df, batch_size=self.batch_size, shuffle=True)
+        dataset = GREXDataset(self.train_df)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
     def get_val_dataloader(self):
-        dataset = GREXDataSet(
-            self.val_df, batch_size=self.batch_size, shuffle=False)
+        dataset = GREXDataset(self.val_df)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
     def get_test_dataloader(self):
-        dataset = GREXDataSet(
-            self.test_df, batch_size=self.batch_size, shuffle=False)
+        dataset = GREXDataset(self.test_df)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
 
 if __name__ == "__main__":
+    # Test the dataloader
     dataloader = GREXDataLoader(batch_size=32)
+    train_loader = dataloader.get_train_dataloader()
+    val_loader = dataloader.get_val_dataloader()
+    test_loader = dataloader.get_test_dataloader()
+
+    for i, data in enumerate(train_loader):
+        pgg, (val, ar) = data
+        print(f"Batch {i}: {pgg.shape}, {val.shape}, {ar.shape}")
