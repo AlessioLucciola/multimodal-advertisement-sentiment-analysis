@@ -9,7 +9,7 @@ BALANCE_DATASET = True # Balance the dataset if True, use the original dataset i
 
 USE_DML = False
 USE_MPS = False
-USE_WANDB = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -62,10 +62,10 @@ DATASET_NAME = "fer2013" # Datasets: fer2013 | ...
 DATASET_DIR = os.path.join(DATA_DIR, "VIDEO/FER/") # Dir: FER | ...
 METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv") 
 VAL_SIZE = 0.2 # Validation size
-SHUFFLE = True # Shuffle the dataset
-LIVE_TEST = True # Test the model on live video if True, test on a video file if False
-MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
+AUGMENT_DATASET = False # Augment the dataset if True, use the original dataset if False
 
 # Video configurations (FER dataset)
+MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
+LIVE_TEST = False # Test the model on live video if True, test on a video file if False
 FER_NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
 NUM_WORKERS = 1 # Number of workers for dataloader (default: 1)
