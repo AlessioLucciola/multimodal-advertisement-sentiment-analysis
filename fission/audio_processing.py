@@ -1,14 +1,13 @@
 from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, RAVDESS_NUM_CLASSES, RANDOM_SEED
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
-from utils.audio_utils import extract_mfcc_features, extract_waveform_from_audio_file, extract_features
+from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features
 from utils.utils import upload_scaler, select_device, set_seed
+from shared.constants import general_emotion_mapping
 import numpy as np
 import torch
 import json
 import os
-
-from utils.utils import upload_scaler
 
 def main(model_path, audio_file_path, epoch):
     set_seed(RANDOM_SEED)
@@ -16,11 +15,22 @@ def main(model_path, audio_file_path, epoch):
     type = model_path.split('_')[0]
     model, scaler, _ = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
-    waveform = extract_audio_features(audio_file_path, scaler)
-    waveform = torch.from_numpy(waveform).float()
-    output = model(waveform.to(device))
-    pred = torch.argmax(output, -1).detach()
-    print(pred.item())
+    waveforms = preprocess_audio_file(audio_file_path, scaler)
+    for waveform in waveforms:
+        output = model(waveform.to(device))
+        pred = torch.argmax(output, -1).detach()
+        emotion = general_emotion_mapping[pred.item()]
+        print(emotion)
+
+def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
+    all_features = []
+    waveforms = extract_multiple_waveforms_from_audio_file(file=audio_file_path, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+    for waveform in waveforms:
+        features = extract_mfcc_features(waveform, sample_rate=AUDIO_SAMPLE_RATE, n_mfcc=NUM_MFCC, n_fft=1024, win_length=512, n_mels=128, window='hamming')
+        features = scale_waveform(features, scaler)
+        features = torch.from_numpy(np.expand_dims(np.expand_dims(features, axis=0), axis=0)).float()
+        all_features.append(features)
+    return all_features
 
 def extract_audio_features(audio_file_path, scaler):
     # Load the audio file
@@ -79,7 +89,7 @@ def get_model_and_dataloader(model_path, device, type):
     return model, scaler, num_classes
 
 if __name__ == "__main__":
-    epoch = 498
+    epoch = 495
     model_path = os.path.join("AudioNetCT_2024-03-26_16-05-55")
-    audio_file_path = os.path.join("data", "AUDIO", "audio_ravdess_files", "03-01-01-01-01-01-01.wav")
+    audio_file_path = os.path.join("data", "AUDIO", "test_audio.wav")
     main(model_path=model_path, audio_file_path=audio_file_path, epoch=epoch)

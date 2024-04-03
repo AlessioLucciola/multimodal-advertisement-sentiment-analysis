@@ -85,3 +85,14 @@ FER_emotion_mapping = {
     5: 'Surprise',
     6: 'Neutral'
 }
+
+general_emotion_mapping = {
+    0: "neutral",
+    1: "calm",
+    2: "happy",
+    3: "sad",
+    4: "angry",
+    5: "fearful",
+    6: "disgust",
+    7: "surprise"
+}
