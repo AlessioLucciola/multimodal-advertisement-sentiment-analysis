@@ -8,3 +8,4 @@ wandb
 TEMP
 **/*.npy
 **/*.pth
+**/.DS_Store
