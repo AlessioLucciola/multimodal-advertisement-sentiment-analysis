@@ -1,7 +1,9 @@
 *.wav
 __pycache__
 results
-data
+**/data/*
+!**/data/README.md
+!**/data/.gitkeep
 plots
 checkpoints
 wandb
