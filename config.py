@@ -9,7 +9,7 @@ BALANCE_DATASET = True # Balance the dataset if True, use the original dataset i
 
 USE_DML = False
 USE_MPS = False
-USE_WANDB = False
+USE_WANDB = True
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -21,7 +21,7 @@ RESUME_EPOCH = 67
 
 # Train configurations
 BATCH_SIZE = 32
-N_EPOCHS = 500
+N_EPOCHS = 200
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2
@@ -63,7 +63,7 @@ DATASET_DIR = os.path.join(DATA_DIR, "VIDEO/FER/") # Dir: FER | ...
 METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv") 
 VAL_SIZE = 0.2 # Validation size
 SHUFFLE = True # Shuffle the dataset
-LIVE_TEST = False # Test the model on live video if True, test on a video file if False
+LIVE_TEST = True # Test the model on live video if True, test on a video file if False
 MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
 
 # Video configurations (FER dataset)
