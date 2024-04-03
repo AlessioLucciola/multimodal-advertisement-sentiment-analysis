@@ -1,3 +1,4 @@
+import functools
 import os
 
 # Common configurations
@@ -22,10 +23,13 @@ RESUME_EPOCH = 67
 
 # Train configurations
 BATCH_SIZE = 512
-N_EPOCHS = 500
-LR = 0.1
-REG = 1e-3
+N_EPOCHS = 1500
+LR = 1e-2
+# REG = 1e-3
+REG = 0
 DROPOUT_P = 0.5
+# TODO: put this in the dataset configuration (GREX dataset)
+AUGMENTATION_SIZE = 1000
 
 # ----------------------------
 
@@ -66,7 +70,7 @@ VAL_SIZE = 0.2  # Validation size
 SHUFFLE = True  # Shuffle the dataset
 LIVE_TEST = False  # Test the model on live video if True, test on a video file if False
 # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
-MODEL_NAME = 'PreProcessedEmotionNet'
+MODEL_NAME = 'EmotionNet'
 
 # Video configurations (FER dataset)
 FER_NUM_CLASSES = 7  # Number of classes in the dataset (default: 7)

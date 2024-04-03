@@ -16,11 +16,13 @@ def main():
     val_loader = loader.get_val_dataloader()
 
     if MODEL_NAME == "PreProcessedEmotionNet":
+        print("Using PreProcessedEmotionNet")
         model = PreProcessedEmotionNet(
             input_size=17,
-            hidden_size=128,
+            hidden_size=256,
             num_classes=5).to(device)
     elif MODEL_NAME == "EmotionNet":
+        print("Using EmotionNet")
         model = EmotionNet(num_classes=5, dropout=DROPOUT_P).to(device)
     else:
         raise ValueError("Invalid model name")

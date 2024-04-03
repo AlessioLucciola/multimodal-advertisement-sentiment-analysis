@@ -30,6 +30,6 @@ def extract_ppg_features(x: torch.Tensor | np.ndarray) -> torch.Tensor:
 
 def extract_ppg_features_from_df(df: pd.DataFrame) -> pd.DataFrame:
     tqdm.pandas()
-    df["ppg_features"] = df["ppg"].progress_apply(
+    df["ppg"] = df["ppg"].progress_apply(
         lambda x: extract_ppg_features(x))
     return df

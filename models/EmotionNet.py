@@ -5,9 +5,11 @@ import torch
 from torch import nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
+from config import DROPOUT_P
+
 
 class EmotionNet(nn.Module):
-    def __init__(self, num_classes, d_model=256, nhead=32, num_layers=4, dropout=0.2):
+    def __init__(self, num_classes, d_model=64, nhead=4, num_layers=4, dropout=DROPOUT_P):
         super(EmotionNet, self).__init__()
         self.num_classes = num_classes
         self.model_type = 'Transformer'
@@ -50,7 +52,7 @@ class EmotionNet(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
+    def __init__(self, d_model, dropout=DROPOUT_P, max_len=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 

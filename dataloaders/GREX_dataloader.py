@@ -1,6 +1,6 @@
-import functools
+import json
 from torch.utils.data import DataLoader
-from config import DATA_DIR, MODEL_NAME
+from config import AUGMENTATION_SIZE, DATA_DIR, MODEL_NAME
 import os
 import pickle
 import torch
@@ -103,14 +103,32 @@ class GREXDataLoader(DataLoader):
         physio_trans_data_segments = pickle.load(
             open(os.path.join(data_segments_path, "physio_trans_data_segments.pickle"), "rb"))
 
+        # physio_trans_data_session = pickle.load(
+        #     open(os.path.join(data_segments_path, "physio_trans_data_session.pickle"), "rb"))
+
+        # with open('session.json', 'w') as f:
+        #     json.dump(physio_trans_data_session, f, default=str)
+        # with open('segments.json', 'w') as f:
+        #     json.dump(physio_trans_data_segments, f, default=str)
+
+        # session_ppg = physio_trans_data_session['filt_PPG']
+        # segments_ppg = physio_trans_data_segments['filt_PPG']
+        # print(f"Session PPG: {len(session_ppg)}")
+        # print(f"Segment PPG: {len(segments_ppg)}")
+        # for session in session_ppg:
+        #     print(f"Session length: {len(session)}")
+        # for segment in segments_ppg:
+        #     print(f"Segment length: {len(segment)}")
+        # raise ValueError
+
         # NOTE: Important keys here are: 'ar_seg' and "vl_seg"
         annotations = pickle.load(
             open(os.path.join(annotation_path, "ann_trans_data_segments.pickle"), "rb"))
 
         self.ppg = torch.tensor(physio_trans_data_segments['filt_PPG'])
 
-        self.ppg = (self.ppg - self.ppg.mean(dim=0, keepdim=True)) / \
-            self.ppg.std(dim=0, keepdim=True)
+        self.ppg = (self.ppg - self.ppg.mean(dim=0, keepdim=True)
+                    ) / self.ppg.std(dim=0, keepdim=True)
 
         self.valence = torch.tensor(annotations['vl_seg']) - 1
         self.arousal = torch.tensor(annotations['ar_seg']) - 1
@@ -132,20 +150,20 @@ class GREXDataLoader(DataLoader):
         # self.train_df, temp_df = train_test_split(
         #     self.data, test_size=0.4, stratify=self.data[["val", "aro"]])
         # self.val_df, self.test_df = train_test_split(
-        #     temp_df, test_size=0.5, stratify=temp_df[["val", "aro"]])
+        # temp_df, test_size=0.5, stratify=temp_df[["val", "aro"]])
 
         self.train_df, temp_df = train_test_split(
-            self.data, test_size=0.2)
+            self.data, test_size=0.25)
         self.val_df, self.test_df = train_test_split(
             temp_df, test_size=0.5)
 
-        self.train_df = GREXTransform(self.train_df).augment(n=15_000)
+        self.train_df = GREXTransform(
+            self.train_df).augment(n=AUGMENTATION_SIZE)
 
         if MODEL_NAME == "PreProcessedEmotionNet":
             self.train_df = extract_ppg_features_from_df(self.train_df)
             self.val_df = extract_ppg_features_from_df(self.val_df)
             self.test_df = extract_ppg_features_from_df(self.test_df)
-
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
 

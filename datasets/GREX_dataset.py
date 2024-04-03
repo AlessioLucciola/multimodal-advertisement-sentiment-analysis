@@ -1,7 +1,4 @@
 from torch.utils.data import Dataset
-from config import DATA_DIR
-import os
-import pickle
 import torch
 import pandas as pd
 
