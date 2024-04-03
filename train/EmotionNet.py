@@ -4,6 +4,7 @@ from dataloaders.GREX_dataloader import GREXDataLoader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
 from models.EmotionNet import EmotionNet
+from models.PreProcessedEmotionNet import PreProcessedEmotionNet
 
 
 def main():
@@ -14,7 +15,15 @@ def main():
     train_loader = loader.get_train_dataloader()
     val_loader = loader.get_val_dataloader()
 
-    model = EmotionNet(num_classes=5).to(device)
+    if MODEL_NAME == "PreProcessedEmotionNet":
+        model = PreProcessedEmotionNet(
+            input_size=17,
+            hidden_size=128,
+            num_classes=5).to(device)
+    elif MODEL_NAME == "EmotionNet":
+        model = EmotionNet(num_classes=5, dropout=DROPOUT_P).to(device)
+    else:
+        raise ValueError("Invalid model name")
 
     # if RESUME_TRAINING:
     #     model.load_state_dict(torch.load(

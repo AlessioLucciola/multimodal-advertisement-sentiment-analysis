@@ -267,11 +267,12 @@ def train_eval_loop(device,
             # if epoch == config["epochs"]-1 and SAVE_MODELS:
             #     save_model(data_name, best_model, epoch=None, is_best=True)
 
-        # scheduler.step()
+        scheduler.step()
+        current_lr = scheduler.optimizer.param_groups[0]['lr']
+        print(f'Current learning rate: {current_lr}')
         if config['scope'] == 'EmotionNet':
             print(
-                "Training -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%".format(
-                    epoch+1, config["epochs"], tr_epoch_loss, tr_accuracy, tr_recall))
-            print('Validation -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%'
-                  .format(epoch+1, config["epochs"], val_epoch_loss, val_accuracy, val_recall))
+                f"Training -> Epoch [{epoch+1}/{config['epochs']}], Loss: {tr_epoch_loss:.4f}, Accuracy: {tr_accuracy:.4f}% (val: {tr_accuracy_valence:.4f}%, aro: {tr_accuracy_arousal:.4f}%), Recall: {tr_recall:.4f}%")
+            print(
+                f"Validation -> Epoch [{epoch+1}/{config['epochs']}], Loss: {val_epoch_loss:.4f}, Accuracy: {val_accuracy:.4f}% (val: {val_accuracy_valence:.4f}%, aro: {val_accuracy_arousal:.4f}%), Recall: {val_recall:.4f}%")
             print("-"*50)

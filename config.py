@@ -23,9 +23,9 @@ RESUME_EPOCH = 67
 # Train configurations
 BATCH_SIZE = 512
 N_EPOCHS = 500
-LR = 1e-3
-REG = 1e-2
-DROPOUT_P = 0.2
+LR = 0.1
+REG = 1e-3
+DROPOUT_P = 0.5
 
 # ----------------------------
 
@@ -66,7 +66,7 @@ VAL_SIZE = 0.2  # Validation size
 SHUFFLE = True  # Shuffle the dataset
 LIVE_TEST = False  # Test the model on live video if True, test on a video file if False
 # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
-MODEL_NAME = 'resnet34'
+MODEL_NAME = 'PreProcessedEmotionNet'
 
 # Video configurations (FER dataset)
 FER_NUM_CLASSES = 7  # Number of classes in the dataset (default: 7)
