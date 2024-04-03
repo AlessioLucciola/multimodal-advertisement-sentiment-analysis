@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
+from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, AUGMENT_DATASET
 from dataloaders.FER_dataloader import FERDataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -16,7 +16,8 @@ def main():
                                    val_size=VAL_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
-                                   balance_dataset=BALANCE_DATASET)
+                                   balance_dataset=BALANCE_DATASET,
+                                   augment_dataset=AUGMENT_DATASET)
     
     train_loader, val_loader = fer_dataloader.get_train_val_dataloader()
     

@@ -138,7 +138,8 @@ def get_model_and_dataloader(model_path, device, type):
                                    val_size=VAL_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
-                                   balance_dataset=BALANCE_DATASET)
+                                   balance_dataset=BALANCE_DATASET,
+                                   augment_dataset=AUGMENT_DATASET)
         scaler = None
     else:
         raise ValueError(f"Unknown architecture {type}")
@@ -203,8 +204,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "VideoNet_resnet34_2024-04-02_18-02-47"
+    model_path = "VideoNet_resnet34_2024-04-03_16-03-38"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "25"
+    epoch = "7"
 
     main(model_path, epoch)

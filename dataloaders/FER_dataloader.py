@@ -29,7 +29,7 @@ class FERDataloader:
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
     def get_train_val_dataloader(self):
-        train_dataset = FERDataset(data=self.data, is_train_dataset=True, transform=None, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
+        train_dataset = FERDataset(data=self.data, is_train_dataset=True, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
         val_len = int(self.val_size*len(train_dataset))
         train_ds, val_ds = random_split(train_dataset, [len(train_dataset)-val_len, val_len])
         print(f"--Dataset-- Training dataset size: {len(train_ds)}")
@@ -37,6 +37,6 @@ class FERDataloader:
         return DataLoader(train_ds, batch_size=self.batch_size, shuffle=True), DataLoader(val_ds, batch_size=self.batch_size, shuffle=False)
     
     def get_test_dataloader(self):
-        test_dataset = FERDataset(data=self.data, is_train_dataset=False, transform=None, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
+        test_dataset = FERDataset(data=self.data, is_train_dataset=False, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
         print(f"--Dataset-- Test dataset size: {len(test_dataset)}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
