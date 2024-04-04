@@ -142,10 +142,36 @@ def unify_segments(speech_segments):
     unified_segments.append((current_segment_start, current_segment_end)) # Add the last unified segment
     return unified_segments
 
-def discard_short_segments(speech_segments, min_duration=1.0):
+def discard_short_segments(speech_segments, min_duration=1):
     filtered_segments = []
     for start, end in speech_segments:
         segment_duration = end - start
         if segment_duration >= min_duration:
             filtered_segments.append((start, end))
     return filtered_segments
+
+def extract_speech_segment_from_waveform(waveform, speech_segments, start_time, end_time, sr):
+    # Convert start and end time to sample indices
+    start_index = int(start_time * sr)
+    end_index = int(end_time * sr)
+
+    # Find the longest speech segment
+    longest_segment_length = 0
+    longest_segment_start = None
+    longest_segment_end = None
+    for segment_start, segment_end in speech_segments:
+        segment_length = segment_end - segment_start
+        if segment_length > longest_segment_length:
+            longest_segment_length = segment_length
+            longest_segment_start = segment_start-start_time
+            longest_segment_end = segment_end-start_time
+        #print(segment_length, longest_segment_length, start_time, end_time, segment_start, segment_end)
+
+    # Repeat the longest speech segment from start to end
+    longest_segment_start_index = int(longest_segment_start * sr)
+    longest_segment_end_index = int(longest_segment_end * sr)
+    repeated_segment = np.tile(waveform[longest_segment_start_index:longest_segment_end_index], (end_index - start_index) // (longest_segment_end_index - longest_segment_start_index) + 1)
+    #print(repeated_segment)
+    # Clip the repeated segment to match the length of the segment we are replacing
+    clipped_repeated_segment = repeated_segment[:end_index - start_index]
+    return clipped_repeated_segment
