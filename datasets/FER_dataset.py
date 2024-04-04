@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
@@ -6,52 +7,48 @@ from shared.constants import FER_emotion_mapping
 from PIL import Image
 import random
 from collections import Counter
-from config import DATASET_DIR, DATASET_NAME
+
+import warnings
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+warnings.simplefilter("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 class FERDataset(Dataset):
     def __init__(self, 
                  data: pd.DataFrame, 
                  is_train_dataset: bool = True,
-                 transform: any = None,
+                 apply_transformations: bool = True,
                  balance_dataset: bool = True,
-                 augment_dataset: bool = True):
+                 augment_dataset: bool = True
+                 ):
         self.data = data
         self.is_train_dataset = is_train_dataset
-        self.transform = transform
+        self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
         self.augment_dataset = augment_dataset
-
-        # Get transformations for training and validation
-        train_tfms, val_tfms = self.get_transformations()
-        if self.transform is None:
-            self.transform = train_tfms if self.is_train_dataset else val_tfms
         
         self.tensor_transform = transforms.ToTensor()
         self.emotions = FER_emotion_mapping
 
-        # Read the dataset
-        if self.is_train_dataset:
-            self.data = self.data.loc[self.data.Usage.isin(
-                ['Training', 'PublicTest'])] # Train and val
-            self.data.reset_index(drop=True, inplace=True)
+        # Reset index
+        self.data.reset_index(drop=True, inplace=True)
 
-            # Balance the dataset
-            if self.balance_dataset: 
-                self.data = self.apply_balance_dataset(self.data)
-                self.data = self.data.drop(['balanced'], axis=1)
+        # Get transformations
+        if self.apply_transformations:
+            print("--Data Transformations-- apply_transformations set to True. Applying transformations to the dataset.")
+            train_tfms, val_tfms = self.get_transformations()
+            self.transformations = train_tfms if self.is_train_dataset else val_tfms
 
-            # Augment the dataset
-            if self.augment_dataset: 
-                self.data = self.apply_data_augmentation(self.data, train_tfms)
-                self.data = self.data.drop(['augmented'], axis=1)
+        # Balance the dataset
+        if self.balance_dataset and self.is_train_dataset: 
+            data = self.apply_balance_dataset(data)
+            data = data.drop(['balanced'], axis=1)
 
-            # Remove unnecessary columns
-            self.data = self.data.drop(['Usage'], axis=1)
-        else:
-            self.data = self.data.loc[self.data.Usage.isin(['PrivateTest'])] # Test
-            self.data.reset_index(drop=True, inplace=True) 
-            self.data = self.data.drop('Usage', axis=1)
-        
+        # Augment the dataset
+        if self.augment_dataset and self.is_train_dataset: 
+            data = self.apply_data_augmentation(data, train_tfms)
+            data = data.drop(['augmented'], axis=1)
+            
         # Convert pixels to numpy array 
         pixels_values = [[int(i) for i in pix.split()]
                          for pix in self.data.pixels]   # For storing pixel values
@@ -67,17 +64,17 @@ class FERDataset(Dataset):
             self.pix_cols.append(f'pixel_{i}') # Column name
             # TODO: FIX THIS -> PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
             self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
-        
+
     def get_transformations(self):
         train_trans = [
-            transforms.RandomCrop(48, padding=4, padding_mode='reflect'),
-            transforms.RandomRotation(15),
-            transforms.RandomAffine(
+            transforms.RandomCrop(48, padding=4, padding_mode='reflect'), # Random crop
+            transforms.RandomRotation(15), # Random rotation
+            transforms.RandomAffine( # Random affine transformation
                 degrees=0,
                 translate=(0.01, 0.12),
                 shear=(0.01, 0.03),
             ),
-            transforms.RandomHorizontalFlip(),
+            transforms.RandomHorizontalFlip(), # Random horizontal flip
             transforms.ToTensor(),
         ]
 
@@ -111,21 +108,23 @@ class FERDataset(Dataset):
         data.fillna({"balanced": False}, inplace=True)
         print("--Data Balance-- Classes after balancing: ", data.emotion.value_counts().to_dict())
 
-        # Save augmented dataset to CSV
-        data.to_csv(DATASET_DIR + DATASET_NAME + "_balanced.csv", index=False)
-
         return data
     
     def apply_data_augmentation(self, data, train_tfms):
         print("--Data Augmentation-- augment_data set to True. Training data will be augmented.")
         print("--Data Augmentation-- Classes before augmentation: ", data.emotion.value_counts().to_dict())
 
-        # Apply transformations
-        
-        print("--Data Augmentation-- Classes after augmentation: ", data.emotion.value_counts().to_dict())
+        # Apply transformations contained in train_tfms to the images
+        data['augmented'] = False
+        for idx, row in data.iterrows():
+            img = np.copy(row[self.pix_cols].values.reshape(48, 48))
+            img = Image.fromarray(img)
+            img = train_tfms(img)
+            img = np.array(img)
+            data.loc[idx, self.pix_cols] = img.flatten()
+            data.loc[idx, 'augmented'] = True
 
-        # Save augmented dataset to CSV
-        data.to_csv(DATASET_DIR + DATASET_NAME + "_augmented.csv", index=False)
+        print("--Data Augmentation-- Classes after augmentation: ", data.emotion.value_counts().to_dict())
 
         return data
     
@@ -139,11 +138,11 @@ class FERDataset(Dataset):
         img.setflags(write=True)
 
         # Apply transformations to the image if provided
-        if self.transform:
+        if self.apply_transformations:
             img = Image.fromarray(img)
-            img = self.transform(img)
+            img = self.transformations(img)
         else:
             img = self.tensor_transform(img)
-
+            
         return img, img_id
     

@@ -1,6 +1,5 @@
 import torch.nn as nn
 from torchvision import models
-from enum import Enum
 from torchvision.models import DenseNet121_Weights
 
 class VideoDenseNet121(nn.Module):

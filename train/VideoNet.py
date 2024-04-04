@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, AUGMENT_DATASET
+from config import RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, AUGMENT_DATASET, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING
 from dataloaders.FER_dataloader import FERDataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -13,13 +13,15 @@ def main():
     device = select_device()
     fer_dataloader = FERDataloader(csv_file=METADATA_CSV,
                                    batch_size=BATCH_SIZE,
-                                   val_size=VAL_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
+                                   apply_transformations=APPLY_TRANSFORMATIONS,
                                    balance_dataset=BALANCE_DATASET,
-                                   augment_dataset=AUGMENT_DATASET)
+                                   augment_dataset=AUGMENT_DATASET,
+                                   use_default_split=DF_SPLITTING)
     
-    train_loader, val_loader = fer_dataloader.get_train_val_dataloader()
+    train_loader = fer_dataloader.get_train_dataloader()
+    val_loader = fer_dataloader.get_val_dataloader()
     
     if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
         model = VideoResNetX(MODEL_NAME, FER_NUM_CLASSES, DROPOUT_P).to(device)
@@ -56,6 +58,10 @@ def main():
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
         "balance_dataset": BALANCE_DATASET,
+        "augment_dataset": AUGMENT_DATASET,
+        "use_default_split": USE_DEFAULT_SPLIT,
+        "df_splitting": None if USE_DEFAULT_SPLIT else DF_SPLITTING,
+        "apply_transformations": APPLY_TRANSFORMATIONS,
         "limit": LIMIT,
         "dropout_p": DROPOUT_P
     }

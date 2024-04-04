@@ -135,11 +135,11 @@ def get_model_and_dataloader(model_path, device, type):
         
         dataloader = FERDataloader(csv_file=METADATA_CSV,
                                    batch_size=BATCH_SIZE,
-                                   val_size=VAL_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
                                    balance_dataset=BALANCE_DATASET,
-                                   augment_dataset=AUGMENT_DATASET)
+                                   augment_dataset=AUGMENT_DATASET,
+                                   use_default_split=USE_DEFAULT_SPLIT)
         scaler = None
     else:
         raise ValueError(f"Unknown architecture {type}")
