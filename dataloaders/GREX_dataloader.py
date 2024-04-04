@@ -1,6 +1,6 @@
 import json
 from torch.utils.data import DataLoader
-from config import AUGMENTATION_SIZE, DATA_DIR, MODEL_NAME
+from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, MODEL_NAME
 import os
 import pickle
 import torch
@@ -18,13 +18,13 @@ class GREXTransform:
         self.transformations = set()
 
     def jitter(self, data):
-        sigma_min, sigma_max = 0.01, 0.1
+        sigma_min, sigma_max = 0.01, 0.2
         sigma = np.random.uniform(sigma_min, sigma_max)
         noise = np.random.normal(loc=0., scale=sigma, size=data.shape)
         return data + noise
 
     def scaling(self, data):
-        sigma_min, sigma_max = 0.01, 0.2
+        sigma_min, sigma_max = 0.01, 0.3
         sigma = np.random.uniform(sigma_min, sigma_max)
         noise = np.random.normal(loc=1., scale=sigma, size=data.shape)
         return data * noise
@@ -45,9 +45,9 @@ class GREXTransform:
         cs = CubicSpline(locs, control_points)
         return data * cs(np.arange(seq_len))
 
-    def time_shifting(self, data):
-        shift = np.random.randint(low=-200, high=200)
-        return np.roll(data, shift)
+    # def time_shifting(self, data):
+    #     shift = np.random.randint(low=-200, high=200)
+    #     return np.roll(data, shift)
 
     # def window_slicing(self, data):
     #     start = np.random.randint(low=0, high=data.shape[0]//2)
@@ -63,15 +63,15 @@ class GREXTransform:
 
     #     return padded_data
 
-    def flipping(self, data):
-        return -data
+    # def flipping(self, data):
+    #     return -data
 
     def apply(self, item, p=0.5):
-        self.transformations = {self.jitter, self.scaling, self.magnitude_warping,
-                                self.time_shifting,  self.flipping}
+        self.transformations = {self.jitter,
+                                self.scaling, self.magnitude_warping}
 
-        subset = [item for item in self.transformations if np.random.rand() < p]
-        for transform in subset:
+        # subset = [item for item in self.transformations if np.random.rand() < p]
+        for transform in self.transformations:
             item = transform(item)
         return item
 
@@ -86,6 +86,23 @@ class GREXTransform:
             augmented_data.append(new_item)
         print(f"Augmented data: {len(augmented_data)}")
         self.df = pd.concat([self.df, pd.DataFrame(augmented_data)])
+        return self.df
+
+    def balance(self):
+        for class_name in ["val", "aro"]:
+            class_counts = self.df[class_name].value_counts()
+            max_count = class_counts.max()
+            while not all(class_counts == max_count):
+                for cls in class_counts.index:
+                    cls_count = class_counts[cls]
+                    if cls_count < max_count:
+                        cls_df = self.df[self.df[class_name] == cls]
+                        n_samples = max_count - cls_count
+                        samples = cls_df.sample(n_samples, replace=True)
+                        # Apply transformations to the new samples
+                        samples["ppg"] = samples["ppg"].apply(self.apply)
+                        self.df = pd.concat([self.df, samples])
+                        class_counts = self.df[class_name].value_counts()
         return self.df
 
 
@@ -130,42 +147,90 @@ class GREXDataLoader(DataLoader):
         self.ppg = (self.ppg - self.ppg.mean(dim=0, keepdim=True)
                     ) / self.ppg.std(dim=0, keepdim=True)
 
+        assert self.ppg.mean(dim=0).mean() < 1e-6, self.ppg.mean(dim=0).sum()
+        assert self.ppg.std(dim=0).mean() - 1 < 1e-6, self.ppg.std(dim=0).sum()
+
         self.valence = torch.tensor(annotations['vl_seg']) - 1
         self.arousal = torch.tensor(annotations['ar_seg']) - 1
 
         print(
-            f"valence counter: {np.unique(self.valence, return_counts=True)}")
+            f"valence counter (before balance): {np.unique(self.valence, return_counts=True)}")
         print(
-            f"arousal counter: {np.unique(self.arousal, return_counts=True)}")
+            f"arousal counter (before balance): {np.unique(self.arousal, return_counts=True)}")
 
         df = []
         for i in range(len(self.ppg)):
-            if (self.ppg[i] == 0.0).all():
-                continue
+            # if (self.ppg[i] == 0.0).all():
+            #     continue
             df.append({"ppg": self.ppg[i].numpy(), "val": float(
-                self.valence[i]), "aro": float(self.arousal[i])})
+                self.valence[i]), "aro": float(self.arousal[i]), "quality_idx": i})
 
-        self.data = pd.DataFrame(df)
+        idx_to_keep = physio_trans_data_segments["PPG_quality_idx"]
+
+        df = pd.DataFrame(df)
+        old_len = len(df)
+        df = df[df["quality_idx"].isin(idx_to_keep)]
+        new_len = len(df)
+        print(f"Removed {old_len - new_len} bad quality samples")
+
+        self.data = df
+
+        # old_len = len(self.data)
+        # self.data = self.remove_bad_quality_samples(self.data)
+        # new_len = len(self.data)
+        # print(f"Removed {old_len - new_len} bad quality samples")
+        # raise ValueError
 
         # self.train_df, temp_df = train_test_split(
         #     self.data, test_size=0.4, stratify=self.data[["val", "aro"]])
         # self.val_df, self.test_df = train_test_split(
-        # temp_df, test_size=0.5, stratify=temp_df[["val", "aro"]])
+        #     temp_df, test_size=0.5, stratify=temp_df[["val", "aro"]])
 
         self.train_df, temp_df = train_test_split(
-            self.data, test_size=0.25)
+            self.data, test_size=0.2)
         self.val_df, self.test_df = train_test_split(
             temp_df, test_size=0.5)
 
-        self.train_df = GREXTransform(
-            self.train_df).augment(n=AUGMENTATION_SIZE)
+        if AUGMENTATION_SIZE > 0:
+            self.train_df = GREXTransform(
+                self.train_df).augment(n=AUGMENTATION_SIZE)
 
-        if MODEL_NAME == "PreProcessedEmotionNet":
-            self.train_df = extract_ppg_features_from_df(self.train_df)
-            self.val_df = extract_ppg_features_from_df(self.val_df)
-            self.test_df = extract_ppg_features_from_df(self.test_df)
+        if BALANCE_DATASET:
+            self.train_df = GREXTransform(self.train_df).balance()
+
+        print(
+            f"Valence count (after balance): {self.train_df['val'].value_counts()}")
+        print(
+            f"Arousal count (after balance): {self.train_df['aro'].value_counts()}")
+
+        self.train_df = extract_ppg_features_from_df(self.train_df)
+        self.val_df = extract_ppg_features_from_df(self.val_df)
+        self.test_df = extract_ppg_features_from_df(self.test_df)
+
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
+
+    def remove_bad_quality_samples(self, df):
+        quality_segments_path = os.path.join(
+            DATA_DIR, "GREX", '6_Results', 'PPG', 'segments', 'Quality')
+
+        bad_df = pd.read_csv(os.path.join(
+            quality_segments_path, "PPG_quality_bad_segments.csv"))
+
+        bad_df['idx'] = bad_df['User'].str.split(
+            '_').str[-1].str.extract('(\d+)', expand=False)
+
+        # bad_df.to_csv("bad_quality_ppg.csv", index=False)
+
+        bad_df = bad_df.dropna(subset=['idx'])
+        # df.to_csv("all_ppg.csv", index=False)
+
+        # Ensure 'idx' is integer type for comparison
+        bad_df['idx'] = bad_df['idx'].astype(int)
+        df = df[~df['quality_idx'].isin(bad_df['idx'])]
+
+        # df.to_csv("good_quality_ppg.csv", index=False)
+        return df
 
     def get_train_dataloader(self):
         dataset = GREXDataset(self.train_df)

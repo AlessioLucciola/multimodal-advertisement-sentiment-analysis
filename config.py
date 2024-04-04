@@ -7,13 +7,14 @@ PATH_TO_SAVE_RESULTS = "results"
 RANDOM_SEED = 42
 # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 LIMIT = None
-BALANCE_DATASET = True  # Balance the dataset if True, use the original dataset if False
+# Balance the dataset if True, use the original dataset if False
+BALANCE_DATASET = True
 
 USE_DML = False
 USE_MPS = True
 USE_WANDB = False
-SAVE_RESULTS = True
-SAVE_MODELS = True
+SAVE_RESULTS = False
+SAVE_MODELS = False
 
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
@@ -22,14 +23,13 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-BATCH_SIZE = 512
+BATCH_SIZE = 256
 N_EPOCHS = 1500
-LR = 1e-2
-# REG = 1e-3
+LR = 1e-4
 REG = 0
 DROPOUT_P = 0.5
 # TODO: put this in the dataset configuration (GREX dataset)
-AUGMENTATION_SIZE = 1000
+AUGMENTATION_SIZE = 0
 
 # ----------------------------
 

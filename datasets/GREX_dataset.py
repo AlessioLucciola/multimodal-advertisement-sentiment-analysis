@@ -16,7 +16,7 @@ class GREXDataset(Dataset):
 
     def __getitem__(self, index):
         ppg = torch.tensor(self.data.iloc[index, 0])
-
+        features = torch.tensor(self.data.iloc[index, 3])
         valence = torch.tensor(self.data.iloc[index, 1])
         arousal = torch.tensor(self.data.iloc[index, 2])
-        return (ppg, (valence, arousal))
+        return (ppg, features, (valence, arousal))

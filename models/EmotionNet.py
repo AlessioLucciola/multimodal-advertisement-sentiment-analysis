@@ -1,6 +1,4 @@
 import math
-from pyteap.signals.bvp import get_bvp_features
-import numpy as np
 import torch
 from torch import nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
@@ -9,7 +7,7 @@ from config import DROPOUT_P
 
 
 class EmotionNet(nn.Module):
-    def __init__(self, num_classes, d_model=64, nhead=4, num_layers=4, dropout=DROPOUT_P):
+    def __init__(self, num_classes, d_model=128, nhead=16, num_layers=16, dropout=DROPOUT_P):
         super(EmotionNet, self).__init__()
         self.num_classes = num_classes
         self.model_type = 'Transformer'
@@ -22,6 +20,15 @@ class EmotionNet(nn.Module):
         self.encoder = nn.Linear(2000, d_model)
         self.decoder = nn.Linear(d_model, num_classes * 2)
         self.d_model = d_model
+
+        # FCN branch for feature set
+        self.feature_encoder = nn.Sequential(
+            nn.Linear(17, 64),  # First layer has 64 neurons
+            nn.ReLU(),
+            nn.Linear(64, d_model // 2),  # Second layer has 128 neurons
+        )
+
+        self.final_layer = nn.Linear(d_model, num_classes * 2)
         self.init_weights()
 
     def _generate_square_subsequent_mask(self, sz):
@@ -35,8 +42,12 @@ class EmotionNet(nn.Module):
         self.encoder.weight.data.uniform_(-initrange, initrange)
         self.decoder.bias.data.zero_()
         self.decoder.weight.data.uniform_(-initrange, initrange)
+        # nn.init.xavier_uniform_(self.encoder.weight)
+        # self.decoder.bias.data.zero_()
+        # nn.init.xavier_uniform_(self.decoder.weight)
 
-    def forward(self, x):
+    def forward(self, x, features):
+        # Transformer branch
         if self.src_mask is None or self.src_mask.size(0) != len(x):
             device = x.device
             mask = self._generate_square_subsequent_mask(len(x)).to(device)
@@ -46,13 +57,23 @@ class EmotionNet(nn.Module):
         x = self.encoder(x)
         x = x * math.sqrt(self.d_model)
         x = self.pos_encoder(x)
-        output = self.transformer_encoder(x, self.src_mask)
-        output = self.decoder(output)
-        return output.view(-1, 2, self.num_classes)
+        ppg_signal = self.transformer_encoder(x, self.src_mask)
+        ppg_signal = self.decoder(ppg_signal)
+
+        # FCN branch
+        # features = self.feature_encoder(features)
+
+        # Concatenate and pass through final layer
+        # out = torch.cat((ppg_signal, features), dim=-1)
+        # out = out.view(out.shape[0], -1)
+
+        # out = self.final_layer(ppg_signal)
+
+        return ppg_signal.view(-1, 2, self.num_classes)
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout=DROPOUT_P, max_len=5000):
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 

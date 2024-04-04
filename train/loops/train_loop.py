@@ -84,20 +84,24 @@ def train_eval_loop(device,
                 # data = pixel, labels = emotions
                 tr_data, tr_labels = tr_batch[0], tr_batch[1]
             elif config["scope"] == "EmotionNet":
-                tr_data, tr_labels = tr_batch[0], tr_batch[1]
+                tr_data, tr_features, tr_labels = tr_batch[0], tr_batch[1], tr_batch[2]
                 tr_labels = torch.stack(tr_labels).transpose(
                     0, 1)
+                tr_features = tr_features.float().to(device)
             else:
                 raise ValueError(f"Invalid scope: {config['scope']}")
             tr_data = tr_data.float().to(device)
             tr_labels = tr_labels.float().to(device)
 
-            tr_outputs = model(tr_data)  # Prediction
+            if config["scope"] == "EmotionNet":
+                tr_outputs = model(tr_data, tr_features)
+            else:
+                tr_outputs = model(tr_data)  # Prediction
 
             if config["scope"] == "EmotionNet":
                 # Split the outputs into valence and arousal
-                tr_outputs_valence = tr_outputs[:, 0, :]
-                tr_outputs_arousal = tr_outputs[:, 1, :]
+                tr_outputs_valence = tr_outputs[:, 0, :].squeeze()
+                tr_outputs_arousal = tr_outputs[:, 1, :].squeeze()
 
                 # Split the labels into valence and arousal
                 tr_labels_valence = tr_labels[:, 0].long()
@@ -124,6 +128,15 @@ def train_eval_loop(device,
 
                     tr_accuracy_arousal = accuracy_metric(
                         torch.argmax(tr_outputs_arousal, -1), tr_labels_arousal) * 100
+
+                    # print(
+                    #     f"Arousal preds: {torch.argmax(tr_outputs_arousal, -1)}")
+                    # print(f"Arousal labels: {tr_labels_arousal}")
+                    # print(f"*"*50)
+                    # print(
+                    #     f"Valence preds: {torch.argmax(tr_outputs_valence, -1)}")
+                    # print(f"Valence labels: {tr_labels_valence}")
+                    # print(f"-"*50)
 
                     tr_accuracy = (tr_accuracy_valence +
                                    tr_accuracy_arousal) / 2
@@ -157,9 +170,10 @@ def train_eval_loop(device,
             wandb.log({"Training Loss": tr_epoch_loss.item()})
             wandb.log({"Training Accuracy": tr_accuracy.item()})
             wandb.log({"Training Recall": tr_recall.item()})
-            wandb.log({"Training Precision": tr_precision.item()})
-            wandb.log({"Training F1": tr_f1.item()})
-            wandb.log({"Training AUROC": tr_auroc.item()})
+            if config["scope"] != "EmotionNet":
+                wandb.log({"Training Precision": tr_precision.item()})
+                wandb.log({"Training F1": tr_f1.item()})
+                wandb.log({"Training AUROC": tr_auroc.item()})
 
         model.eval()
         with torch.no_grad():
@@ -173,19 +187,23 @@ def train_eval_loop(device,
                     # data = pixel, labels = emotions
                     val_data, val_labels = val_batch[0], val_batch[1]
                 elif config["scope"] == "EmotionNet":
-                    val_data, val_labels = val_batch[0], val_batch[1]
+                    val_data, val_features, val_labels = val_batch[0], val_batch[1], val_batch[2]
                     val_labels = torch.stack(val_labels).transpose(
                         0, 1)
+                    val_features = val_features.float().to(device)
                 else:
                     raise ValueError(f"Invalid scope: {config['scope']}")
                 val_data = val_data.float().to(device)
                 val_labels = val_labels.float().to(device)
 
-                val_outputs = model(val_data).to(device)
+                if config["scope"] == "EmotionNet":
+                    val_outputs = model(val_data, val_features)
+                else:
+                    val_outputs = model(val_data).to(device)
 
                 if config["scope"] == "EmotionNet":
-                    val_outputs_valence = val_outputs[:, 0, :]
-                    val_outputs_arousal = val_outputs[:, 1, :]
+                    val_outputs_valence = val_outputs[:, 0, :].squeeze()
+                    val_outputs_arousal = val_outputs[:, 1, :].squeeze()
                     val_labels_valence = val_labels[:, 0].long()
                     val_labels_arousal = val_labels[:, 1].long()
 
@@ -232,13 +250,14 @@ def train_eval_loop(device,
                 val_auroc = auroc_metric(
                     val_outputs.softmax(dim=1), val_labels)*100
 
-            # if config["use_wandb"]:
-            #     wandb.log({"Validation Loss": val_epoch_loss.item()})
-            #     wandb.log({"Validation Accuracy": val_accuracy.item()})
-            #     wandb.log({"Validation Recall": val_recall.item()})
-            #     wandb.log({"Validation Precision": val_precision.item()})
-            #     wandb.log({"Validation F1": val_f1.item()})
-            #     wandb.log({"Validation AUROC": val_auroc.item()})
+            if config["use_wandb"]:
+                wandb.log({"Validation Loss": val_epoch_loss.item()})
+                wandb.log({"Validation Accuracy": val_accuracy.item()})
+                wandb.log({"Validation Recall": val_recall.item()})
+                if config["scope"] != "EmotionNet":
+                    wandb.log({"Validation Precision": val_precision.item()})
+                    wandb.log({"Validation F1": val_f1.item()})
+                    wandb.log({"Validation AUROC": val_auroc.item()})
             # print('Validation -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'
             #       .format(epoch+1, config["epochs"], val_epoch_loss, val_accuracy, val_recall, val_precision, val_f1, val_auroc))
 
@@ -266,9 +285,9 @@ def train_eval_loop(device,
             #     save_model(data_name, model, epoch)
             # if epoch == config["epochs"]-1 and SAVE_MODELS:
             #     save_model(data_name, best_model, epoch=None, is_best=True)
-
-        scheduler.step()
-        current_lr = scheduler.optimizer.param_groups[0]['lr']
+        if scheduler is not None:
+            scheduler.step()
+        current_lr = optimizer.param_groups[0]['lr']
         print(f'Current learning rate: {current_lr}')
         if config['scope'] == 'EmotionNet':
             print(

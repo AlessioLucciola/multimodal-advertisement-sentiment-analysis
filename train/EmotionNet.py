@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
+from config import AUGMENTATION_SIZE, RANDOM_SEED, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
 from dataloaders.GREX_dataloader import GREXDataLoader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -34,29 +34,33 @@ def main():
                                  lr=LR,
                                  weight_decay=REG)
 
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer=optimizer,
-        max_lr=LR,
-        epochs=N_EPOCHS,
-        steps_per_epoch=len(train_loader))
+    # scheduler = torch.optim.lr_scheduler.OneCycleLR(
+    #     optimizer=optimizer,
+    #     max_lr=LR,
+    #     epochs=N_EPOCHS,
+    #     steps_per_epoch=len(train_loader))
+    scheduler = None
 
     criterion = torch.nn.CrossEntropyLoss()
 
     config = {
-        "architecture": "EmotionNet",
+        "architecture": "EmotionNet - Transformer",
         "scope": "EmotionNet",
         "learning_rate": LR,
         "epochs": N_EPOCHS,
         "reg": REG,
         "batch_size": BATCH_SIZE,
-        "num_classes": FER_NUM_CLASSES,
-        "dataset": DATASET_NAME,
+        "num_classes": 5,
+        "dataset": "GREX",
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
-        "balance_dataset": BALANCE_DATASET,
+        "balance_dataset": False,
         "limit": LIMIT,
-        "dropout_p": DROPOUT_P
+        "dropout_p": DROPOUT_P,
+        "agumented_data": AUGMENTATION_SIZE,
+        "message": "",
+
     }
 
     train_eval_loop(device=device,
