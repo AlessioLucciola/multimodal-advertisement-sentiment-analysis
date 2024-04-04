@@ -17,7 +17,7 @@ def extract_waveform_from_audio_file(file, desired_length_seconds, offset, desir
 
 def extract_multiple_waveforms_from_audio_file(file, desired_length_seconds, desired_sample_rate, overlap_seconds=2.5):
     # Load the entire audio file
-    waveform, _ = librosa.load(file, sr=desired_sample_rate)
+    waveform, sr = librosa.load(file, sr=desired_sample_rate)
 
     # Calculate the number of samples corresponding to the desired length and overlap
     desired_length_samples = int(desired_length_seconds * desired_sample_rate)
@@ -29,16 +29,22 @@ def extract_multiple_waveforms_from_audio_file(file, desired_length_seconds, des
     # Determine the number of segments needed
     num_segments = (len(waveform) - desired_length_samples) // step_size + 1
 
-    waveforms = []
+    segments = []
 
     # Extract overlapping segments
     for i in range(num_segments):
         start_index = i * step_size
         end_index = start_index + desired_length_samples
-        segment = waveform[start_index:end_index]
-        waveforms.append(segment)
+        segment_waveform = waveform[start_index:end_index]
+        start_time = start_index / sr
+        end_time = end_index / sr
+        segments.append({
+            "waveform": segment_waveform,
+            "start_time": start_time,
+            "end_time": end_time
+        })
 
-    return waveforms
+    return segments
 
 def extract_mfcc_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window):
     mfcc = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mfcc=n_mfcc, n_fft=n_fft, win_length=win_length, n_mels=n_mels, window=window, fmax=sample_rate/2)
@@ -89,3 +95,57 @@ def apply_AWGN(waveform, bits=16, snr_min=15, snr_max=30):
     augmented_waveform = augmented_waveform.astype(np.float32)
     
     return augmented_waveform
+
+def detect_speech(waveform, start_time, end_time, sr, frame_length=2048, hop_length=512, threshold_energy=0.05):
+    # Calculate energy for each frame
+    energy = librosa.feature.rms(y=waveform, frame_length=frame_length, hop_length=hop_length)[0]
+
+    # Compute the energy threshold based on the maximum energy
+    threshold = threshold_energy * np.max(energy)
+
+    # Determine speech segments based on energy thresholding
+    speech_segments = []
+    speech_start = None
+    for i in range(len(energy)):
+        if energy[i] > threshold:
+            if speech_start is None:
+                speech_start = start_time + i * hop_length / sr
+        else:
+            if speech_start is not None:
+                speech_end = start_time + i * hop_length / sr
+                # Only add the speech segment if it lies within the specified start and end times
+                if speech_end <= end_time:
+                    speech_segments.append((speech_start, speech_end))
+                speech_start = None
+
+    # If speech extends to the end of the waveform, add the last segment
+    if speech_start is not None:
+        speech_end = end_time
+        speech_segments.append((speech_start, speech_end))
+    speech_segments = unify_segments(speech_segments)
+    speech_segments = discard_short_segments(speech_segments)
+
+    return speech_segments
+
+def unify_segments(speech_segments):
+    unified_segments = []
+    if not speech_segments:
+        return unified_segments
+    current_segment_start, current_segment_end = speech_segments[0]
+    for next_segment_start, next_segment_end in speech_segments[1:]:
+        # If the time gap between current and next segment is less than 0.3 seconds
+        if next_segment_start - current_segment_end < 0.3:
+            current_segment_end = next_segment_end # Merge the segments
+        else:
+            unified_segments.append((current_segment_start, current_segment_end)) # Add the current unified segment to the list
+            current_segment_start, current_segment_end = next_segment_start, next_segment_end # Update current segment to the next segment
+    unified_segments.append((current_segment_start, current_segment_end)) # Add the last unified segment
+    return unified_segments
+
+def discard_short_segments(speech_segments, min_duration=1.0):
+    filtered_segments = []
+    for start, end in speech_segments:
+        segment_duration = end - start
+        if segment_duration >= min_duration:
+            filtered_segments.append((start, end))
+    return filtered_segments

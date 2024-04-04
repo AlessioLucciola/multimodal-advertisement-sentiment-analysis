@@ -1,7 +1,7 @@
 from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, RAVDESS_NUM_CLASSES, RANDOM_SEED
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
-from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features
+from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features, detect_speech
 from utils.utils import upload_scaler, select_device, set_seed
 from shared.constants import general_emotion_mapping
 import numpy as np
@@ -24,7 +24,10 @@ def main(model_path, audio_file_path, epoch):
 
 def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
     all_features = []
-    waveforms = extract_multiple_waveforms_from_audio_file(file=audio_file_path, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+    segments = extract_multiple_waveforms_from_audio_file(file=audio_file_path, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+    waveforms = [segment["waveform"] for segment in segments]
+    for segment in segments:
+        detect_speech(waveform=segment['waveform'], start_time=segment['start_time'], end_time=segment['end_time'], sr=AUDIO_SAMPLE_RATE)
     for waveform in waveforms:
         features = extract_mfcc_features(waveform, sample_rate=AUDIO_SAMPLE_RATE, n_mfcc=NUM_MFCC, n_fft=1024, win_length=512, n_mels=128, window='hamming')
         features = scale_waveform(features, scaler)
