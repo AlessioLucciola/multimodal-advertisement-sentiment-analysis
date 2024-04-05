@@ -27,17 +27,12 @@ class FERDataset(Dataset):
         self.balance_dataset = balance_dataset
         self.augment_dataset = augment_dataset
         
+        train_tfms, val_tfms = self.get_transformations()
+        self.transformations = train_tfms if self.is_train_dataset else val_tfms            
         self.tensor_transform = transforms.ToTensor()
         self.emotions = FER_emotion_mapping
-
         # Reset index
         self.data.reset_index(drop=True, inplace=True)
-
-        # Get transformations
-        if self.apply_transformations:
-            print("--Data Transformations-- apply_transformations set to True. Applying transformations to the dataset.")
-            train_tfms, val_tfms = self.get_transformations()
-            self.transformations = train_tfms if self.is_train_dataset else val_tfms
 
         # Balance the dataset
         if self.balance_dataset and self.is_train_dataset: 
@@ -62,21 +57,26 @@ class FERDataset(Dataset):
         # Add pixel values to the dataframe as separate columns        
         for i in range(pixels_values.shape[1]):
             self.pix_cols.append(f'pixel_{i}') # Column name
-            # TODO: FIX THIS -> PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
             self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
 
     def get_transformations(self):
-        train_trans = [
-            transforms.RandomCrop(48, padding=4, padding_mode='reflect'), # Random crop
-            transforms.RandomRotation(15), # Random rotation
-            transforms.RandomAffine( # Random affine transformation
-                degrees=0,
-                translate=(0.01, 0.12),
-                shear=(0.01, 0.03),
-            ),
-            transforms.RandomHorizontalFlip(), # Random horizontal flip
-            transforms.ToTensor(),
-        ]
+        if self.apply_transformations:
+            print("--Data Transformations-- apply_transformations set to True. Applying transformations to the images.")
+            train_trans = [
+                transforms.RandomCrop(48, padding=4, padding_mode='reflect'), # Random crop
+                transforms.RandomRotation(15), # Random rotation
+                transforms.RandomAffine( # Random affine transformation
+                    degrees=0,
+                    translate=(0.01, 0.12),
+                    shear=(0.01, 0.03),
+                ),
+                transforms.RandomHorizontalFlip(), # Random horizontal flip
+                transforms.ToTensor(),
+            ]
+        else:
+            train_trans = [
+                transforms.ToTensor(),
+            ]
 
         val_trans = [
             transforms.ToTensor(),
@@ -138,7 +138,7 @@ class FERDataset(Dataset):
         img.setflags(write=True)
 
         # Apply transformations to the image if provided
-        if self.apply_transformations:
+        if self.transformations:
             img = Image.fromarray(img)
             img = self.transformations(img)
         else:
