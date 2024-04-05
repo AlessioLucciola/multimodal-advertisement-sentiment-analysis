@@ -22,7 +22,7 @@ RESUME_EPOCH = 67
 
 # Train configurations
 BATCH_SIZE = 64
-N_EPOCHS = 100
+N_EPOCHS = 20
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2
@@ -64,7 +64,7 @@ METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv")
 
 AUGMENT_DATASET = False # Augment the dataset if True, use the original dataset if False
 APPLY_TRANSFORMATIONS = False # Apply transformations if True, use the original dataset if False
-USE_DEFAULT_SPLIT = True # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
+USE_DEFAULT_SPLIT = False # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
 
 # Video configurations
 MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn

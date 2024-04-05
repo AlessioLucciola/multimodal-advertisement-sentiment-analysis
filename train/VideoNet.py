@@ -18,7 +18,7 @@ def main():
                                    apply_transformations=APPLY_TRANSFORMATIONS,
                                    balance_dataset=BALANCE_DATASET,
                                    augment_dataset=AUGMENT_DATASET,
-                                   use_default_split=DF_SPLITTING)
+                                   use_default_split=USE_DEFAULT_SPLIT)
     
     train_loader = fer_dataloader.get_train_dataloader()
     val_loader = fer_dataloader.get_val_dataloader()

@@ -32,11 +32,6 @@ class FERDataloader:
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
         
         if self.use_default_split:
-            self.data = self.data.drop(['Usage'], axis=1) # Remove unnecessary columns
-
-            self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
-            self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)      
-        else:
             train_val_df = self.data.loc[self.data.Usage.isin(['Training', 'PublicTest'])]
             self.train_df, self.val_df = train_test_split(train_val_df, test_size=DF_SPLITTING[0], random_state=self.seed)
             self.test_df = self.data.loc[self.data.Usage.isin(['PrivateTest'])]
@@ -45,7 +40,12 @@ class FERDataloader:
             self.train_df = self.train_df.drop(['Usage'], axis=1)
             self.val_df = self.val_df.drop(['Usage'], axis=1)
             self.test_df = self.test_df.drop(['Usage'], axis=1)
-    
+        else:
+            self.data = self.data.drop(['Usage'], axis=1) # Remove unnecessary columns
+
+            self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
+            self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)  
+            
     def get_train_dataloader(self):
         train_dataset = FERDataset(data=self.train_df, is_train_dataset=True, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
         print(f"--Dataset-- Training dataset size: {len(train_dataset)}")
