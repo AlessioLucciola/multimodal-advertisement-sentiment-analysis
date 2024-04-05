@@ -1,4 +1,3 @@
-import pickle
 from utils.audio_utils import apply_AWGN, extract_waveform_from_audio_file, extract_zcr_features, extract_rms_features, extract_mfcc_features, extract_features
 from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, AUDIO_FILES_DIR, FRAME_LENGTH, HOP_LENGTH, USE_RAVDESS_ONLY, RAVDESS_FILES_DIR, NUM_MFCC
 from collections import Counter

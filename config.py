@@ -8,7 +8,7 @@ DF_SPLITTING = [0.20, 0.50] #[train/test splitting, test/val splitting]
 LIMIT = 0.5 # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 BALANCE_DATASET = True # Balance the dataset if True, use the original dataset if False
 
-USE_DML = False
+USE_DML = True
 USE_MPS = False
 USE_WANDB = False
 SAVE_RESULTS = True
