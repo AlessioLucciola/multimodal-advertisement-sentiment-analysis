@@ -1,6 +1,6 @@
 import json
 from torch.utils.data import DataLoader
-from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, MODEL_NAME
+from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, MODEL_NAME, RANDOM_SEED
 import os
 import pickle
 import torch
@@ -45,9 +45,9 @@ class GREXTransform:
         cs = CubicSpline(locs, control_points)
         return data * cs(np.arange(seq_len))
 
-    # def time_shifting(self, data):
-    #     shift = np.random.randint(low=-200, high=200)
-    #     return np.roll(data, shift)
+    def time_shifting(self, data):
+        shift = np.random.randint(low=-1000, high=1000)
+        return np.roll(data, shift)
 
     # def window_slicing(self, data):
     #     start = np.random.randint(low=0, high=data.shape[0]//2)
@@ -77,6 +77,7 @@ class GREXTransform:
 
     def augment(self, n=5_000):
         augmented_data = []
+        print(f"Original data: {len(augmented_data)}")
         while len(augmented_data) < n:
             # Randomly select an item from the dataframe
             item = self.df.sample(1).iloc[0]
@@ -85,8 +86,8 @@ class GREXTransform:
             new_item = {"ppg": self.apply(ppg), "val": val, "aro": aro}
             augmented_data.append(new_item)
         print(f"Augmented data: {len(augmented_data)}")
-        self.df = pd.concat([self.df, pd.DataFrame(augmented_data)])
-        return self.df
+        df = pd.concat([self.df, pd.DataFrame(augmented_data)])
+        return df
 
     def balance(self):
         for class_name in ["val", "aro"]:
@@ -153,11 +154,6 @@ class GREXDataLoader(DataLoader):
         self.valence = torch.tensor(annotations['vl_seg']) - 1
         self.arousal = torch.tensor(annotations['ar_seg']) - 1
 
-        print(
-            f"valence counter (before balance): {np.unique(self.valence, return_counts=True)}")
-        print(
-            f"arousal counter (before balance): {np.unique(self.arousal, return_counts=True)}")
-
         df = []
         for i in range(len(self.ppg)):
             # if (self.ppg[i] == 0.0).all():
@@ -181,15 +177,16 @@ class GREXDataLoader(DataLoader):
         # print(f"Removed {old_len - new_len} bad quality samples")
         # raise ValueError
 
-        # self.train_df, temp_df = train_test_split(
-        #     self.data, test_size=0.4, stratify=self.data[["val", "aro"]])
+        self.train_df, self.val_df = train_test_split(
+            self.data, test_size=0.2, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
+        self.test_df = self.val_df
         # self.val_df, self.test_df = train_test_split(
-        #     temp_df, test_size=0.5, stratify=temp_df[["val", "aro"]])
+        #     temp_df, test_size=0.1, stratify=temp_df[["val", "aro"]], random_state=RANDOM_SEED)
 
-        self.train_df, temp_df = train_test_split(
-            self.data, test_size=0.2)
-        self.val_df, self.test_df = train_test_split(
-            temp_df, test_size=0.5)
+        # self.train_df, temp_df = train_test_split(
+        #     self.data, test_size=0.1, random_state=RANDOM_SEED)
+        # self.val_df, self.test_df = train_test_split(
+        #     temp_df, test_size=0.5, random_state=RANDOM_SEED)
 
         if AUGMENTATION_SIZE > 0:
             self.train_df = GREXTransform(
@@ -199,9 +196,14 @@ class GREXDataLoader(DataLoader):
             self.train_df = GREXTransform(self.train_df).balance()
 
         print(
-            f"Valence count (after balance): {self.train_df['val'].value_counts()}")
+            f"Valence count TRAIN (after balance): {self.train_df['val'].value_counts()}")
         print(
-            f"Arousal count (after balance): {self.train_df['aro'].value_counts()}")
+            f"Arousal count TRAIN (after balance): {self.train_df['aro'].value_counts()}")
+
+        print(
+            f"Valence count VAL: {self.val_df['val'].value_counts()}")
+        print(
+            f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
 
         self.train_df = extract_ppg_features_from_df(self.train_df)
         self.val_df = extract_ppg_features_from_df(self.val_df)

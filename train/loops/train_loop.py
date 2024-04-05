@@ -291,7 +291,7 @@ def train_eval_loop(device,
         print(f'Current learning rate: {current_lr}')
         if config['scope'] == 'EmotionNet':
             print(
-                f"Training -> Epoch [{epoch+1}/{config['epochs']}], Loss: {tr_epoch_loss:.4f}, Accuracy: {tr_accuracy:.4f}% (val: {tr_accuracy_valence:.4f}%, aro: {tr_accuracy_arousal:.4f}%), Recall: {tr_recall:.4f}%")
+                f"Training -> Epoch [{epoch+1}/{config['epochs']}], Loss: {tr_epoch_loss:.4f} (val: {loss_valence:.3f}, aro: {loss_arousal:.3f}), Accuracy: {tr_accuracy:.4f}% (val: {tr_accuracy_valence:.4f}%, aro: {tr_accuracy_arousal:.4f}%), Recall: {tr_recall:.4f}%")
             print(
                 f"Validation -> Epoch [{epoch+1}/{config['epochs']}], Loss: {val_epoch_loss:.4f}, Accuracy: {val_accuracy:.4f}% (val: {val_accuracy_valence:.4f}%, aro: {val_accuracy_arousal:.4f}%), Recall: {val_recall:.4f}%")
             print("-"*50)

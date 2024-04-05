@@ -8,11 +8,11 @@ RANDOM_SEED = 42
 # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 LIMIT = None
 # Balance the dataset if True, use the original dataset if False
-BALANCE_DATASET = True
+BALANCE_DATASET = False
 
 USE_DML = False
 USE_MPS = True
-USE_WANDB = False
+USE_WANDB = True
 SAVE_RESULTS = False
 SAVE_MODELS = False
 
@@ -23,13 +23,13 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 N_EPOCHS = 1500
 LR = 1e-4
-REG = 0
-DROPOUT_P = 0.5
+REG = 0.3
+DROPOUT_P = 0.8
 # TODO: put this in the dataset configuration (GREX dataset)
-AUGMENTATION_SIZE = 0
+AUGMENTATION_SIZE = 5_000
 
 # ----------------------------
 
