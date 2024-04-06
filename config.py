@@ -5,7 +5,7 @@ DATA_DIR = "data"
 PATH_TO_SAVE_RESULTS = "results"
 RANDOM_SEED = 42
 DF_SPLITTING = [0.20, 0.50] #[train/test splitting, test/val splitting]
-LIMIT = 0.5 # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
+LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 BALANCE_DATASET = True # Balance the dataset if True, use the original dataset if False
 
 USE_DML = False
@@ -22,7 +22,7 @@ RESUME_EPOCH = 67
 
 # Train configurations
 BATCH_SIZE = 64
-N_EPOCHS = 20
+N_EPOCHS = 200
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2
@@ -63,8 +63,8 @@ DATASET_DIR = os.path.join(DATA_DIR, "VIDEO/FER/") # Dir: FER | FER_AND_MUXSPACE
 METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv") 
 
 AUGMENT_DATASET = False # Augment the dataset if True, use the original dataset if False
-APPLY_TRANSFORMATIONS = False # Apply transformations if True, use the original dataset if False
-USE_DEFAULT_SPLIT = False # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
+APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
+USE_DEFAULT_SPLIT = True # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
 
 # Video configurations
 MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
