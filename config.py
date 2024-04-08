@@ -62,12 +62,11 @@ DATASET_NAME = "fer2013" # Datasets: fer2013 | fer2013_and_muxspace
 DATASET_DIR = os.path.join(DATA_DIR, "VIDEO/FER/") # Dir: FER | FER_AND_MUXSPACE
 METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv") 
 
-AUGMENT_DATASET = False # Augment the dataset if True, use the original dataset if False
 APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
 USE_DEFAULT_SPLIT = True # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
 
 # Video configurations
-MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
+MODEL_NAME = 'custom_cnn' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
 LIVE_TEST = False # Test the model on live video if True, test on a video file if False
 FER_NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
 NUM_WORKERS = 1 # Number of workers for dataloader (default: 1)

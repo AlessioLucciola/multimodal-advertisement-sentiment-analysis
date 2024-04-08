@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, AUGMENT_DATASET, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING
+from config import RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING
 from dataloaders.FER_dataloader import FERDataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -17,7 +17,6 @@ def main():
                                    limit=LIMIT,
                                    apply_transformations=APPLY_TRANSFORMATIONS,
                                    balance_dataset=BALANCE_DATASET,
-                                   augment_dataset=AUGMENT_DATASET,
                                    use_default_split=USE_DEFAULT_SPLIT)
     
     train_loader = fer_dataloader.get_train_dataloader()
@@ -58,7 +57,6 @@ def main():
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
         "balance_dataset": BALANCE_DATASET,
-        "augment_dataset": AUGMENT_DATASET,
         "use_default_split": USE_DEFAULT_SPLIT,
         "df_splitting": None if USE_DEFAULT_SPLIT else DF_SPLITTING,
         "apply_transformations": APPLY_TRANSFORMATIONS,

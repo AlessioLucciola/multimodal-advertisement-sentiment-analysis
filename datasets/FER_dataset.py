@@ -19,13 +19,11 @@ class FERDataset(Dataset):
                  is_train_dataset: bool = True,
                  apply_transformations: bool = True,
                  balance_dataset: bool = True,
-                 augment_dataset: bool = True
                  ):
         self.data = data
         self.is_train_dataset = is_train_dataset
         self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
-        self.augment_dataset = augment_dataset
         
         train_tfms, val_tfms = self.get_transformations()
         self.transformations = train_tfms if self.is_train_dataset else val_tfms            
@@ -38,11 +36,6 @@ class FERDataset(Dataset):
         if self.balance_dataset and self.is_train_dataset: 
             data = self.apply_balance_dataset(data)
             data = data.drop(['balanced'], axis=1)
-
-        # Augment the dataset
-        if self.augment_dataset and self.is_train_dataset: 
-            data = self.apply_data_augmentation(data, train_tfms)
-            data = data.drop(['augmented'], axis=1)
             
         # Convert pixels to numpy array 
         pixels_values = [[int(i) for i in pix.split()]
@@ -107,24 +100,6 @@ class FERDataset(Dataset):
                 emotion_indices = data[data["emotion"] == emotion].index
         data.fillna({"balanced": False}, inplace=True)
         print("--Data Balance-- Classes after balancing: ", data.emotion.value_counts().to_dict())
-
-        return data
-    
-    def apply_data_augmentation(self, data, train_tfms):
-        print("--Data Augmentation-- augment_data set to True. Training data will be augmented.")
-        print("--Data Augmentation-- Classes before augmentation: ", data.emotion.value_counts().to_dict())
-
-        # Apply transformations contained in train_tfms to the images
-        data['augmented'] = False
-        for idx, row in data.iterrows():
-            img = np.copy(row[self.pix_cols].values.reshape(48, 48))
-            img = Image.fromarray(img)
-            img = train_tfms(img)
-            img = np.array(img)
-            data.loc[idx, self.pix_cols] = img.flatten()
-            data.loc[idx, 'augmented'] = True
-
-        print("--Data Augmentation-- Classes after augmentation: ", data.emotion.value_counts().to_dict())
 
         return data
     

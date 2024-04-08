@@ -12,7 +12,6 @@ class FERDataloader:
                  limit: int = None,
                  apply_transformations: bool = True,
                  balance_dataset: bool = True,
-                 augment_dataset: bool = True,
                  use_default_split: bool = True
                  ):
         self.batch_size = batch_size
@@ -21,7 +20,6 @@ class FERDataloader:
         self.limit = limit
         self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
-        self.augment_dataset = augment_dataset
         self.use_default_split = use_default_split
 
         if self.limit is not None:
@@ -47,16 +45,16 @@ class FERDataloader:
             self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)  
             
     def get_train_dataloader(self):
-        train_dataset = FERDataset(data=self.train_df, is_train_dataset=True, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
+        train_dataset = FERDataset(data=self.train_df, is_train_dataset=True, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset)
         print(f"--Dataset-- Training dataset size: {len(train_dataset)}")
         return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
     
     def get_val_dataloader(self):
-        val_dataset = FERDataset(data=self.val_df, is_train_dataset=False, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
+        val_dataset = FERDataset(data=self.val_df, is_train_dataset=False, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset)
         print(f"--Dataset-- Validation dataset size: {len(val_dataset)}")
         return DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
 
     def get_test_dataloader(self):
-        test_dataset = FERDataset(data=self.test_df, is_train_dataset=False, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, augment_dataset=self.augment_dataset)
+        test_dataset = FERDataset(data=self.test_df, is_train_dataset=False, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset)
         print(f"--Dataset-- Test dataset size: {len(test_dataset)}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)

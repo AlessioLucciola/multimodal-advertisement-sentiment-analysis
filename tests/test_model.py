@@ -138,7 +138,6 @@ def get_model_and_dataloader(model_path, device, type):
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
                                    balance_dataset=BALANCE_DATASET,
-                                   augment_dataset=AUGMENT_DATASET,
                                    use_default_split=USE_DEFAULT_SPLIT)
         scaler = None
     else:
