@@ -19,13 +19,13 @@ def read_test_results(tests):
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON in file {test_file_name}: {e}")
         else:
-            print(f"Test results for {t} don't exist")
+            raise ValueError(f"Test results for {t} don't exist")
     return all_results
 
 
 def create_plots(metrics, data, models_name, configuration, save_plot_prefix="plot"):
     script_directory = os.path.dirname(__file__)
-    values = [[d[metric[0]] for d in data] for metric in metrics]
+    values = [[d["test_"+metric[0]] for d in data] for metric in metrics]
     colors = ["#7b00c2", "#189e00", "#03adfc"]
 
     for i, metric in enumerate(metrics):
@@ -52,11 +52,10 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
 
 # ---CONFIGURATIONS---#
 test_folders = [
-    "AudioNetCT_2024-03-26_16-05-55",
+    "AudioNetCT_2024-04-08_09-33-56",
 ]
 
-metrics = [tuple(('test_accuracy', 'Accuracy')), tuple(
-    ('test_recall', "Recall")), tuple(('test_loss', 'Loss'))]
+metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
 models_name = [name.split("_")[0] for name in test_folders]
 configuration = ""
 

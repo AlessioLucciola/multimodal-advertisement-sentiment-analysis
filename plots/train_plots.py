@@ -18,7 +18,7 @@ def read_train_val_results(tests):
                 except json.JSONDecodeError as e:
                     print(f"Error decoding JSON in file {test_file_name}: {e}")
         else:
-            print(f"Test results for {t} don't exist")
+            raise ValueError(f"Test results for {t} don't exist")
     return all_results
 
 
@@ -70,7 +70,7 @@ def create_line_plots(metrics, data, models_name, configuration, save_plot_prefi
 test_folders = [
     "VideoNet_resnet34_2024-04-05_16-49-34",
 ]
-metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('loss', 'Cross Entropy Loss')]
+metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
 models_name = [name.split("_")[0] for name in test_folders]
 batch_size = 32
 configuration = f"Batch Size={batch_size}"

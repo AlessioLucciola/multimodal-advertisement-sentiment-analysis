@@ -15,29 +15,33 @@ def main(model_path, audio_file_path, epoch):
     type = model_path.split('_')[0]
     model, scaler, _ = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
-    waveforms = preprocess_audio_file(audio_file_path, scaler)
-    for waveform in waveforms:
-        output = model(waveform.to(device))
+    features_list = preprocess_audio_file(audio_file_path, scaler)
+    for feature in features_list:
+        waveform = feature['waveform'].to(device)
+        start_time = feature['start_time']
+        end_time = feature['end_time']
+        longest_voice_segment_start = feature['longest_voice_segment_start']
+        longest_voice_segment_end = feature['longest_voice_segment_end']
+        output = model(waveform)
         pred = torch.argmax(output, -1).detach()
         emotion = general_emotion_mapping[pred.item()]
-        print(emotion)
+        print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
 
 def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
-    all_features = []
     segments = extract_multiple_waveforms_from_audio_file(file=audio_file_path, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
     preprocessed_segments = []
     for segment in segments:
         speech_segments = detect_speech(waveform=segment['waveform'], start_time=segment['start_time'], end_time=segment['end_time'], sr=AUDIO_SAMPLE_RATE)
         if len(speech_segments) != 0:
-            segment['waveform'] = extract_speech_segment_from_waveform(waveform=segment['waveform'], start_time=segment['start_time'], end_time=segment['end_time'], speech_segments=speech_segments, sr=AUDIO_SAMPLE_RATE)
+            segment['waveform'], segment['longest_voice_segment_start'], segment['longest_voice_segment_end'], segment['longest_voice_segment_length'] = extract_speech_segment_from_waveform(waveform=segment['waveform'], start_time=segment['start_time'], end_time=segment['end_time'], speech_segments=speech_segments, sr=AUDIO_SAMPLE_RATE)
             preprocessed_segments.append(segment)
-    waveforms = [segment["waveform"] for segment in preprocessed_segments]
-    for waveform in waveforms:
+    for segment in preprocessed_segments:
+        waveform = segment['waveform']
         features = extract_mfcc_features(waveform, sample_rate=AUDIO_SAMPLE_RATE, n_mfcc=NUM_MFCC, n_fft=1024, win_length=512, n_mels=128, window='hamming')
         features = scale_waveform(features, scaler)
         features = torch.from_numpy(np.expand_dims(np.expand_dims(features, axis=0), axis=0)).float()
-        all_features.append(features)
-    return all_features
+        segment['waveform'] = features
+    return preprocessed_segments
 
 def extract_audio_features(audio_file_path, scaler):
     # Load the audio file
@@ -96,7 +100,7 @@ def get_model_and_dataloader(model_path, device, type):
     return model, scaler, num_classes
 
 if __name__ == "__main__":
-    epoch = 495
-    model_path = os.path.join("AudioNetCT_2024-03-26_16-05-55")
-    audio_file_path = os.path.join("data", "AUDIO", "test_audio.wav")
+    epoch = 484
+    model_path = os.path.join("AudioNetCT_2024-04-08_09-33-56")
+    audio_file_path = os.path.join("data", "AUDIO", "test_audio_real.wav")
     main(model_path=model_path, audio_file_path=audio_file_path, epoch=epoch)
