@@ -23,13 +23,16 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-BATCH_SIZE = 128
+LENGTH = 500
+STEP = 500
+BATCH_SIZE = 512
 N_EPOCHS = 1500
-LR = 1e-4
-REG = 0.3
-DROPOUT_P = 0.8
+LR = 1e-3
+# REG = 0.0001
+REG = 0
+DROPOUT_P = 0.1
 # TODO: put this in the dataset configuration (GREX dataset)
-AUGMENTATION_SIZE = 5_000
+AUGMENTATION_SIZE = 0
 
 # ----------------------------
 

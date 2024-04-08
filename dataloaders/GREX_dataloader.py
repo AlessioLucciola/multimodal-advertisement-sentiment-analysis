@@ -1,6 +1,6 @@
 import json
 from torch.utils.data import DataLoader
-from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, MODEL_NAME, RANDOM_SEED
+from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, LENGTH, MODEL_NAME, RANDOM_SEED, STEP
 import os
 import pickle
 import torch
@@ -46,7 +46,7 @@ class GREXTransform:
         return data * cs(np.arange(seq_len))
 
     def time_shifting(self, data):
-        shift = np.random.randint(low=-1000, high=1000)
+        shift = np.random.randint(low=-LENGTH, high=LENGTH)
         return np.roll(data, shift)
 
     # def window_slicing(self, data):
@@ -145,21 +145,28 @@ class GREXDataLoader(DataLoader):
 
         self.ppg = torch.tensor(physio_trans_data_segments['filt_PPG'])
 
-        self.ppg = (self.ppg - self.ppg.mean(dim=0, keepdim=True)
-                    ) / self.ppg.std(dim=0, keepdim=True)
+        # self.ppg = (self.ppg - self.ppg.mean(dim=0, keepdim=True)
+        #             ) / self.ppg.std(dim=0, keepdim=True)
 
-        assert self.ppg.mean(dim=0).mean() < 1e-6, self.ppg.mean(dim=0).sum()
-        assert self.ppg.std(dim=0).mean() - 1 < 1e-6, self.ppg.std(dim=0).sum()
+        # self.ppg = self.ppg - self.ppg.min(dim=0, keepdim=True)[0] / \
+        #     (self.ppg.max(dim=0, keepdim=True)[
+        #      0] - self.ppg.min(dim=0, keepdim=True)[0])
+
+        # assert self.ppg.mean(dim=0).mean() < 1e-6, self.ppg.mean(dim=0).sum()
+        # assert self.ppg.std(dim=0).mean() - 1 < 1e-6, self.ppg.std(dim=0).sum()
 
         self.valence = torch.tensor(annotations['vl_seg']) - 1
         self.arousal = torch.tensor(annotations['ar_seg']) - 1
+        self.uncertain = annotations['unc_seg']
 
         df = []
         for i in range(len(self.ppg)):
-            # if (self.ppg[i] == 0.0).all():
+            if (self.ppg[i] == 0.0).all():
+                continue
+            # if self.uncertain[i] is not None and self.uncertain[i] >= 2:
             #     continue
-            df.append({"ppg": self.ppg[i].numpy(), "val": float(
-                self.valence[i]), "aro": float(self.arousal[i]), "quality_idx": i})
+            df.append({"ppg": self.ppg[i].numpy(), "val": int(
+                self.valence[i]), "aro": int(self.arousal[i]), "quality_idx": i})
 
         idx_to_keep = physio_trans_data_segments["PPG_quality_idx"]
 
@@ -177,16 +184,18 @@ class GREXDataLoader(DataLoader):
         # print(f"Removed {old_len - new_len} bad quality samples")
         # raise ValueError
 
-        self.train_df, self.val_df = train_test_split(
-            self.data, test_size=0.2, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
-        self.test_df = self.val_df
+        # self.train_df, self.val_df = train_test_split(
+        #     self.data, test_size=0.3, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
+        # # TODO: just for debug reasons to see if stratify is better, remove later
+        # self.test_df = self.val_df
+
         # self.val_df, self.test_df = train_test_split(
         #     temp_df, test_size=0.1, stratify=temp_df[["val", "aro"]], random_state=RANDOM_SEED)
 
-        # self.train_df, temp_df = train_test_split(
-        #     self.data, test_size=0.1, random_state=RANDOM_SEED)
-        # self.val_df, self.test_df = train_test_split(
-        #     temp_df, test_size=0.5, random_state=RANDOM_SEED)
+        self.train_df, temp_df = train_test_split(
+            self.data, test_size=0.3, random_state=RANDOM_SEED)
+        self.val_df, self.test_df = train_test_split(
+            temp_df, test_size=0.5, random_state=RANDOM_SEED)
 
         if AUGMENTATION_SIZE > 0:
             self.train_df = GREXTransform(
@@ -208,6 +217,15 @@ class GREXDataLoader(DataLoader):
         self.train_df = extract_ppg_features_from_df(self.train_df)
         self.val_df = extract_ppg_features_from_df(self.val_df)
         self.test_df = extract_ppg_features_from_df(self.test_df)
+
+        self.train_df = self.slice_data(self.train_df)
+        self.val_df = self.slice_data(self.val_df)
+        self.test_df = self.slice_data(self.test_df)
+
+        print(
+            f"Valence count VAL: {self.val_df['val'].value_counts()}")
+        print(
+            f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
 
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
@@ -234,6 +252,37 @@ class GREXDataLoader(DataLoader):
         # df.to_csv("good_quality_ppg.csv", index=False)
         return df
 
+    def slice_data(self, df, length=LENGTH, step=STEP):
+        """
+        Taken a dataframe that contains data with columns "ppg", "val", "aro",
+        this function outputs a new df where the data is sliced into segments of
+        length `length` with a sliding window step of `step`.
+        """
+        if length > 2000:
+            raise ValueError(
+                "Length cannot be greater than original length 2000")
+        new_df = []
+        for _, row in df.iterrows():
+            ppg, val, aro = row["ppg"], row["val"], row["aro"]
+            for i in range(0, len(ppg) - length, step):
+                assert ppg[i:i +
+                           length].shape[0] == length, f"Shape is not consistent: {ppg[i:i + length].shape} != {length}"
+                segment = ppg[i:i + length]
+                new_row = {"ppg": segment, "val": val,
+                           "aro": aro, "ppg_features": row["ppg_features"]}
+                new_df.append(new_row)
+        new_df = pd.DataFrame(new_df)
+
+        # Convert the numpy arrays to PyTorch tensors and concatenate them
+        ppg_tensors = torch.cat([torch.from_numpy(x) for x in new_df['ppg']])
+        # Calculate the mean and standard deviation
+        mean = ppg_tensors.mean()
+        std = ppg_tensors.std()
+        # Standardize the ppg column
+        new_df['ppg'] = new_df['ppg'].apply(lambda x: (
+            (torch.from_numpy(x) - mean) / std).numpy())
+        return new_df
+
     def get_train_dataloader(self):
         dataset = GREXDataset(self.train_df)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
@@ -255,5 +304,7 @@ if __name__ == "__main__":
     test_loader = dataloader.get_test_dataloader()
 
     for i, data in enumerate(train_loader):
-        pgg, (val, ar) = data
+        print(f"Data size is {len(data)}")
+        pgg, features, (val, ar) = data
         print(f"Batch {i}: {pgg.shape}, {val.shape}, {ar.shape}")
+        break
