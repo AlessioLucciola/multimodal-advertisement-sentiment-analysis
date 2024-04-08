@@ -23,7 +23,7 @@ def init_with_parsed_arguments():
     parser.add_argument("--balance_dataset", action="store_true", default=False)
     parser.add_argument("--use_default_split", action="store_true", default=False)
 
-    # REQUIRED: resnet18, resnet34, resnet50, resnet101, densenet121, custom_cnn, vit_pretrained
+    # REQUIRED: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
     parser.add_argument("--architecture", type=str)
     parser.add_argument("--dataset-limit", type=int, default=LIMIT)
     parser.add_argument("--lr", type=float, default=LR)

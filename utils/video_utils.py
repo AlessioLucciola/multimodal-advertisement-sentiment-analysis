@@ -24,11 +24,11 @@ def select_model(model_name, hidden_size, num_classes, dropout_p):
         model = VideoResNetX(model_name, hidden_size, num_classes, dropout_p)
     elif model_name == 'densenet121':
         model = VideoDenseNet121(hidden_size, num_classes, dropout_p)
-    elif model_name == 'custom_cnn':
+    elif model_name == 'custom-cnn':
         model = VideoCustomCNN(num_classes, dropout_p)
-    elif model_name == 'vit_pretrained':
+    elif model_name == 'vit-pretrained':
         model = VideoViTPretrained(hidden_size, num_classes, dropout_p)
     else:
-        raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, densenet121, custom_cnn, vit_pretrained]')
+        raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained]')
     
     return model
