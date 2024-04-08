@@ -21,10 +21,10 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-BATCH_SIZE = 64
-N_EPOCHS = 200
-LR = 1e-3
-REG = 1e-3
+BATCH_SIZE = 128
+N_EPOCHS = 50
+LR = 1e-4
+REG = 1e-4
 DROPOUT_P = 0.2
 
 # ----------------------------
@@ -56,17 +56,20 @@ LSTM_NUM_LAYERS = 2
 
 # ----------------------------
 
-# VIDEO
+# VIDEO 
 # Dataset configurations
 DATASET_NAME = "fer2013" # Datasets: fer2013 | fer2013_and_muxspace
-DATASET_DIR = os.path.join(DATA_DIR, "VIDEO/FER/") # Dir: FER | FER_AND_MUXSPACE
-METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv") 
+DATASET_DIR = "FER" # Dir: FER | FER_AND_MUXSPACE
+DATASET_PATH = os.path.join(DATA_DIR, "VIDEO/"+ DATASET_DIR)
+METADATA_CSV = os.path.join(DATASET_PATH, DATASET_NAME + ".csv") 
 
 APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
 USE_DEFAULT_SPLIT = True # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
 
 # Video configurations
-MODEL_NAME = 'custom_cnn' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
+MODEL_NAME = 'dense121' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
+HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
+
 LIVE_TEST = False # Test the model on live video if True, test on a video file if False
-FER_NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
+VIDEO_NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
 NUM_WORKERS = 1 # Number of workers for dataloader (default: 1)
