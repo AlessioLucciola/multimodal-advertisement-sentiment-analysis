@@ -11,8 +11,8 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import FER_emotion_mapping
-from dataloaders.FER_dataloader import FERDataloader
+from shared.constants import video_emotion_mapping
+from dataloaders.video_custom_dataloader import video_custom_dataloader
 from models.VideoDenseNet121 import VideoDenseNet121
 from models.VideoResnetX import VideoResNetX
 from models.VideoCustomCNN import VideoCustomCNN
@@ -126,7 +126,7 @@ def get_model_and_dataloader(model_path, device, type):
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
         
-        dataloader = FERDataloader(csv_file=METADATA_CSV,
+        dataloader = video_custom_dataloader(csv_file=METADATA_CSV,
                                    batch_size=BATCH_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
@@ -168,7 +168,7 @@ def video_live_test(model):
                 log_ps = model.cpu()(X)
                 ps = torch.exp(log_ps)
                 top_p, top_class = ps.topk(1, dim=1)
-                pred = FER_emotion_mapping[int(top_class.numpy())]
+                pred = video_emotion_mapping[int(top_class.numpy())]
             cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
         
         cv2.imshow('frame', frame)

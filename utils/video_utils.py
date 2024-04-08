@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 from torchvision.utils import make_grid
 
-from models.VideoDenseNet121 import VideoDenseNet121
 from models.VideoResnetX import VideoResNetX
+from models.VideoDenseNet121 import VideoDenseNet121
 from models.VideoCustomCNN import VideoCustomCNN
 from models.VideoViTPretrained import VideoViTPretrained
 

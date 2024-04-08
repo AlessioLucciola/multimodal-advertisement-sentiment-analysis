@@ -1,6 +1,6 @@
 import torch
 from config import RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE
-from dataloaders.FER_dataloader import FERDataloader
+from dataloaders.video_custom_dataloader import video_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
 from utils.video_utils import select_model
@@ -8,7 +8,7 @@ from utils.video_utils import select_model
 def main():
     set_seed(RANDOM_SEED)
     device = select_device()
-    fer_dataloader = FERDataloader(csv_file=METADATA_CSV,
+    fer_dataloader = video_custom_dataloader(csv_file=METADATA_CSV,
                                    batch_size=BATCH_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,

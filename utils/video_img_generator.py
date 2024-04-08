@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 from config import DATASET_NAME, DATASET_DIR
 from tqdm import tqdm
-from shared.constants import FER_emotion_mapping
+from shared.constants import video_emotion_mapping
 
 # Load the FER dataset CSV file
 csv_file = os.path.join(DATASET_DIR, DATASET_NAME + ".csv")
 data = pd.read_csv(csv_file)
-emotion_mapping = FER_emotion_mapping
+emotion_mapping = video_emotion_mapping
 
 def generate_fer_img():
     # Iterate through the dataset and generate images
