@@ -5,7 +5,7 @@ import numpy as np
 from config import DROPOUT_P
 from torchvision.models import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, ResNet101_Weights
 
-def VideoResNetX(model_name, hidden_size, num_classes, dropout_p):
+def VideoResNetX(model_name, hidden_size, num_classes, dropout_p=DROPOUT_P):
     if model_name == 'resnet18':
         model = ResNet18(hidden_size, num_classes, dropout_p)
     elif model_name == 'resnet34':
