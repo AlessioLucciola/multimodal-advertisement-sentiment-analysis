@@ -67,7 +67,7 @@ APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original d
 USE_DEFAULT_SPLIT = True # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
 
 # Video configurations
-MODEL_NAME = 'dense121' # Models: resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn
+MODEL_NAME = 'vit_pretrained' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom_cnn, vit_pretrained
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
 
 LIVE_TEST = False # Test the model on live video if True, test on a video file if False

@@ -16,6 +16,7 @@ from dataloaders.FER_dataloader import FERDataloader
 from models.VideoDenseNet121 import VideoDenseNet121
 from models.VideoResnetX import VideoResNetX
 from models.VideoCustomCNN import VideoCustomCNN
+from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
     test_model.eval()
@@ -123,15 +124,7 @@ def get_model_and_dataloader(model_path, device, type):
     elif type == "VideoNet":
         num_classes = VIDEO_NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
-
-        if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
-            model = VideoResNetX(MODEL_NAME, HIDDEN_SIZE, VIDEO_NUM_CLASSES, DROPOUT_P).to(device)
-        elif MODEL_NAME == 'dense121':
-            model = VideoDenseNet121(HIDDEN_SIZE, VIDEO_NUM_CLASSES, DROPOUT_P).to(device)
-        elif MODEL_NAME == 'custom_cnn':
-            model = VideoCustomCNN(VIDEO_NUM_CLASSES, DROPOUT_P).to(device)
-        else:
-            raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn]')
+        model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
         
         dataloader = FERDataloader(csv_file=METADATA_CSV,
                                    batch_size=BATCH_SIZE,
@@ -203,8 +196,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "VideoNet_resnet34_2024-04-03_16-03-38"
+    model_path = "VideoNet_vit_2024-04-08_10-42-27"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "7"
+    epoch = "1"
 
     main(model_path, epoch)
