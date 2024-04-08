@@ -68,7 +68,7 @@ def create_line_plots(metrics, data, models_name, configuration, save_plot_prefi
 
 # ---CONFIGURATIONS---#
 test_folders = [
-    "AudioNetCT_2024-03-26_16-05-55",
+    "VideoNet_resnet34_2024-04-05_16-49-34",
 ]
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('loss', 'Cross Entropy Loss')]
 models_name = [name.split("_")[0] for name in test_folders]

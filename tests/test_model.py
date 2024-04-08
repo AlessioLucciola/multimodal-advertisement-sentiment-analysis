@@ -135,10 +135,10 @@ def get_model_and_dataloader(model_path, device, type):
         
         dataloader = FERDataloader(csv_file=METADATA_CSV,
                                    batch_size=BATCH_SIZE,
-                                   val_size=VAL_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
-                                   balance_dataset=BALANCE_DATASET)
+                                   balance_dataset=BALANCE_DATASET,
+                                   use_default_split=USE_DEFAULT_SPLIT)
         scaler = None
     else:
         raise ValueError(f"Unknown architecture {type}")
@@ -203,8 +203,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "VideoNet_resnet34_2024-04-02_15-09-04"
+    model_path = "VideoNet_resnet34_2024-04-03_16-03-38"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "1"
+    epoch = "7"
 
     main(model_path, epoch)
