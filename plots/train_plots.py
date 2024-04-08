@@ -68,7 +68,7 @@ def create_line_plots(metrics, data, models_name, configuration, save_plot_prefi
 
 # ---CONFIGURATIONS---#
 test_folders = [
-    "VideoNet_vit-pretrained_2024-04-08_10-42-27",
+    "VideoNet_vit-pretrained_2024-04-08_15-27-18",
 ]
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('loss', 'Cross Entropy Loss')]
 models_name = [name.split("_")[0] for name in test_folders]
