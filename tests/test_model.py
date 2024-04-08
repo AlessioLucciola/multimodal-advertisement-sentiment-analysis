@@ -20,7 +20,6 @@ from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
     test_model.eval()
-    test_loss_iter = 0
     accuracy_metric = Accuracy(task="multiclass", num_classes=num_classes).to(device)
     recall_metric = Recall(task="multiclass", num_classes=num_classes, average='macro').to(device)
     precision_metric = Precision(task="multiclass", num_classes=num_classes, average='macro').to(device)
@@ -31,6 +30,7 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
         epoch_test_preds = torch.tensor([]).to(device)
         epoch_test_labels = torch.tensor([], dtype=torch.long).to(device)
         epoch_test_probs = torch.tensor([]).to(device)
+        epoch_test_loss = 0
         for _, tr_batch in enumerate(tqdm(test_loader, desc="Testing model..", leave=False)):
             type = model_path.split('_')[0]
             if type == "AudioNetCT" or type == "AudioNetCL":
@@ -48,10 +48,11 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
             epoch_test_probs = torch.cat((epoch_test_probs, test_probs), 0)
 
             # Multiclassification loss considering all classes
-            test_epoch_loss = criterion(test_outputs, test_labels)
-            test_loss_iter += test_epoch_loss.item()
+            test_loss = criterion(test_outputs, test_labels)
+            epoch_test_loss += test_loss.item()
 
-        test_loss = test_loss_iter / (len(test_loader) * test_loader.batch_size)
+
+        final_test_loss = epoch_test_loss / len(test_loader)
         test_accuracy = accuracy_metric(epoch_test_preds, epoch_test_labels) * 100
         test_recall = recall_metric(epoch_test_preds, epoch_test_labels) * 100
         test_precision = precision_metric(epoch_test_preds, epoch_test_labels) * 100
@@ -59,10 +60,10 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
         test_auroc = auroc_metric(epoch_test_probs, epoch_test_labels) * 100
 
         print('Test -> Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'.format(
-            test_loss, test_accuracy, test_recall, test_precision, test_f1, test_auroc))
+            final_test_loss, test_accuracy, test_recall, test_precision, test_f1, test_auroc))
 
         test_results = {
-            'test_loss': test_loss,
+            'test_loss': final_test_loss,
             'test_accuracy': test_accuracy.item(),
             'test_recall': test_recall.item(),
             'test_precision': test_precision.item(),
