@@ -199,6 +199,6 @@ if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
     model_path = "VideoNet_vit-pretrained_2024-04-08_15-27-18"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "50"
+    epoch = "66"
 
     main(model_path, epoch)
