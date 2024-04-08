@@ -174,4 +174,4 @@ def extract_speech_segment_from_waveform(waveform, speech_segments, start_time, 
     #print(repeated_segment)
     # Clip the repeated segment to match the length of the segment we are replacing
     clipped_repeated_segment = repeated_segment[:end_index - start_index]
-    return clipped_repeated_segment
+    return clipped_repeated_segment, longest_segment_start+start_time, longest_segment_end+start_time, longest_segment_length
