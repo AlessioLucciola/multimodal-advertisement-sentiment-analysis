@@ -57,7 +57,7 @@ def train_eval_loop(device,
                 name=data_name
             )
 
-    total_step = len(train_loader)
+    training_total_step = len(train_loader)
     best_model = None
     best_accuracy = None
     accuracy_metric = Accuracy(task="multiclass", num_classes=config['num_classes']).to(device)
@@ -69,7 +69,9 @@ def train_eval_loop(device,
         model.train()
         epoch_tr_preds = torch.tensor([]).to(device)
         epoch_tr_labels = torch.tensor([]).to(device)
-        for tr_i, tr_batch in enumerate(tqdm(train_loader, desc="Training", leave=False)):
+        epoch_tr_outputs = torch.tensor([]).to(device)
+        epoch_tr_loss = 0
+        for _, tr_batch in enumerate(tqdm(train_loader, desc="Training", leave=False)):
             if config["scope"] == "AudioNet":
                 tr_data, tr_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
             elif config["scope"] == "VideoNet":
@@ -80,29 +82,31 @@ def train_eval_loop(device,
             tr_outputs = model(tr_data)  # Prediction
 
             # Multiclassification loss considering all classes
-            tr_epoch_loss = criterion(tr_outputs, tr_labels)
+            tr_loss = criterion(tr_outputs, tr_labels)
+            epoch_tr_loss = epoch_tr_loss + tr_loss.item()
+            epoch_tr_outputs = torch.cat((epoch_tr_outputs, tr_outputs), 0)
 
             optimizer.zero_grad()
-            tr_epoch_loss.backward()
+            tr_loss.backward()
             optimizer.step()
 
             with torch.no_grad():
                 tr_preds = torch.argmax(tr_outputs, -1).detach()
                 epoch_tr_preds = torch.cat((epoch_tr_preds, tr_preds), 0)
                 epoch_tr_labels = torch.cat((epoch_tr_labels, tr_labels), 0)
+        
+        with torch.no_grad():
+            tr_accuracy = accuracy_metric(epoch_tr_preds, epoch_tr_labels) * 100
+            tr_recall = recall_metric(epoch_tr_preds, epoch_tr_labels) * 100
+            tr_precision = precision_metric(epoch_tr_preds, epoch_tr_labels) * 100
+            tr_f1 = f1_metric(epoch_tr_preds, epoch_tr_labels) * 100
+            tr_auroc = auroc_metric(epoch_tr_outputs.softmax(dim=1), epoch_tr_labels.long())*100
 
-                tr_accuracy = accuracy_metric(tr_preds, tr_labels) * 100
-                tr_recall = recall_metric(tr_preds, tr_labels) * 100
-                tr_precision = precision_metric(tr_preds, tr_labels) * 100
-                tr_f1 = f1_metric(tr_preds, tr_labels) * 100
-                tr_auroc = auroc_metric(tr_outputs.softmax(dim=1), tr_labels)*100
-
-                if (tr_i+1) % 50 == 0:
-                    print('Training -> Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'
-                            .format(epoch+1, config["epochs"], tr_i+1, total_step, tr_epoch_loss, tr_accuracy, tr_recall, tr_precision, tr_f1, tr_auroc))
+            print('Training -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'
+                .format(epoch+1, config["epochs"], epoch_tr_loss/training_total_step, tr_accuracy, tr_recall, tr_precision, tr_f1, tr_auroc))
 
         if config["use_wandb"]:
-            wandb.log({"Training Loss": tr_epoch_loss.item()})
+            wandb.log({"Training Loss": epoch_tr_loss/training_total_step})
             wandb.log({"Training Accuracy": tr_accuracy.item()})
             wandb.log({"Training Recall": tr_recall.item()})
             wandb.log({"Training Precision": tr_precision.item()})
@@ -111,8 +115,11 @@ def train_eval_loop(device,
 
         model.eval()
         with torch.no_grad():
+            val_total_step = len(val_loader)
             epoch_val_preds = torch.tensor([]).to(device)
             epoch_val_labels = torch.tensor([]).to(device)
+            epoch_val_outputs = torch.tensor([]).to(device)
+            epoch_val_loss = 0
             for _, val_batch in enumerate(val_loader):
                 if config["scope"] == "AudioNet":
                     val_data, val_labels = val_batch['audio'], val_batch['emotion'] # data = audio, labels = emotions
@@ -125,38 +132,40 @@ def train_eval_loop(device,
                 val_preds = torch.argmax(val_outputs, -1).detach()
                 epoch_val_preds = torch.cat((epoch_val_preds, val_preds), 0)
                 epoch_val_labels = torch.cat((epoch_val_labels, val_labels), 0)
+                epoch_val_outputs = torch.cat((epoch_val_outputs, val_outputs), 0)
 
                 # Multiclassification loss considering all classes
-                val_epoch_loss = criterion(val_outputs, val_labels)
+                val_loss = criterion(val_outputs, val_labels)
+                epoch_val_loss = epoch_val_loss + val_loss.item()
 
             val_accuracy = accuracy_metric(epoch_val_preds, epoch_val_labels) * 100
             val_recall = recall_metric(epoch_val_preds, epoch_val_labels) * 100
             val_precision = precision_metric(epoch_val_preds, epoch_val_labels) * 100
             val_f1 = f1_metric(epoch_val_preds, epoch_val_labels) * 100
-            val_auroc = auroc_metric(val_outputs.softmax(dim=1), val_labels)*100
+            val_auroc = auroc_metric(epoch_val_outputs.softmax(dim=1), epoch_val_labels.long()) * 100
         
             if config["use_wandb"]:
-                wandb.log({"Validation Loss": val_epoch_loss.item()})
+                wandb.log({"Validation Loss": epoch_val_loss/val_total_step})
                 wandb.log({"Validation Accuracy": val_accuracy.item()})
                 wandb.log({"Validation Recall": val_recall.item()})
                 wandb.log({"Validation Precision": val_precision.item()})
                 wandb.log({"Validation F1": val_f1.item()})
                 wandb.log({"Validation AUROC": val_auroc.item()})
             print('Validation -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'
-                  .format(epoch+1, config["epochs"], val_epoch_loss, val_accuracy, val_recall, val_precision, val_f1, val_auroc))
+                  .format(epoch+1, config["epochs"], epoch_val_loss/val_total_step, val_accuracy, val_recall, val_precision, val_f1, val_auroc))
 
             if best_accuracy is None or val_accuracy < best_accuracy:
                 best_accuracy = val_accuracy
                 best_model = copy.deepcopy(model)
             current_results = {
                 'epoch': epoch+1,
-                'training_loss': tr_epoch_loss.item(),
+                'training_loss': epoch_tr_loss/training_total_step,
                 'training_accuracy': tr_accuracy.item(),
                 'training_recall': tr_recall.item(),
                 'training_precision': tr_precision.item(),
                 'training_f1': tr_f1.item(),
                 'training_auroc': tr_auroc.item(),
-                'validation_loss': val_epoch_loss.item(),
+                'validation_loss': epoch_val_loss/val_total_step,
                 'validation_accuracy': val_accuracy.item(),
                 'validation_recall': val_recall.item(),
                 'validation_precision': val_precision.item(),

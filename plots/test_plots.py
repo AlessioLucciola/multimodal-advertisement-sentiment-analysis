@@ -52,7 +52,7 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
 
 # ---CONFIGURATIONS---#
 test_folders = [
-    "AudioNetCT_2024-04-08_09-33-56",
+    "AudioNetCT_2024-04-08_17-00-51",
 ]
 
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
