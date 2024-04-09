@@ -11,11 +11,12 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import FER_emotion_mapping
-from dataloaders.FER_dataloader import FERDataloader
+from shared.constants import video_emotion_mapping
+from dataloaders.video_custom_dataloader import video_custom_dataloader
 from models.VideoDenseNet121 import VideoDenseNet121
 from models.VideoResnetX import VideoResNetX
 from models.VideoCustomCNN import VideoCustomCNN
+from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
     test_model.eval()
@@ -122,19 +123,11 @@ def get_model_and_dataloader(model_path, device, type):
                                         )
         scaler = upload_scaler(model_path)
     elif type == "VideoNet":
-        num_classes = FER_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = VIDEO_NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
-        # Set the model
-        if MODEL_NAME == 'resnet18' or MODEL_NAME == 'resnet34' or MODEL_NAME == 'resnet50' or MODEL_NAME == 'resnet101':
-            model = VideoResNetX(MODEL_NAME, FER_NUM_CLASSES, DROPOUT_P).to(device)
-        elif MODEL_NAME == 'dense121':
-            model = VideoDenseNet121(FER_NUM_CLASSES, DROPOUT_P).to(device)
-        elif MODEL_NAME == 'custom_cnn':
-            model = VideoCustomCNN(FER_NUM_CLASSES, DROPOUT_P).to(device)
-        else:
-            raise ValueError('Invalid Model Name: Options [resnet18, resnet34, resnet50, resnet101, dense121, custom_cnn]')
+        model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
         
-        dataloader = FERDataloader(csv_file=METADATA_CSV,
+        dataloader = video_custom_dataloader(csv_file=METADATA_CSV,
                                    batch_size=BATCH_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
@@ -176,7 +169,7 @@ def video_live_test(model):
                 log_ps = model.cpu()(X)
                 ps = torch.exp(log_ps)
                 top_p, top_class = ps.topk(1, dim=1)
-                pred = FER_emotion_mapping[int(top_class.numpy())]
+                pred = video_emotion_mapping[int(top_class.numpy())]
             cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
         
         cv2.imshow('frame', frame)
@@ -204,8 +197,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "AudioNetCT_2024-04-08_17-00-51"
+    model_path = "VideoNet_vit-pretrained_2024-04-08_15-27-18"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "484"
+    epoch = "66"
 
     main(model_path, epoch)

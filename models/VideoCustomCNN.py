@@ -1,7 +1,8 @@
 import torch.nn as nn
+from config import DROPOUT_P
 
 class VideoCustomCNN(nn.Module):
-  def __init__(self, num_classes, dropout_p):
+  def __init__(self, num_classes, dropout_p=DROPOUT_P):
     super(VideoCustomCNN, self).__init__()
     self.cnn1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=3)
     self.cnn2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3)

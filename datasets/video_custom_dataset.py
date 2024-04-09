@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
 from torchvision import transforms
-from shared.constants import FER_emotion_mapping
+from shared.constants import video_emotion_mapping
 from PIL import Image
 import random
 from collections import Counter
@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 warnings.simplefilter("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-class FERDataset(Dataset):
+class video_custom_dataset(Dataset):
     def __init__(self, 
                  data: pd.DataFrame, 
                  is_train_dataset: bool = True,
@@ -28,7 +28,7 @@ class FERDataset(Dataset):
         train_tfms, val_tfms = self.get_transformations()
         self.transformations = train_tfms if self.is_train_dataset else val_tfms            
         self.tensor_transform = transforms.ToTensor()
-        self.emotions = FER_emotion_mapping
+        self.emotions = video_emotion_mapping
         # Reset index
         self.data.reset_index(drop=True, inplace=True)
 
