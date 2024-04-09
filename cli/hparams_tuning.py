@@ -2,6 +2,7 @@ from argparse import ArgumentParser
 import itertools
 import json
 import os
+from datetime import datetime
 
 import torch
 from tqdm import tqdm
@@ -9,7 +10,7 @@ import wandb
 
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from train.loops.train_loop import train_eval_loop
-from config import RANDOM_SEED, LIMIT, MODEL_NAME, USE_WANDB, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE
+from config import RANDOM_SEED, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE
 from utils.utils import set_seed, select_device
 from utils.video_utils import select_model
 
@@ -25,7 +26,7 @@ def init_with_parsed_arguments():
 
     # REQUIRED: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
     parser.add_argument("--architecture", type=str)
-    parser.add_argument("--dataset-limit", type=int, default=LIMIT)
+    parser.add_argument("--dataset-limit", type=float, default=LIMIT)
     parser.add_argument("--lr", type=float, default=LR)
     parser.add_argument("--reg", type=float, default=None)
     parser.add_argument("--dropout", type=float, default=None)
@@ -58,19 +59,19 @@ def init_with_parsed_arguments():
         "hidden_size": HIDDEN_SIZE,
         "num_classes": VIDEO_NUM_CLASSES,
         "dataset": DATASET_NAME,
-        "limit": LIMIT if kwargs.get("dataset_limit") is None else kwargs.get("dataset_limit"),
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
-        # "initialization": "default",
+        "use_wandb": True if not kwargs.get("no_wandb") else False,
         "balance_dataset": BALANCE_DATASET if kwargs.get("balance_dataset") is None else kwargs.get("balance_dataset"),
         "use_default_split": USE_DEFAULT_SPLIT if kwargs.get("use_default_split") is None else kwargs.get("use_default_split"),
         "df_splitting": None if kwargs.get("use_default_split") is None else DF_SPLITTING,
         "apply_transformations": APPLY_TRANSFORMATIONS if kwargs.get("apply_transformations") is None else kwargs.get("apply_transformations"),
+        "limit": LIMIT if kwargs.get("dataset_limit") is None else kwargs.get("dataset_limit"),
         "dropout_p": DROPOUT_P if kwargs.get("dropout") is None else kwargs.get("dropout"),
-        "use_wandb": USE_WANDB if not kwargs.get("no_wandb") else False,
+        # NEW
         "hparam_tuning": True if (kwargs.get("reg") is None and kwargs.get("dropout") is None) else False,
         "force_reset": kwargs.get("force_reset"),
-        "message": kwargs.get("message") if kwargs.get("message") is not None else None,
+        "message": kwargs.get("message") if kwargs.get("message") is not None else None
     }
 
     train_loader, val_loader = build_dataloaders(**config)
@@ -129,14 +130,20 @@ def hparams_tuning(train_loader, val_loader, **hparams):
 def init_run(train_loader, val_loader, **kwargs):
     model = get_model(**kwargs)
 
+    # Definition of the parameters to create folders where to save data (plots and models)
+    current_datetime = datetime.now()
+    current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+    data_name = f"{kwargs['architecture']}_{current_datetime_str}"
+
     if kwargs["use_wandb"]:
         if wandb.run is not None:
             wandb.finish()
         wandb.init(
-            project="mi_project",
-            config=kwargs,  # Track hyperparameters and run metadata
-            resume=False,
-        )
+                project="mi_project",
+                config=kwargs,
+                resume=False,
+                name=data_name
+            )
 
     run_train_eval_loop(model=model,
                         train_loader=train_loader,
