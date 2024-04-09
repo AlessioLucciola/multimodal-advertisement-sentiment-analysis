@@ -10,7 +10,7 @@ import wandb
 
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from train.loops.train_loop import train_eval_loop
-from config import RANDOM_SEED, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE
+from config import NORMALIZE, RANDOM_SEED, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE
 from utils.utils import set_seed, select_device
 from utils.video_utils import select_model
 
@@ -90,8 +90,10 @@ def init_with_parsed_arguments():
 
 def hparams_tuning(train_loader, val_loader, **hparams):
     hparams_space = {
-        "reg": [0.01, 0.02, 0.03, 0.04, 0.05, 0.06],
-        "dropout_p": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        # "reg": [0.01, 0.02, 0.03, 0.04, 0.05, 0.06],
+        # "dropout_p": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        "reg": [0.02, 0.03, 0.04],
+        "dropout_p": [0.2, 0.3, 0.4]
     }
     combinations = list(itertools.product(*hparams_space.values()))
 
