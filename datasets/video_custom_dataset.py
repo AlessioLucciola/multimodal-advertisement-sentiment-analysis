@@ -19,11 +19,13 @@ class video_custom_dataset(Dataset):
                  is_train_dataset: bool = True,
                  apply_transformations: bool = True,
                  balance_dataset: bool = True,
+                 normalize: bool = False,
                  ):
         self.data = data
         self.is_train_dataset = is_train_dataset
         self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
+        self.normalize = normalize
         
         train_tfms, val_tfms = self.get_transformations()
         self.transformations = train_tfms if self.is_train_dataset else val_tfms            
@@ -36,14 +38,18 @@ class video_custom_dataset(Dataset):
         if self.balance_dataset and self.is_train_dataset: 
             data = self.apply_balance_dataset(data)
             data = data.drop(['balanced'], axis=1)
-            
+
         # Convert pixels to numpy array 
         pixels_values = [[int(i) for i in pix.split()]
                          for pix in self.data.pixels]   # For storing pixel values
         pixels_values = np.array(pixels_values)
 
-        # Normalize pixel values to [0, 1]
-        pixels_values = pixels_values/255.0
+        # Normalize pixel values
+        if self.normalize:
+            print("--Data Normalization-- normalize set to True. Applying normalization to the images.")
+            pixels_values = pixels_values/255.0 # Normalize pixel values to [0, 1]
+        else:
+            pixels_values = np.array(pixels_values, dtype=np.float32)  # Convert to float
         self.data.drop(columns=['pixels'], axis=1, inplace=True)
         self.pix_cols = []  # For keeping track of column names  
 
@@ -51,7 +57,7 @@ class video_custom_dataset(Dataset):
         for i in range(pixels_values.shape[1]):
             self.pix_cols.append(f'pixel_{i}') # Column name
             self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
-
+            
     def get_transformations(self):
         if self.apply_transformations:
             print("--Data Transformations-- apply_transformations set to True. Applying transformations to the images.")

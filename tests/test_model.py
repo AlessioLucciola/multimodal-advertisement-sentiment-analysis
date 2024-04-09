@@ -132,7 +132,9 @@ def get_model_and_dataloader(model_path, device, type):
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
                                    balance_dataset=BALANCE_DATASET,
-                                   use_default_split=USE_DEFAULT_SPLIT)
+                                   use_default_split=USE_DEFAULT_SPLIT,
+                                   normalize=NORMALIZE,
+                                   )
         scaler = None
     else:
         raise ValueError(f"Unknown architecture {type}")

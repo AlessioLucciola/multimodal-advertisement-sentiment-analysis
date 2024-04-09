@@ -22,7 +22,7 @@ RESUME_EPOCH = 66
 
 # Train configurations
 BATCH_SIZE = 128
-N_EPOCHS = 10
+N_EPOCHS = 20
 LR = 1e-2
 REG = 1e-2
 DROPOUT_P = 0.2
@@ -65,6 +65,7 @@ METADATA_CSV = os.path.join(DATASET_PATH, DATASET_NAME + ".csv")
 
 APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
 USE_DEFAULT_SPLIT = True # FER and FER_AND_MUXSPACE datasets have a DEFAULT train/val and test split. If True, use the custom split (DF_SPLITTING). If False, use the default split.
+NORMALIZE = True # Normalize the images if True, use the original images if False
 
 # Video configurations
 MODEL_NAME = 'vit-pretrained' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained

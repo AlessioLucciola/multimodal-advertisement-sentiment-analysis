@@ -23,6 +23,7 @@ def init_with_parsed_arguments():
     parser.add_argument("--apply_transformations", action="store_true", default=False)
     parser.add_argument("--balance_dataset", action="store_true", default=False)
     parser.add_argument("--use_default_split", action="store_true", default=False)
+    parser.add_argument("--normalize", action="store_true", default=False)
 
     # REQUIRED: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
     parser.add_argument("--architecture", type=str)
@@ -66,6 +67,7 @@ def init_with_parsed_arguments():
         "use_default_split": USE_DEFAULT_SPLIT if kwargs.get("use_default_split") is None else kwargs.get("use_default_split"),
         "df_splitting": None if kwargs.get("use_default_split") is None else DF_SPLITTING,
         "apply_transformations": APPLY_TRANSFORMATIONS if kwargs.get("apply_transformations") is None else kwargs.get("apply_transformations"),
+        "normalize": NORMALIZE if kwargs.get("normalize") is None else kwargs.get("normalize"),
         "limit": LIMIT if kwargs.get("dataset_limit") is None else kwargs.get("dataset_limit"),
         "dropout_p": DROPOUT_P if kwargs.get("dropout") is None else kwargs.get("dropout"),
         # NEW
@@ -176,7 +178,9 @@ def build_dataloaders(**args):
                                    limit=args["limit"],
                                    apply_transformations=args["apply_transformations"],
                                    balance_dataset=args["balance_dataset"],
-                                   use_default_split=args["use_default_split"])
+                                   use_default_split=args["use_default_split"],
+                                   normalize=args["normalize"],
+                                   )
     
     train_loader = fer_dataloader.get_train_dataloader()
     val_loader = fer_dataloader.get_val_dataloader()

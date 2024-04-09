@@ -1,5 +1,5 @@
 import torch
-from config import RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE
+from config import RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -14,7 +14,9 @@ def main():
                                    limit=LIMIT,
                                    apply_transformations=APPLY_TRANSFORMATIONS,
                                    balance_dataset=BALANCE_DATASET,
-                                   use_default_split=USE_DEFAULT_SPLIT)
+                                   use_default_split=USE_DEFAULT_SPLIT,
+                                   normalize=NORMALIZE,
+                                   )
     
     train_loader = fer_dataloader.get_train_dataloader()
     val_loader = fer_dataloader.get_val_dataloader()
@@ -51,6 +53,7 @@ def main():
         "use_default_split": USE_DEFAULT_SPLIT,
         "df_splitting": None if USE_DEFAULT_SPLIT else DF_SPLITTING,
         "apply_transformations": APPLY_TRANSFORMATIONS,
+        "normalize": NORMALIZE,
         "limit": LIMIT,
         "dropout_p": DROPOUT_P
     }
