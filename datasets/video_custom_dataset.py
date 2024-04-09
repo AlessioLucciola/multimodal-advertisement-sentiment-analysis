@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
 from torchvision import transforms
-from shared.constants import FER_emotion_mapping
+from shared.constants import video_emotion_mapping
 from PIL import Image
 import random
 from collections import Counter
@@ -13,22 +13,24 @@ warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 warnings.simplefilter("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-class FERDataset(Dataset):
+class video_custom_dataset(Dataset):
     def __init__(self, 
                  data: pd.DataFrame, 
                  is_train_dataset: bool = True,
                  apply_transformations: bool = True,
                  balance_dataset: bool = True,
+                 normalize: bool = False,
                  ):
         self.data = data
         self.is_train_dataset = is_train_dataset
         self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
+        self.normalize = normalize
         
         train_tfms, val_tfms = self.get_transformations()
         self.transformations = train_tfms if self.is_train_dataset else val_tfms            
         self.tensor_transform = transforms.ToTensor()
-        self.emotions = FER_emotion_mapping
+        self.emotions = video_emotion_mapping
         # Reset index
         self.data.reset_index(drop=True, inplace=True)
 
@@ -36,14 +38,18 @@ class FERDataset(Dataset):
         if self.balance_dataset and self.is_train_dataset: 
             data = self.apply_balance_dataset(data)
             data = data.drop(['balanced'], axis=1)
-            
+
         # Convert pixels to numpy array 
         pixels_values = [[int(i) for i in pix.split()]
                          for pix in self.data.pixels]   # For storing pixel values
         pixels_values = np.array(pixels_values)
 
-        # Normalize pixel values to [0, 1]
-        pixels_values = pixels_values/255.0
+        # Normalize pixel values
+        if self.normalize:
+            print("--Data Normalization-- normalize set to True. Applying normalization to the images.")
+            pixels_values = pixels_values/255.0 # Normalize pixel values to [0, 1]
+        else:
+            pixels_values = np.array(pixels_values, dtype=np.float32)  # Convert to float
         self.data.drop(columns=['pixels'], axis=1, inplace=True)
         self.pix_cols = []  # For keeping track of column names  
 
@@ -51,7 +57,7 @@ class FERDataset(Dataset):
         for i in range(pixels_values.shape[1]):
             self.pix_cols.append(f'pixel_{i}') # Column name
             self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
-
+            
     def get_transformations(self):
         if self.apply_transformations:
             print("--Data Transformations-- apply_transformations set to True. Applying transformations to the images.")

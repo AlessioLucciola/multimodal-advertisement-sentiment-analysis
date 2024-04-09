@@ -76,7 +76,7 @@ final_emotion_mapping = {
     "surprise": 7
 }
 
-FER_emotion_mapping = {
+video_emotion_mapping = {
     0: 'Angry',
     1: 'Disgust',
     2: 'Fear',
