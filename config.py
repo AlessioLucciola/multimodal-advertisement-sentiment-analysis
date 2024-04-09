@@ -71,5 +71,9 @@ MODEL_NAME = 'vit-pretrained' # Models: resnet18, resnet34, resnet50, resnet101,
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
 
 LIVE_TEST = False # Test the model on live video if True, test on a video file if False
+VIDEO_SAMPLE_RATE = 30
+VIDEO_DURATION = 2
+VIDEO_OVERLAPPING_SECONDS = 1.5
+
 VIDEO_NUM_CLASSES = 7 # Number of classes in the dataset (default: 7)
 NUM_WORKERS = 1 # Number of workers for dataloader (default: 1)
