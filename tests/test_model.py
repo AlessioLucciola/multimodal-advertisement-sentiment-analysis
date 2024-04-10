@@ -11,11 +11,8 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import video_emotion_mapping
+from shared.constants import general_emotion_mapping
 from dataloaders.video_custom_dataloader import video_custom_dataloader
-from models.VideoDenseNet121 import VideoDenseNet121
-from models.VideoResnetX import VideoResNetX
-from models.VideoCustomCNN import VideoCustomCNN
 from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
@@ -127,12 +124,11 @@ def get_model_and_dataloader(model_path, device, type):
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
         
-        dataloader = video_custom_dataloader(csv_file=METADATA_CSV,
+        dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
                                    batch_size=BATCH_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
                                    balance_dataset=BALANCE_DATASET,
-                                   use_default_split=USE_DEFAULT_SPLIT,
                                    normalize=NORMALIZE,
                                    )
         scaler = None
@@ -162,7 +158,7 @@ def video_live_test(model):
         faces = face_cascade.detectMultiScale(frame)
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
-            resize_frame = cv2.resize(gray[y:y + h, x:x + w], (48, 48))
+            resize_frame = cv2.resize(gray[y:y + h, x:x + w], IMG_SIZE)
             X = resize_frame/256
             X = Image.fromarray((X))
             X = val_transform(X).unsqueeze(0)
@@ -171,7 +167,7 @@ def video_live_test(model):
                 log_ps = model.cpu()(X)
                 ps = torch.exp(log_ps)
                 top_p, top_class = ps.topk(1, dim=1)
-                pred = video_emotion_mapping[int(top_class.numpy())]
+                pred = general_emotion_mapping[int(top_class.numpy())]
             cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
         
         cv2.imshow('frame', frame)
@@ -199,8 +195,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "VideoNet_vit-pretrained_2024-04-08_19-54-21"
+    model_path = "AudioNetCL_2024-04-10_12-19-31"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "10"
+    epoch = "50"
 
     main(model_path, epoch)

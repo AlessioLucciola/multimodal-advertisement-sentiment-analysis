@@ -45,19 +45,25 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
         if not os.path.exists(os.path.join(script_directory, "results")):
             os.makedirs(os.path.join(script_directory, "results"))
         save_path = os.path.join(
-            script_directory, "results", f"{save_plot_prefix}_{metric[0]}.png")
+            script_directory, "results", f"{save_plot_prefix}_test_{metric[0]}.png")
         plt.savefig(save_path)
         print(f"Plot saved as {save_path}")
 
 
 # ---CONFIGURATIONS---#
 test_folders = [
-    "AudioNetCT_2024-04-08_17-00-51",
+    "AudioNetCL_2024-04-10_12-19-31",
 ]
 
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
 models_name = [name.split("_")[0] for name in test_folders]
-configuration = ""
+
+# Read configurations.json file
+with open(os.path.join(os.path.dirname(__file__), '..', 'results', test_folders[0], 'configurations.json'), 'r') as file:
+    configurations = json.load(file)
+
+batch_size = configurations['batch_size']
+configuration = f"batch Size={batch_size}, lr={configurations['learning_rate']}, reg={configurations['reg']}, dropout={configurations['dropout_p']}"
 
 assert len(test_folders) == len(
     models_name), "The number of tests and their name must be of equal lenght"

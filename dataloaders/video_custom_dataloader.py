@@ -12,7 +12,6 @@ class video_custom_dataloader:
                  limit: int = None,
                  apply_transformations: bool = True,
                  balance_dataset: bool = True,
-                 use_default_split: bool = True,
                  normalize: bool = True,
                  ):
         self.batch_size = batch_size
@@ -21,7 +20,6 @@ class video_custom_dataloader:
         self.limit = limit
         self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
-        self.use_default_split = use_default_split
         self.normalize = normalize
 
         if self.limit is not None:
@@ -31,21 +29,16 @@ class video_custom_dataloader:
                 self.data = self.data.sample(frac=self.limit, random_state=self.seed)
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
         
-        if self.use_default_split:
-            train_val_df = self.data.loc[self.data.Usage.isin(['Training', 'PublicTest'])]
-            self.train_df, self.val_df = train_test_split(train_val_df, test_size=DF_SPLITTING[0], random_state=self.seed)
-            self.test_df = self.data.loc[self.data.Usage.isin(['PrivateTest'])]
+        # Drop unnecessary columns, mantain only 'pixels' and 'emotion' columns
+        self.data = self.data.drop(['file_name'], axis=1) 
+        self.data = self.data.drop(['emotion_intensity'], axis=1) 
+        self.data = self.data.drop(['repetition'], axis=1) 
+        self.data = self.data.drop(['actor'], axis=1)
 
-            # Remove unnecessary columns
-            self.train_df = self.train_df.drop(['Usage'], axis=1)
-            self.val_df = self.val_df.drop(['Usage'], axis=1)
-            self.test_df = self.test_df.drop(['Usage'], axis=1)
-        else:
-            self.data = self.data.drop(['Usage'], axis=1) # Remove unnecessary columns
-
-            self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
-            self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)  
-            
+        # Split the dataset
+        self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
+        self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)  
+        
     def get_train_dataloader(self):
         print(f"--Dataset-- Loading training dataset...")
         train_dataset = video_custom_dataset(data=self.train_df, is_train_dataset=True, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, normalize=self.normalize)
