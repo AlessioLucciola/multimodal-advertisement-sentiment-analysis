@@ -68,12 +68,17 @@ def create_line_plots(metrics, data, models_name, configuration, save_plot_prefi
 
 # ---CONFIGURATIONS---#
 test_folders = [
-    "VideoNet_vit-pretrained_2024-04-08_19-16-14",
+    "AudioNetCL_2024-04-10_12-19-31",
 ]
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
 models_name = [name.split("_")[0] for name in test_folders]
-batch_size = 32
-configuration = f"Batch Size={batch_size}"
+
+# Read configurations.json file
+with open(os.path.join(os.path.dirname(__file__), '..', 'results', test_folders[0], 'configurations.json'), 'r') as file:
+    configurations = json.load(file)
+
+batch_size = configurations['batch_size']
+configuration = f"batch Size={batch_size}, lr={configurations['learning_rate']}, reg={configurations['reg']}, dropout={configurations['dropout_p']}"
 
 
 assert len(test_folders) == len(

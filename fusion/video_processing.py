@@ -3,7 +3,7 @@ from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
 from utils.utils import upload_scaler, select_device, set_seed
-from shared.constants import general_emotion_mapping, video_emotion_mapping
+from shared.constants import general_emotion_mapping
 import numpy as np
 import torch
 import json
@@ -30,7 +30,7 @@ def test_on_video_file(model, video_file_path, device):
         end_time = feature['end_time']
         output = model(clip)
         pred = torch.argmax(output, -1).detach()
-        emotion = video_emotion_mapping[pred.item()]
+        emotion = general_emotion_mapping[pred.item()]
         print(f"Emotion detected from {start_time:.2f}s to {end_time:.2f}s: {emotion}")
 
 def preprocess_video_file(video_file_path, desired_length_seconds=VIDEO_DURATION):

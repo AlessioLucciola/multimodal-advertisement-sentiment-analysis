@@ -1,9 +1,10 @@
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
+from config import IMG_SIZE
 import pandas as pd
 import numpy as np
 from torchvision import transforms
-from shared.constants import video_emotion_mapping
+from shared.constants import general_emotion_mapping
 from PIL import Image
 import random
 from collections import Counter
@@ -30,7 +31,7 @@ class video_custom_dataset(Dataset):
         train_tfms, val_tfms = self.get_transformations()
         self.transformations = train_tfms if self.is_train_dataset else val_tfms            
         self.tensor_transform = transforms.ToTensor()
-        self.emotions = video_emotion_mapping
+        self.emotions = general_emotion_mapping
         # Reset index
         self.data.reset_index(drop=True, inplace=True)
 
@@ -115,7 +116,7 @@ class video_custom_dataset(Dataset):
     def __getitem__(self, idx):
         row = self.data.iloc[idx]
         img_id = int(row['emotion'])
-        img = np.copy(row[self.pix_cols].values.reshape(48, 48))
+        img = np.copy(row[self.pix_cols].values.reshape(IMG_SIZE))
         img.setflags(write=True)
 
         # Apply transformations to the image if provided

@@ -9,6 +9,11 @@ RAVDESS_emotion_mapping = {
     8: "surprise"
 }
 
+RAVDESS_emotion_intensity_mapping = {
+    0: "normal",
+    1: "strong"
+}
+
 CREMA_emotion_mapping = {
     "NEU": "neutral",
     "ANG": "angry",
@@ -76,7 +81,7 @@ final_emotion_mapping = {
     "surprise": 7
 }
 
-video_emotion_mapping = {
+fer_emotion_mapping = {
     0: 'Angry',
     1: 'Disgust',
     2: 'Fear',
@@ -85,6 +90,8 @@ video_emotion_mapping = {
     5: 'Surprise',
     6: 'Neutral'
 }
+
+# -----------------------------
 
 general_emotion_mapping = {
     0: "neutral",
