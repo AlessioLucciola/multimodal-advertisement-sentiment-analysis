@@ -7,7 +7,7 @@ RANDOM_SEED = 42
 
 # Train / Validation / Test configurations
 DF_SPLITTING = [0.20, 0.50] #[train/test splitting, test/val splitting]
-LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
+LIMIT = 0.8 # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 BALANCE_DATASET = True # Balance the dataset if True, use the original dataset if False
 
 USE_DML = False
@@ -23,7 +23,7 @@ RESUME_EPOCH = 66
 # ----------------------------
 
 # Train configurations
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 N_EPOCHS = 50
 LR = 1e-3
 REG = 1e-3
