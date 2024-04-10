@@ -46,6 +46,9 @@ def create_ravdess_csv_from_frames(path):
     df.to_csv(DATASET_DIR + "/" + "ravdess_frames" +".csv", index=False)
 
 def create_ravdess_csv_from_frames_w_pixels(path):
+    #  Retrieve size from path and convert into a tuple like (234, 234)
+    img_size = tuple(map(int, path.split("_")[-1].split("x")))
+    
     file_names = []
     emotion = []
     emotion_intensity = []
@@ -64,7 +67,7 @@ def create_ravdess_csv_from_frames_w_pixels(path):
         # Generate pixels from image
         img = Image.open(os.path.join(RAVDESS_FRAMES_FILES_DIR, path, file))
         img = img.convert('L')
-        img = img.resize((48, 48))
+        img = img.resize((img_size))
         img = np.array(img)
         img = img.flatten()
         img = ' '.join(str(p) for p in img)
@@ -75,7 +78,7 @@ def create_ravdess_csv_from_frames_w_pixels(path):
     df.to_csv(DATASET_DIR + "/" + frames_path +"_w_pixels.csv", index=False)
 
 if __name__ == "__main__":
-    frames_path = 'ravdess_frames_234x234' # ravdess_frames_48x48 | ravdess_frames_234x234
+    frames_path = 'ravdess_frames_128x128' # ravdess_frames_48x48 | ravdess_frames_128x128 | ravdess_frames_224x224
     # Comment / Uncomment the following lines to generate the desired CSV files
     create_ravdess_csv_from_video()
     create_ravdess_csv_from_frames(frames_path)

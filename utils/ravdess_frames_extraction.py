@@ -1,14 +1,18 @@
 import os
 import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 from config import RAVDESS_VIDEO_FILES_DIR, RAVDESS_FRAMES_FILES_DIR, DATASET_DIR
 
+# To keep track of frames with no face or multiple faces
+no_face = []
+multiple_faces = []
+
 def prepare_all_videos(filenames, paths, output_path, resolution, skip=1):
+    # Create output directory
     resolution_name = f'_{resolution[0]}x{resolution[1]}'
     output_path = RAVDESS_FRAMES_FILES_DIR + "/"+ output_path + resolution_name
     if not os.path.exists(output_path):
         os.makedirs(output_path)
+
     for count, video in enumerate(zip(filenames, paths)):
         # Gather all its frames
         save_frames(filename=video[0], input_path=video[1], output_path=output_path, resolution=resolution,skip=skip)
@@ -22,9 +26,6 @@ def save_frames(filename, input_path, output_path, resolution, skip):
     frames = []
     count = 0
 
-    no_face = []
-    multiple_faces = []
-    
     try:
         # Loop through all frames
         while True:
@@ -43,7 +44,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                         print(f"No face detected in {filename}")
                         no_face.append(filename)
                         # Save list on disk
-                        with open(DATASET_DIR + '/no_face.txt', 'a') as f:
+                        with open(DATASET_DIR + '/TOREMOVE_no_face.txt', 'w') as f:
                             for item in no_face:
                                 f.write("%s\n" % item)
 
@@ -52,7 +53,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                     print(f"More than one face detected in {filename}")
                     multiple_faces.append(filename)
                     # Save list on disk
-                    with open(DATASET_DIR + '/multiple_faces.txt', 'a') as f:
+                    with open(DATASET_DIR + '/TOREMOVE_multiple_faces.txt', 'w') as f:
                         for item in multiple_faces:
                             f.write("%s\n" % item)
 
@@ -71,10 +72,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
 
 if __name__ == "__main__":
     output_path = 'ravdess_frames'
-    resolution = (48, 48) # (48x48) | (234, 234)
-
-    emotions = {1:'neutral', 2:'calm', 3:'happy', 4:'sad', 5:'angry', 6:'fear', 7:'disgust', 8:'surprise'}
-    emotional_intensity = {1:'normal', 2:'strong'}
+    resolution = (128, 128) # (48x48) | (128, 128) | (224, 224)
 
     filenames = []
     feats = []
