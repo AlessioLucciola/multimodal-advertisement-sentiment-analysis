@@ -46,6 +46,40 @@ def extract_multiple_waveforms_from_audio_file(file, desired_length_seconds, des
 
     return segments
 
+def extract_multiple_waveforms_from_buffer(buffer, desired_length_seconds, desired_sample_rate, overlap_seconds=2.5):
+    # Load the entire audio file
+    waveform = np.frombuffer(buffer, dtype=np.int16)
+
+    # Convert the audio data to floating-point format
+    waveform = waveform.astype(np.float32) / np.iinfo(np.int16).max
+
+    # Calculate the number of samples corresponding to the desired length and overlap
+    desired_length_samples = int(desired_length_seconds * desired_sample_rate)
+    overlap_samples = int(overlap_seconds * desired_sample_rate)
+
+    # Determine the step size for sliding the window
+    step_size = desired_length_samples - overlap_samples
+
+    # Determine the number of segments needed
+    num_segments = (len(waveform) - desired_length_samples) // step_size + 1
+
+    segments = []
+
+    # Extract overlapping segments
+    for i in range(num_segments):
+        start_index = i * step_size
+        end_index = start_index + desired_length_samples
+        segment_waveform = waveform[start_index:end_index]
+        start_time = start_index / desired_sample_rate
+        end_time = end_index / desired_sample_rate
+        segments.append({
+            "waveform": segment_waveform,
+            "start_time": start_time,
+            "end_time": end_time
+        })
+
+    return segments
+
 def extract_mfcc_features(waveform, sample_rate, n_mfcc, n_fft, win_length, n_mels, window):
     mfcc = librosa.feature.mfcc(y=waveform, sr=sample_rate, n_mfcc=n_mfcc, n_fft=n_fft, win_length=win_length, n_mels=n_mels, window=window, fmax=sample_rate/2)
     return mfcc

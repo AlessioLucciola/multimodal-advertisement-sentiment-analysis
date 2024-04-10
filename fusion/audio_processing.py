@@ -1,21 +1,23 @@
 from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, RAVDESS_NUM_CLASSES, RANDOM_SEED
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
-from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
+from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_multiple_waveforms_from_buffer, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
 from utils.utils import upload_scaler, select_device, set_seed
 from shared.constants import general_emotion_mapping
 import numpy as np
 import torch
 import json
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def main(model_path, audio_file_path, epoch):
+def main(model_path, audio_file, epoch, live_demo=False):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[0]
     model, scaler, _ = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
-    features_list = preprocess_audio_file(audio_file_path, scaler)
+    features_list = preprocess_audio_file(audio_file, scaler, live_demo)
     for feature in features_list:
         waveform = feature['waveform'].to(device)
         start_time = feature['start_time']
@@ -27,8 +29,11 @@ def main(model_path, audio_file_path, epoch):
         emotion = general_emotion_mapping[pred.item()]
         print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
 
-def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
-    segments = extract_multiple_waveforms_from_audio_file(file=audio_file_path, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+def preprocess_audio_file(audio_file, scaler, live_demo, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
+    if live_demo:
+        segments = extract_multiple_waveforms_from_buffer(buffer=audio_file, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+    else:
+        segments = extract_multiple_waveforms_from_audio_file(file=audio_file, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
     preprocessed_segments = []
     for segment in segments:
         speech_segments = detect_speech(waveform=segment['waveform'], start_time=segment['start_time'], end_time=segment['end_time'], sr=AUDIO_SAMPLE_RATE)
@@ -42,17 +47,6 @@ def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_
         features = torch.from_numpy(np.expand_dims(np.expand_dims(features, axis=0), axis=0)).float()
         segment['waveform'] = features
     return preprocessed_segments
-
-def extract_audio_features(audio_file_path, scaler):
-    # Load the audio file
-    waveform = extract_waveform_from_audio_file(file=audio_file_path, desired_length_seconds=AUDIO_DURATION, offset=AUDIO_OFFSET, desired_sample_rate=AUDIO_SAMPLE_RATE)
-    # Extract features from the audio file
-    # features = extract_features(waveform=waveform, sample_rate=AUDIO_SAMPLE_RATE, n_mfcc=NUM_MFCC, n_fft=1024, win_length=512, n_mels=128, window='hamming', frame_length=FRAME_LENGTH, hop_length=HOP_LENGTH)
-    features = extract_mfcc_features(waveform, sample_rate=AUDIO_SAMPLE_RATE, n_mfcc=NUM_MFCC, n_fft=1024, win_length=512, n_mels=128, window='hamming')
-    # Scale the waveform
-    features = scale_waveform(features, scaler)
-    features = np.expand_dims(np.expand_dims(features, axis=0), axis=0) # Add channel dimension to get a 4D tensor suitable for CNN
-    return features
 
 def scale_waveform(waveform, scaler):
     return scaler.transform(waveform.reshape(-1, waveform.shape[-1])).reshape(waveform.shape)
@@ -101,6 +95,7 @@ def get_model_and_dataloader(model_path, device, type):
 
 if __name__ == "__main__":
     epoch = 484
-    model_path = os.path.join("AudioNetCT_2024-04-08_09-33-56")
+    model_path = os.path.join("AudioNetCT_2024-04-08_17-00-51")
+    # Offline audio file, it you want to test with a live audio stream use the demo instead
     audio_file_path = os.path.join("data", "AUDIO", "test_audio_real.wav")
-    main(model_path=model_path, audio_file_path=audio_file_path, epoch=epoch)
+    main(model_path=model_path, audio_file=audio_file_path, epoch=epoch)
