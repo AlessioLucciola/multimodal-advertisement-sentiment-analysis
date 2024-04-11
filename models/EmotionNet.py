@@ -102,7 +102,7 @@ class EmotionNet(nn.Module):
 
             nn.Flatten()
         )
-        self.lstm = nn.LSTM(input_size=10,
+        self.lstm = nn.LSTM(input_size=20,
                             hidden_size=128,
                             num_layers=2,
                             batch_first=True,
@@ -112,10 +112,10 @@ class EmotionNet(nn.Module):
 
         # Fully connected layers
         self.fc_layers = nn.Sequential(
-            nn.Linear(4928, 1024),
+            nn.Linear(12128, 1024),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(1024, 2 * num_classes)
+            nn.Linear(1024, num_classes)
         )
 
     def forward(self, x, spatial_features):
@@ -145,4 +145,4 @@ class EmotionNet(nn.Module):
         # print(f"cnn_out: {cnn_out.shape}")
         out = self.fc_layers(out)
 
-        return out.view(out.size(0), 2, self.num_classes)
+        return out.view(out.size(0), self.num_classes)

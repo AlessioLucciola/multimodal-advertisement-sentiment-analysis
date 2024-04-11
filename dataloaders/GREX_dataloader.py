@@ -181,10 +181,10 @@ class GREXDataLoader(DataLoader):
         self.data = df
 
         # Apply standardization
-        # std = self.data["ppg"].apply(lambda x: x.std())
-        # mean = self.data["ppg"].apply(lambda x: x.mean())
-        # self.data["ppg"] = self.data["ppg"].apply(
-        #     lambda x: (x - mean.mean()) / std.mean())
+        ppg_mean = np.stack(self.data["ppg"].to_numpy(), axis=0).mean()
+        ppg_std = np.stack(self.data["ppg"].to_numpy(), axis=0).std()
+        self.data["ppg"] = self.data["ppg"].apply(
+            lambda x: (x - ppg_mean) / ppg_std)
 
         tqdm.pandas()
         self.data["ppg_spatial_features"] = self.data["ppg"].progress_apply(
@@ -196,7 +196,6 @@ class GREXDataLoader(DataLoader):
             self.data, test_size=0.2, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
         # TODO: just for debug reasons to see if stratify is better, remove later
         self.test_df = self.val_df
-
         # self.val_df, self.test_df = train_test_split(
         #     temp_df, test_size=0.1, stratify=temp_df[["val", "aro"]], random_state=RANDOM_SEED)
 
@@ -233,24 +232,6 @@ class GREXDataLoader(DataLoader):
 
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
-
-    def remove_bad_quality_samples(self, df):
-        quality_segments_path = os.path.join(
-            DATA_DIR, "GREX", '6_Results', 'PPG', 'segments', 'Quality')
-
-        bad_df = pd.read_csv(os.path.join(
-            quality_segments_path, "PPG_quality_bad_segments.csv"))
-
-        bad_df['idx'] = bad_df['User'].str.split(
-            '_').str[-1].str.extract('(\d+)', expand=False)
-
-        bad_df = bad_df.dropna(subset=['idx'])
-
-        # Ensure 'idx' is integer type for comparison
-        bad_df['idx'] = bad_df['idx'].astype(int)
-        df = df[~df['quality_idx'].isin(bad_df['idx'])]
-
-        return df
 
     def slice_data(self, df, length=LENGTH, step=STEP):
         """
@@ -306,6 +287,3 @@ if __name__ == "__main__":
         print(f"Data size is {len(data)}")
         print(f"data is {data}")
         break
-        # pgg, features, (val, ar) = data
-        # print(f"Batch {i}: {pgg.shape}, {val.shape}, {ar.shape}")
-        # break

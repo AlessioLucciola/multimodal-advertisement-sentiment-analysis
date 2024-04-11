@@ -27,9 +27,9 @@ STEP = 200
 BATCH_SIZE = 16
 N_EPOCHS = 5000
 LR = 1e-3
-REG = 0.0001
-# REG = 0
-DROPOUT_P = 0.5
+# REG = 0.0001
+REG = 0
+DROPOUT_P = 0.3
 FAST_LOAD = False
 SAVE_DF = False
 # TODO: put this in the dataset configuration (GREX dataset)

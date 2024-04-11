@@ -1,7 +1,7 @@
 import torch
 from config import AUGMENTATION_SIZE, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
 from dataloaders.GREX_dataloader import GREXDataLoader
-from train.loops.train_loop import train_eval_loop
+from train.loops.train_loop_emotion import train_eval_loop
 from utils.utils import set_seed, select_device
 from models.EmotionNet import EmotionNet
 from models.PreProcessedEmotionNet import PreProcessedEmotionNet
@@ -15,24 +15,22 @@ def main():
     train_loader = loader.get_train_dataloader()
     val_loader = loader.get_val_dataloader()
 
-    if MODEL_NAME == "PreProcessedEmotionNet":
-        print("Using PreProcessedEmotionNet")
-        model = PreProcessedEmotionNet(
-            input_size=17,
-            hidden_size=256,
-            num_classes=5).to(device)
-    elif MODEL_NAME == "EmotionNet":
-        print("Using EmotionNet")
-        model = EmotionNet(num_classes=5, dropout=DROPOUT_P).to(device)
-    else:
-        raise ValueError("Invalid model name")
+    model_aro = EmotionNet(num_classes=5, dropout=DROPOUT_P).to(device)
+    model_val = EmotionNet(num_classes=5, dropout=DROPOUT_P).to(device)
+    model = [model_aro, model_val]
 
     # if RESUME_TRAINING:
     #     model.load_state_dict(torch.load(
     #         f"{PATH_TO_SAVE_RESULTS}/{PATH_MODEL_TO_RESUME}/models/mi_project_{RESUME_EPOCH}.pt"))
-    optimizer = torch.optim.Adam(model.parameters(),
-                                 lr=LR,
-                                 weight_decay=REG)
+    optimizer_aro = torch.optim.Adam(model_aro.parameters(),
+                                     lr=LR,
+                                     weight_decay=REG)
+
+    optimizer_val = torch.optim.Adam(model_val.parameters(),
+                                     lr=LR,
+                                     weight_decay=REG)
+
+    optimizer = [optimizer_aro, optimizer_val]
 
     # scheduler = torch.optim.lr_scheduler.OneCycleLR(
     #     optimizer=optimizer,
@@ -50,7 +48,7 @@ def main():
         "epochs": N_EPOCHS,
         "reg": REG,
         "batch_size": BATCH_SIZE,
-        "num_classes": 10,
+        "num_classes": 5,
         "dataset": "GREX",
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
@@ -68,9 +66,9 @@ def main():
     train_eval_loop(device=device,
                     train_loader=train_loader,
                     val_loader=val_loader,
-                    model=model,
+                    models=model,
                     config=config,
-                    optimizer=optimizer,
+                    optimizers=optimizer,
                     scheduler=scheduler,
                     criterion=criterion,
                     scaler=None,
