@@ -1,6 +1,6 @@
 from datasets.video_custom_dataset import video_custom_dataset
 from torch.utils.data import DataLoader
-from config import RANDOM_SEED, DF_SPLITTING
+from config import RANDOM_SEED, DF_SPLITTING, NUM_WORKERS
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
@@ -43,16 +43,16 @@ class video_custom_dataloader:
         print(f"--Dataset-- Loading training dataset...")
         train_dataset = video_custom_dataset(data=self.train_df, is_train_dataset=True, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, normalize=self.normalize)
         print(f"--Dataset-- Training dataset size: {len(train_dataset)}")
-        return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(train_dataset, batch_size=self.batch_size, num_workers=NUM_WORKERS, shuffle=True)
     
     def get_val_dataloader(self):
         print(f"--Dataset-- Loading validation dataset...")
         val_dataset = video_custom_dataset(data=self.val_df, is_train_dataset=False, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, normalize=self.normalize)
         print(f"--Dataset-- Validation dataset size: {len(val_dataset)}")
-        return DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(val_dataset, batch_size=self.batch_size, num_workers=NUM_WORKERS, shuffle=False)
 
     def get_test_dataloader(self):
         print(f"--Dataset-- Loading test dataset...")
         test_dataset = video_custom_dataset(data=self.test_df, is_train_dataset=False, apply_transformations=self.apply_transformations, balance_dataset=self.balance_dataset, normalize=self.normalize)
         print(f"--Dataset-- Test dataset size: {len(test_dataset)}")
-        return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(test_dataset, batch_size=self.batch_size, num_workers=NUM_WORKERS, shuffle=False)

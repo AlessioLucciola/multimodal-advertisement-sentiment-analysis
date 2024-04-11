@@ -11,7 +11,7 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import general_emotion_mapping
+from shared.constants import RAVDESS_emotion_mapping
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from utils.video_utils import select_model
 
@@ -167,7 +167,7 @@ def video_live_test(model):
                 log_ps = model.cpu()(X)
                 ps = torch.exp(log_ps)
                 top_p, top_class = ps.topk(1, dim=1)
-                pred = general_emotion_mapping[int(top_class.numpy())]
+                pred = RAVDESS_emotion_mapping[int(top_class.numpy())]
             cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
         
         cv2.imshow('frame', frame)
@@ -195,8 +195,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "VideoNet_vit-pretrained_2024-04-10_13-20-45"
+    model_path = PATH_MODEL_TO_RESUME
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "14"
+    epoch = TEST_EPOCH
 
     main(model_path, epoch)

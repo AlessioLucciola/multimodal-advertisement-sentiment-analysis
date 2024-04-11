@@ -1,6 +1,7 @@
 import os
 import json
 import matplotlib.pyplot as plt
+from config import *
 
 
 def read_test_results(tests):
@@ -52,7 +53,7 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
 
 # ---CONFIGURATIONS---#
 test_folders = [
-    "AudioNetCL_2024-04-10_12-19-31",
+    PATH_MODEL_TO_TEST,
 ]
 
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]

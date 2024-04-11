@@ -8,7 +8,7 @@ from utils.video_utils import select_model
 def main():
     set_seed(RANDOM_SEED)
     device = select_device()
-    fer_dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
+    custom_dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
                                    batch_size=BATCH_SIZE,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
@@ -17,8 +17,8 @@ def main():
                                    normalize=NORMALIZE,
                                    )
     
-    train_loader = fer_dataloader.get_train_dataloader()
-    val_loader = fer_dataloader.get_val_dataloader()
+    train_loader = custom_dataloader.get_train_dataloader()
+    val_loader = custom_dataloader.get_val_dataloader()
     
     model = select_model(MODEL_NAME, HIDDEN_SIZE, VIDEO_NUM_CLASSES, DROPOUT_P).to(device)
     

@@ -1,9 +1,9 @@
-from config import LIVE_TEST, AUDIO_SAMPLE_RATE, VIDEO_SAMPLE_RATE, VIDEO_OVERLAPPING_SECONDS, AUDIO_OFFSET, AUDIO_DURATION, VIDEO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, RAVDESS_NUM_CLASSES, RANDOM_SEED, METADATA_CSV, VIDEO_NUM_CLASSES, BATCH_SIZE, LIMIT, BALANCE_DATASET, USE_DEFAULT_SPLIT, MODEL_NAME, HIDDEN_SIZE, DROPOUT_P, RESUME_TRAINING, DATASET_NAME, APPLY_TRANSFORMATIONS, DF_SPLITTING
+from config import PATH_MODEL_RESULTS, MODEL_EPOCH, LIVE_TEST, AUDIO_SAMPLE_RATE, VIDEO_SAMPLE_RATE, VIDEO_OVERLAPPING_SECONDS, AUDIO_OFFSET, AUDIO_DURATION, VIDEO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, RAVDESS_NUM_CLASSES, RANDOM_SEED, METADATA_CSV, VIDEO_NUM_CLASSES, BATCH_SIZE, LIMIT, BALANCE_DATASET, USE_DEFAULT_SPLIT, MODEL_NAME, HIDDEN_SIZE, DROPOUT_P, RESUME_TRAINING, DATASET_NAME, APPLY_TRANSFORMATIONS, DF_SPLITTING
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
 from utils.utils import upload_scaler, select_device, set_seed
-from shared.constants import general_emotion_mapping
+from shared.constants import RAVDESS_emotion_mapping
 import numpy as np
 import torch
 import json
@@ -12,6 +12,7 @@ import cv2
 from PIL import Image
 from torchvision import transforms
 from utils.video_utils import select_model
+from config import *
 
 def main(model_path, video_file_path, epoch):
     set_seed(RANDOM_SEED)
@@ -30,7 +31,7 @@ def test_on_video_file(model, video_file_path, device):
         end_time = feature['end_time']
         output = model(clip)
         pred = torch.argmax(output, -1).detach()
-        emotion = general_emotion_mapping[pred.item()]
+        emotion = RAVDESS_emotion_mapping[pred.item()]
         print(f"Emotion detected from {start_time:.2f}s to {end_time:.2f}s: {emotion}")
 
 def preprocess_video_file(video_file_path, desired_length_seconds=VIDEO_DURATION):
@@ -115,7 +116,7 @@ def get_model_and_dataloader(model_path, device, type):
     return model, scaler, num_classes
 
 if __name__ == "__main__":
-    epoch = 20
-    model_path = os.path.join("HT_VideoNet_resnet18_2024-04-09_09-47-01")
+    epoch = TEST_EPOCH
+    model_path = os.path.join(PATH_MODEL_TO_TEST)
     video_file_path = os.path.join("data", "VIDEO", "test_video.mp4")
     main(model_path=model_path, video_file_path=video_file_path, epoch=epoch)

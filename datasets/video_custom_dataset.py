@@ -4,10 +4,11 @@ from config import IMG_SIZE
 import pandas as pd
 import numpy as np
 from torchvision import transforms
-from shared.constants import general_emotion_mapping
+from shared.constants import RAVDESS_emotion_mapping
 from PIL import Image
 import random
 from collections import Counter
+from tqdm import tqdm
 
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -31,7 +32,7 @@ class video_custom_dataset(Dataset):
         train_tfms, val_tfms = self.get_transformations()
         self.transformations = train_tfms if self.is_train_dataset else val_tfms            
         self.tensor_transform = transforms.ToTensor()
-        self.emotions = general_emotion_mapping
+        self.emotions = RAVDESS_emotion_mapping
         # Reset index
         self.data.reset_index(drop=True, inplace=True)
 
@@ -41,8 +42,9 @@ class video_custom_dataset(Dataset):
             data = data.drop(['balanced'], axis=1)
 
         # Convert pixels to numpy array 
+        print("--Data Conversion-- Converting pixels to numpy array.")
         pixels_values = [[int(i) for i in pix.split()]
-                         for pix in self.data.pixels]   # For storing pixel values
+                         for pix in tqdm(self.data.pixels)]   # For storing pixel values
         pixels_values = np.array(pixels_values)
 
         # Normalize pixel values
@@ -54,8 +56,9 @@ class video_custom_dataset(Dataset):
         self.data.drop(columns=['pixels'], axis=1, inplace=True)
         self.pix_cols = []  # For keeping track of column names  
 
-        # Add pixel values to the dataframe as separate columns        
-        for i in range(pixels_values.shape[1]):
+        # Add pixel values to the dataframe as separate columns      
+        print("--Data Conversion-- Adding pixel values to the dataframe.")  
+        for i in tqdm(range(pixels_values.shape[1])):
             self.pix_cols.append(f'pixel_{i}') # Column name
             self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
             
