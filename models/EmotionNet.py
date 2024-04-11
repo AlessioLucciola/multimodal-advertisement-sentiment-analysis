@@ -11,14 +11,14 @@ class ResidualBlock(nn.Module):
                       padding=(kernel_size - 1) // 2),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d(4),
             nn.Dropout(dropout)
         )
         self.shortcut = nn.Sequential()
         if in_channels != out_channels:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_channels, out_channels, kernel_size=1),
-                nn.MaxPool2d(2)
+                nn.MaxPool2d(4)
             )
 
     def forward(self, x):
@@ -48,61 +48,35 @@ class EmotionNet(nn.Module):
         self.num_classes = num_classes
 
         # CNN branch
-        self.cnn_layers = nn.Sequential(
-            nn.Conv2d(1, 8, 3, stride=1, padding=1),
-            nn.BatchNorm2d(8),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(dropout),
+        # self.cnn_layers = nn.Sequential(
+        #     nn.Conv2d(1, 8, 3, stride=1, padding=1),
+        #     nn.BatchNorm2d(8),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=4, stride=4),
+        #     nn.Dropout(dropout),
 
-            nn.Conv2d(8, 16, 3, stride=1, padding=1),
-            nn.BatchNorm2d(16),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=4, stride=4),
-            nn.Dropout(dropout),
+        #     nn.Conv2d(8, 16, 3, stride=1, padding=1),
+        #     nn.BatchNorm2d(16),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=4, stride=4),
+        #     nn.Dropout(dropout),
 
-            nn.Flatten(),
-        )
+        #     nn.Conv2d(16, 32, 3, stride=1, padding=1),
+        #     nn.BatchNorm2d(23),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(kernel_size=4, stride=4),
+        #     nn.Dropout(dropout),
+
+        #     nn.Flatten(),
+        # )
+
         self.cnn_layers = nn.Sequential(
             ResidualBlock(1, 16, 3, dropout),
             ResidualBlock(16, 32, 3, dropout),
             nn.Flatten()
         )
 
-        self.cnn_layers_1d = nn.Sequential(
-            nn.Conv1d(
-                in_channels=1,
-                out_channels=16,
-                kernel_size=3,
-            ),
-            nn.BatchNorm1d(16),
-            nn.ReLU(),
-            nn.MaxPool1d(kernel_size=2, stride=2),
-            nn.Dropout(p=dropout),
-
-            nn.Conv1d(
-                in_channels=16,
-                out_channels=32,
-                kernel_size=3,
-            ),
-            nn.BatchNorm1d(32),
-            nn.ReLU(),
-            nn.MaxPool1d(kernel_size=4, stride=4),
-            nn.Dropout(p=dropout),
-
-            nn.Conv1d(
-                in_channels=32,
-                out_channels=64,
-                kernel_size=3,
-            ),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.MaxPool1d(kernel_size=4, stride=4),
-            nn.Dropout(p=dropout),
-
-            nn.Flatten()
-        )
-        self.lstm = nn.LSTM(input_size=20,
+        self.lstm = nn.LSTM(input_size=100,
                             hidden_size=128,
                             num_layers=2,
                             batch_first=True,
@@ -112,7 +86,7 @@ class EmotionNet(nn.Module):
 
         # Fully connected layers
         self.fc_layers = nn.Sequential(
-            nn.Linear(12128, 1024),
+            nn.Linear(3584, 1024),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(1024, num_classes)

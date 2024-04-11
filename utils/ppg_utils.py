@@ -53,8 +53,8 @@ def statistical_features(x: torch.Tensor | np.ndarray) -> torch.Tensor:
 
 
 def wavelet_transform(x):
-    scale_step = 100
-    # return np.zeros((2000 // scale_step,  2000))  # TODO: for debug
+    scale_step = 20
+    return np.zeros((2000 // scale_step,  2000))  # TODO: for debug
     x = bvp.bvp(x, 100, show=False)["filtered"]
     scales = np.arange(1, len(x) + 1, scale_step)
     coef, freqs = pywt.cwt(x, scales, 'morl')

@@ -1,7 +1,7 @@
 import pickle
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, FAST_LOAD, LENGTH, MODEL_NAME, RANDOM_SEED, SAVE_DF, STEP
+from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, LENGTH, LOAD_DF, MODEL_NAME, RANDOM_SEED, SAVE_DF, STEP
 import os
 import pickle
 import torch
@@ -112,17 +112,6 @@ class GREXDataLoader(DataLoader):
     def __init__(self, batch_size):
         self.batch_size = batch_size
 
-        if FAST_LOAD:
-            self.train_df = pd.read_csv(f"train_ppg_{LENGTH}.csv")
-            self.val_df = pd.read_csv(f"val_ppg_{LENGTH}.csv")
-            self.test_df = pd.read_csv(f"test_ppg_{LENGTH}.csv")
-
-            self.train_df = self.train_df.map(lambda x: parse_df_row(x))
-            self.val_df = self.val_df.map(lambda x: parse_df_row(x))
-            self.test_df = self.test_df.map(lambda x: parse_df_row(x))
-
-            return
-
         data_segments_path = os.path.join(
             DATA_DIR, "GREX", '3_Physio', 'Transformed')
 
@@ -190,6 +179,19 @@ class GREXDataLoader(DataLoader):
         self.data["ppg_spatial_features"] = self.data["ppg"].progress_apply(
             wavelet_transform)
 
+        if SAVE_DF:
+            ppg_spatial_features = np.stack(
+                self.data["ppg_spatial_features"].to_numpy(), axis=0)
+            print(f"Saving ppg_spatial_features: {ppg_spatial_features.shape}")
+            np.save("ppg_spatial_features.npy", ppg_spatial_features)
+
+        if LOAD_DF:
+            ppg_spatial_features = np.load("ppg_spatial_features.npy")
+            assert len(self.data) == len(ppg_spatial_features)
+            for i in range(len(self.data)):
+                self.data.iloc[i]["ppg_spatial_features"] = ppg_spatial_features[i].tolist(
+                )
+
         self.data = self.slice_data(self.data)
 
         self.train_df, self.val_df = train_test_split(
@@ -220,10 +222,6 @@ class GREXDataLoader(DataLoader):
             f"Valence count VAL: {self.val_df['val'].value_counts()}")
         print(
             f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
-
-        if SAVE_DF:
-            # TODO: implement serialization and deserialization
-            pass
 
         print(
             f"Valence count VAL: {self.val_df['val'].value_counts()}")
