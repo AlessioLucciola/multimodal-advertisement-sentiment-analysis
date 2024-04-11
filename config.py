@@ -3,6 +3,7 @@ import os
 # Common configurations
 DATA_DIR = "data"
 PATH_TO_SAVE_RESULTS = "results"
+DEMO_DIR = "demo"
 RANDOM_SEED = 42
 
 # Train / Validation / Test configurations

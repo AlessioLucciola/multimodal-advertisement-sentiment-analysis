@@ -1,5 +1,9 @@
-import librosa
+from config import DEMO_DIR
+from datetime import datetime
+import soundfile as sf
 import numpy as np
+import librosa
+import os
 
 def extract_waveform_from_audio_file(file, desired_length_seconds, offset, desired_sample_rate):
     #waveform, _ = librosa.load(path=file, duration=desired_length_seconds, offset=trim_seconds, sr=desired_sample_rate)
@@ -48,10 +52,13 @@ def extract_multiple_waveforms_from_audio_file(file, desired_length_seconds, des
 
 def extract_multiple_waveforms_from_buffer(buffer, desired_length_seconds, desired_sample_rate, overlap_seconds=2.5):
     # Load the entire audio file
-    waveform = np.frombuffer(buffer, dtype=np.int16)
-
-    # Convert the audio data to floating-point format
-    waveform = waveform.astype(np.float32) / np.iinfo(np.int16).max
+    waveform = np.frombuffer(buffer, dtype=np.float32)
+    current_datetime = datetime.now()
+    current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+    audio_path = os.path.join(DEMO_DIR, "audio_files", str(current_datetime_str))
+    if not os.path.exists(audio_path):
+        os.makedirs(audio_path)
+    sf.write(os.path.join(audio_path, "full.wav"), waveform, desired_sample_rate)
 
     # Calculate the number of samples corresponding to the desired length and overlap
     desired_length_samples = int(desired_length_seconds * desired_sample_rate)
@@ -77,6 +84,7 @@ def extract_multiple_waveforms_from_buffer(buffer, desired_length_seconds, desir
             "start_time": start_time,
             "end_time": end_time
         })
+        sf.write(os.path.join(audio_path, f"segment_{i}_{start_time}_{end_time}.wav"), segment_waveform, desired_sample_rate)
 
     return segments
 
