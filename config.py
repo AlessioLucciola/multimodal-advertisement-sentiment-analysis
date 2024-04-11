@@ -1,4 +1,3 @@
-import functools
 import os
 
 # Common configurations
@@ -23,14 +22,16 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-LENGTH = 500
-STEP = 500
-BATCH_SIZE = 512
-N_EPOCHS = 1500
+LENGTH = 200
+STEP = 150
+BATCH_SIZE = 16
+N_EPOCHS = 5000
 LR = 1e-3
-# REG = 0.0001
-REG = 0
-DROPOUT_P = 0.1
+REG = 0.0001
+# REG = 0
+DROPOUT_P = 0.5
+FAST_LOAD = False
+SAVE_DF = True
 # TODO: put this in the dataset configuration (GREX dataset)
 AUGMENTATION_SIZE = 0
 

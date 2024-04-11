@@ -72,7 +72,15 @@ def train_eval_loop(device,
         task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
     auroc_metric = AUROC(
         task="multiclass", num_classes=config['num_classes']).to(device)
+
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
+        epoch_tr_accuracy = 0
+        epoch_tr_recall = 0
+        tr_cumulative_loss = 0
+        val_cumulative_loss = 0
+        tr_step = 0
+        val_step = 0
+
         model.train()
         epoch_tr_preds = torch.tensor([]).to(device)
         epoch_tr_labels = torch.tensor([]).to(device)
@@ -84,17 +92,26 @@ def train_eval_loop(device,
                 # data = pixel, labels = emotions
                 tr_data, tr_labels = tr_batch[0], tr_batch[1]
             elif config["scope"] == "EmotionNet":
-                tr_data, tr_features, tr_labels = tr_batch[0], tr_batch[1], tr_batch[2]
-                tr_labels = torch.stack(tr_labels).transpose(
-                    0, 1)
-                tr_features = tr_features.float().to(device)
+                tr_data, tr_spatial, tr_temp, tr_labels_valence, tr_labels_arousal = tr_batch["ppg"], tr_batch[
+                    "ppg_spatial_features"], tr_batch["ppg_temporal_features"], tr_batch["valence"], tr_batch["arousal"]
+
+                # tr_labels = torch.stack(tr_labels).transpose(
+                #     0, 1)
+                # tr_features = tr_features.float().to(device)
             else:
                 raise ValueError(f"Invalid scope: {config['scope']}")
+
             tr_data = tr_data.float().to(device)
-            tr_labels = tr_labels.float().to(device)
+            tr_labels_valence = tr_labels_valence.float().to(device)
+            tr_labels_arousal = tr_labels_arousal.float().to(device)
+            tr_spatial = tr_spatial.float().to(device)
+            tr_temp = tr_temp.float().to(device)
+
+            # print(
+            #     f"tr_data: {tr_data.shape}, tr_labels: {tr_labels.shape}, tr_features: {tr_features.shape}")
 
             if config["scope"] == "EmotionNet":
-                tr_outputs = model(tr_data, tr_features)
+                tr_outputs = model(tr_data, tr_spatial, tr_temp)
             else:
                 tr_outputs = model(tr_data)  # Prediction
 
@@ -104,8 +121,8 @@ def train_eval_loop(device,
                 tr_outputs_arousal = tr_outputs[:, 1, :].squeeze()
 
                 # Split the labels into valence and arousal
-                tr_labels_valence = tr_labels[:, 0].long()
-                tr_labels_arousal = tr_labels[:, 1].long()
+                # tr_labels_valence = tr_labels[:, 0].long()
+                # tr_labels_arousal = tr_labels[:, 1].long()
 
                 # Compute the loss for each separately
                 loss_valence = criterion(tr_outputs_valence, tr_labels_valence)
@@ -113,6 +130,7 @@ def train_eval_loop(device,
 
                 # Combine the two losses
                 tr_epoch_loss = loss_valence + loss_arousal
+                tr_cumulative_loss += tr_epoch_loss
             else:
                 # Multiclassification loss considering all classes
                 tr_epoch_loss = criterion(tr_outputs, tr_labels)
@@ -148,6 +166,10 @@ def train_eval_loop(device,
                         torch.argmax(tr_outputs_arousal, -1), tr_labels_arousal) * 100
 
                     tr_recall = (tr_recall_valence + tr_recall_arousal) / 2
+
+                    epoch_tr_accuracy += tr_accuracy
+                    epoch_tr_recall += tr_recall
+                    tr_step += 1
 
                 else:
                     tr_preds = torch.argmax(tr_outputs, -1).detach()
@@ -187,25 +209,33 @@ def train_eval_loop(device,
                     # data = pixel, labels = emotions
                     val_data, val_labels = val_batch[0], val_batch[1]
                 elif config["scope"] == "EmotionNet":
-                    val_data, val_features, val_labels = val_batch[0], val_batch[1], val_batch[2]
-                    val_labels = torch.stack(val_labels).transpose(
-                        0, 1)
-                    val_features = val_features.float().to(device)
+                    val_data, val_spatial, val_temp, val_labels_valence, val_labels_arousal = val_batch["ppg"], val_batch[
+                        "ppg_spatial_features"], val_batch["ppg_temporal_features"], val_batch["valence"], val_batch["arousal"]
                 else:
                     raise ValueError(f"Invalid scope: {config['scope']}")
                 val_data = val_data.float().to(device)
-                val_labels = val_labels.float().to(device)
+                val_spatial = val_spatial.float().to(device)
+                val_temp = val_temp.float().to(device)
+                val_labels_valence = val_labels_valence.float().to(device)
+                val_labels_arousal = val_labels_arousal.float().to(device)
 
                 if config["scope"] == "EmotionNet":
-                    val_outputs = model(val_data, val_features)
+                    val_outputs = model(val_data, val_spatial, val_temp)
                 else:
                     val_outputs = model(val_data).to(device)
 
                 if config["scope"] == "EmotionNet":
                     val_outputs_valence = val_outputs[:, 0, :].squeeze()
                     val_outputs_arousal = val_outputs[:, 1, :].squeeze()
-                    val_labels_valence = val_labels[:, 0].long()
-                    val_labels_arousal = val_labels[:, 1].long()
+
+                    val_labels = torch.cat(
+                        (val_labels_arousal.unsqueeze(1), val_labels_valence.unsqueeze(1)), 1)
+
+                    val_preds = torch.argmax(val_outputs, -1).detach()
+                    epoch_val_preds = torch.cat(
+                        (epoch_val_preds, val_preds), 0)
+                    epoch_val_labels = torch.cat(
+                        (epoch_val_labels, val_labels), 0)
 
                     val_loss_valence = criterion(
                         val_outputs_valence, val_labels_valence)
@@ -213,6 +243,9 @@ def train_eval_loop(device,
                         val_outputs_arousal, val_labels_arousal)
 
                     val_epoch_loss = val_loss_valence + val_loss_arousal
+                    val_cumulative_loss += val_epoch_loss
+                    val_step += 1
+
                 else:
                     val_preds = torch.argmax(val_outputs, -1).detach()
                     epoch_val_preds = torch.cat(
@@ -221,21 +254,28 @@ def train_eval_loop(device,
                         (epoch_val_labels, val_labels), 0)
                     # Multiclassification loss considering all classes
                     val_epoch_loss = criterion(val_outputs, val_labels)
+
             if config["scope"] == "EmotionNet":
+                val_preds_valence = epoch_val_preds[:, 0].squeeze()
+                val_preds_arousal = epoch_val_preds[:, 1].squeeze()
+
+                epoch_val_labels_valence = epoch_val_labels[:, 0].squeeze()
+                epoch_val_labels_arousal = epoch_val_labels[:, 1].squeeze()
+
                 val_accuracy_valence = accuracy_metric(
-                    torch.argmax(val_outputs_valence, -1), val_labels_valence) * 100
+                    val_preds_valence, epoch_val_labels_valence) * 100
 
                 val_accuracy_arousal = accuracy_metric(
-                    torch.argmax(val_outputs_arousal, -1), val_labels_arousal) * 100
+                    val_preds_arousal, epoch_val_labels_arousal) * 100
 
                 val_accuracy = (val_accuracy_valence +
                                 val_accuracy_arousal) / 2
 
                 val_recall_valence = recall_metric(
-                    torch.argmax(val_outputs_valence, -1), val_labels_valence) * 100
+                    val_preds_valence, epoch_val_labels_valence) * 100
 
                 val_recall_arousal = recall_metric(
-                    torch.argmax(val_outputs_arousal, -1), val_labels_arousal) * 100
+                    val_preds_arousal, epoch_val_labels_arousal) * 100
 
                 val_recall = (val_recall_valence + val_recall_arousal) / 2
 
@@ -285,13 +325,19 @@ def train_eval_loop(device,
             #     save_model(data_name, model, epoch)
             # if epoch == config["epochs"]-1 and SAVE_MODELS:
             #     save_model(data_name, best_model, epoch=None, is_best=True)
+        epoch_tr_accuracy /= tr_step
+        epoch_tr_recall /= tr_step
+        tr_cumulative_loss /= tr_step
+
+        val_cumulative_loss /= val_step
+
         if scheduler is not None:
             scheduler.step()
         current_lr = optimizer.param_groups[0]['lr']
         print(f'Current learning rate: {current_lr}')
         if config['scope'] == 'EmotionNet':
             print(
-                f"Training -> Epoch [{epoch+1}/{config['epochs']}], Loss: {tr_epoch_loss:.4f} (val: {loss_valence:.3f}, aro: {loss_arousal:.3f}), Accuracy: {tr_accuracy:.4f}% (val: {tr_accuracy_valence:.4f}%, aro: {tr_accuracy_arousal:.4f}%), Recall: {tr_recall:.4f}%")
+                f"Training -> Epoch [{epoch+1}/{config['epochs']}], Loss: {tr_cumulative_loss:.4f} (val: {loss_valence:.3f}, aro: {loss_arousal:.3f}), Accuracy: {epoch_tr_accuracy:.4f}% , Recall: {epoch_tr_recall:.4f}%")
             print(
-                f"Validation -> Epoch [{epoch+1}/{config['epochs']}], Loss: {val_epoch_loss:.4f}, Accuracy: {val_accuracy:.4f}% (val: {val_accuracy_valence:.4f}%, aro: {val_accuracy_arousal:.4f}%), Recall: {val_recall:.4f}%")
+                f"Validation -> Epoch [{epoch+1}/{config['epochs']}], Loss: {val_cumulative_loss:.4f}, Accuracy: {val_accuracy:.4f}%, Recall: {val_recall:.4f}%")
             print("-"*50)

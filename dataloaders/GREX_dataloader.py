@@ -1,6 +1,7 @@
-import json
+import pickle
 from torch.utils.data import DataLoader
-from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, LENGTH, MODEL_NAME, RANDOM_SEED, STEP
+from tqdm import tqdm
+from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, FAST_LOAD, LENGTH, MODEL_NAME, RANDOM_SEED, SAVE_DF, STEP
 import os
 import pickle
 import torch
@@ -9,7 +10,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from datasets.GREX_dataset import GREXDataset
 from scipy.interpolate import CubicSpline
-from utils.ppg_utils import extract_ppg_features_from_df
+from utils.ppg_utils import fft, onsets_and_hr, power_spectrum, wavelet_transform
 
 
 class GREXTransform:
@@ -111,6 +112,17 @@ class GREXDataLoader(DataLoader):
     def __init__(self, batch_size):
         self.batch_size = batch_size
 
+        if FAST_LOAD:
+            self.train_df = pd.read_csv(f"train_ppg_{LENGTH}.csv")
+            self.val_df = pd.read_csv(f"val_ppg_{LENGTH}.csv")
+            self.test_df = pd.read_csv(f"test_ppg_{LENGTH}.csv")
+
+            self.train_df = self.train_df.map(lambda x: parse_df_row(x))
+            self.val_df = self.val_df.map(lambda x: parse_df_row(x))
+            self.test_df = self.test_df.map(lambda x: parse_df_row(x))
+
+            return
+
         data_segments_path = os.path.join(
             DATA_DIR, "GREX", '3_Physio', 'Transformed')
 
@@ -178,24 +190,30 @@ class GREXDataLoader(DataLoader):
 
         self.data = df
 
+        std = self.data["ppg"].apply(lambda x: x.std())
+        mean = self.data["ppg"].apply(lambda x: x.mean())
+
+        self.data["ppg"] = self.data["ppg"].apply(
+            lambda x: (x - mean.mean()) / std.mean())
+
         # old_len = len(self.data)
         # self.data = self.remove_bad_quality_samples(self.data)
         # new_len = len(self.data)
         # print(f"Removed {old_len - new_len} bad quality samples")
         # raise ValueError
 
-        # self.train_df, self.val_df = train_test_split(
-        #     self.data, test_size=0.3, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
-        # # TODO: just for debug reasons to see if stratify is better, remove later
-        # self.test_df = self.val_df
+        self.train_df, self.val_df = train_test_split(
+            self.data, test_size=0.3, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
+        # TODO: just for debug reasons to see if stratify is better, remove later
+        self.test_df = self.val_df
 
         # self.val_df, self.test_df = train_test_split(
         #     temp_df, test_size=0.1, stratify=temp_df[["val", "aro"]], random_state=RANDOM_SEED)
 
-        self.train_df, temp_df = train_test_split(
-            self.data, test_size=0.3, random_state=RANDOM_SEED)
-        self.val_df, self.test_df = train_test_split(
-            temp_df, test_size=0.5, random_state=RANDOM_SEED)
+        # self.train_df, temp_df = train_test_split(
+        #     self.data, test_size=0.3, random_state=RANDOM_SEED)
+        # self.val_df, self.test_df = train_test_split(
+        #     temp_df, test_size=0.5, random_state=RANDOM_SEED)
 
         if AUGMENTATION_SIZE > 0:
             self.train_df = GREXTransform(
@@ -214,13 +232,28 @@ class GREXDataLoader(DataLoader):
         print(
             f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
 
-        self.train_df = extract_ppg_features_from_df(self.train_df)
-        self.val_df = extract_ppg_features_from_df(self.val_df)
-        self.test_df = extract_ppg_features_from_df(self.test_df)
+        tqdm.pandas()
+        self.train_df["ppg_spatial_features"] = self.train_df["ppg"].progress_apply(
+            wavelet_transform)
+        self.val_df["ppg_spatial_features"] = self.val_df["ppg"].progress_apply(
+            wavelet_transform)
+        self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
+            wavelet_transform)
+
+        # self.train_df["ppg_temporal_features"] = self.train_df["ppg"].progress_apply(
+        #     onsets_and_hr)
+        # self.val_df["ppg_temporal_features"] = self.val_df["ppg"].progress_apply(
+        #     onsets_and_hr)
+        # self.test_df["ppg_temporal_features"] = self.test_df["ppg"].progress_apply(
+        #     onsets_and_hr)
 
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
         self.test_df = self.slice_data(self.test_df)
+
+        if SAVE_DF:
+            # TODO: implement serialization and deserialization
+            pass
 
         print(
             f"Valence count VAL: {self.val_df['val'].value_counts()}")
@@ -240,16 +273,12 @@ class GREXDataLoader(DataLoader):
         bad_df['idx'] = bad_df['User'].str.split(
             '_').str[-1].str.extract('(\d+)', expand=False)
 
-        # bad_df.to_csv("bad_quality_ppg.csv", index=False)
-
         bad_df = bad_df.dropna(subset=['idx'])
-        # df.to_csv("all_ppg.csv", index=False)
 
         # Ensure 'idx' is integer type for comparison
         bad_df['idx'] = bad_df['idx'].astype(int)
         df = df[~df['quality_idx'].isin(bad_df['idx'])]
 
-        # df.to_csv("good_quality_ppg.csv", index=False)
         return df
 
     def slice_data(self, df, length=LENGTH, step=STEP):
@@ -263,24 +292,36 @@ class GREXDataLoader(DataLoader):
                 "Length cannot be greater than original length 2000")
         new_df = []
         for _, row in df.iterrows():
-            ppg, val, aro = row["ppg"], row["val"], row["aro"]
-            for i in range(0, len(ppg) - length, step):
+            if "ppg_spatial_features" in row:
+                ppg, val, aro, wavelet = row["ppg"], row["val"], row["aro"], row["ppg_spatial_features"]
+            else:
+                ppg, val, aro = row["ppg"], row["val"], row["aro"]
+            for i in range(0, len(ppg) - length + 1, step):
                 assert ppg[i:i +
                            length].shape[0] == length, f"Shape is not consistent: {ppg[i:i + length].shape} != {length}"
                 segment = ppg[i:i + length]
-                new_row = {"ppg": segment, "val": val,
-                           "aro": aro, "ppg_features": row["ppg_features"]}
+                if "ppg_spatial_features" in row:
+                    segment_wavelet = wavelet[:, i:i + length]
+                    new_row = {"ppg": segment, "val": val, "aro": aro,
+                               "ppg_spatial_features": segment_wavelet}
+                else:
+                    new_row = {"ppg": segment, "val": val, "aro": aro}
                 new_df.append(new_row)
-        new_df = pd.DataFrame(new_df)
 
+        new_df = pd.DataFrame(new_df)
+        for i, row in new_df.iterrows():
+            wavelet = row["ppg_spatial_features"]
+            print(f"Wavelet shape: {wavelet.shape}")
+
+        # new_df.to_csv("sliced_ppg.csv", index=False)
         # Convert the numpy arrays to PyTorch tensors and concatenate them
-        ppg_tensors = torch.cat([torch.from_numpy(x) for x in new_df['ppg']])
-        # Calculate the mean and standard deviation
-        mean = ppg_tensors.mean()
-        std = ppg_tensors.std()
-        # Standardize the ppg column
-        new_df['ppg'] = new_df['ppg'].apply(lambda x: (
-            (torch.from_numpy(x) - mean) / std).numpy())
+        # ppg_tensors = torch.cat([torch.from_numpy(x) for x in new_df['ppg']])
+        # # Calculate the mean and standard deviation
+        # mean = ppg_tensors.mean()
+        # std = ppg_tensors.std()
+        # # Standardize the ppg column
+        # new_df['ppg'] = new_df['ppg'].apply(lambda x: (
+        #     (torch.from_numpy(x) - mean) / std).numpy())
         return new_df
 
     def get_train_dataloader(self):
@@ -305,6 +346,8 @@ if __name__ == "__main__":
 
     for i, data in enumerate(train_loader):
         print(f"Data size is {len(data)}")
-        pgg, features, (val, ar) = data
-        print(f"Batch {i}: {pgg.shape}, {val.shape}, {ar.shape}")
+        print(f"data is {data}")
         break
+        # pgg, features, (val, ar) = data
+        # print(f"Batch {i}: {pgg.shape}, {val.shape}, {ar.shape}")
+        # break
