@@ -1,4 +1,5 @@
 from config import DEMO_DIR
+import noisereduce as nr
 from datetime import datetime
 import soundfile as sf
 import numpy as np
@@ -53,6 +54,7 @@ def extract_multiple_waveforms_from_audio_file(file, desired_length_seconds, des
 def extract_multiple_waveforms_from_buffer(buffer, desired_length_seconds, desired_sample_rate, overlap_seconds=2.5):
     # Load the entire audio file
     waveform = np.frombuffer(buffer, dtype=np.float32)
+    #waveform = nr.reduce_noise(waveform, sr=desired_sample_rate)
     current_datetime = datetime.now()
     current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
     audio_path = os.path.join(DEMO_DIR, "audio_files", str(current_datetime_str))
@@ -138,7 +140,7 @@ def apply_AWGN(waveform, bits=16, snr_min=15, snr_max=30):
     
     return augmented_waveform
 
-def detect_speech(waveform, start_time, end_time, sr, frame_length=2048, hop_length=512, threshold_energy=0.05):
+def detect_speech(waveform, start_time, end_time, sr, frame_length=2048, hop_length=512, threshold_energy=0.01):
     # Calculate energy for each frame
     energy = librosa.feature.rms(y=waveform, frame_length=frame_length, hop_length=hop_length)[0]
 
