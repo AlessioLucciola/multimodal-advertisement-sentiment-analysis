@@ -1,6 +1,7 @@
 import torch
-from config import VIDEO_DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
+from config import PRELOAD_FRAMES, RAVDESS_FRAMES_FILES_DIR, VIDEO_DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
 from dataloaders.video_custom_dataloader import video_custom_dataloader
+from dataloaders.frames_custom_dataloader import frames_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
 from utils.video_utils import select_model
@@ -8,10 +9,21 @@ from utils.video_utils import select_model
 def main():
     set_seed(RANDOM_SEED)
     device = select_device()
-    custom_dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
+    # custom_dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
+    #                                batch_size=BATCH_SIZE,
+    #                                seed=RANDOM_SEED,
+    #                                limit=LIMIT,
+    #                                apply_transformations=APPLY_TRANSFORMATIONS,
+    #                                balance_dataset=BALANCE_DATASET,
+    #                                normalize=NORMALIZE,
+    #                                )
+
+    custom_dataloader = frames_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
                                    batch_size=BATCH_SIZE,
+                                   frames_dir=RAVDESS_FRAMES_FILES_DIR+"/"+VIDEO_DATASET_NAME,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
+                                   preload_frames=PRELOAD_FRAMES,
                                    apply_transformations=APPLY_TRANSFORMATIONS,
                                    balance_dataset=BALANCE_DATASET,
                                    normalize=NORMALIZE,
