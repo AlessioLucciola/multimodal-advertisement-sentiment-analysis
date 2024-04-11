@@ -11,7 +11,7 @@ BALANCE_DATASET = False
 
 USE_DML = False
 USE_MPS = True
-USE_WANDB = True
+USE_WANDB = False
 SAVE_RESULTS = False
 SAVE_MODELS = False
 
@@ -22,8 +22,8 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-LENGTH = 200
-STEP = 150
+LENGTH = 300
+STEP = 200
 BATCH_SIZE = 16
 N_EPOCHS = 5000
 LR = 1e-3
@@ -31,7 +31,7 @@ REG = 0.0001
 # REG = 0
 DROPOUT_P = 0.5
 FAST_LOAD = False
-SAVE_DF = True
+SAVE_DF = False
 # TODO: put this in the dataset configuration (GREX dataset)
 AUGMENTATION_SIZE = 0
 

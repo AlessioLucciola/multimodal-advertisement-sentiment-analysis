@@ -44,18 +44,18 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
 
     config = {
-        "architecture": "EmotionNet - Transformer",
+        "architecture": "EmotionNet - CNN + LSTM",
         "scope": "EmotionNet",
         "learning_rate": LR,
         "epochs": N_EPOCHS,
         "reg": REG,
         "batch_size": BATCH_SIZE,
-        "num_classes": 5,
+        "num_classes": 10,
         "dataset": "GREX",
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
-        "balance_dataset": False,
+        "balance_dataset": BALANCE_DATASET,
         "limit": LIMIT,
         "length": LENGTH,
         "step": STEP,

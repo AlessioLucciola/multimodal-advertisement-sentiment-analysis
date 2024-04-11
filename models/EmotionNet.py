@@ -102,33 +102,31 @@ class EmotionNet(nn.Module):
 
             nn.Flatten()
         )
-        self.lstm = nn.LSTM(input_size=200,
-                            hidden_size=64,
-                            num_layers=3,
+        self.lstm = nn.LSTM(input_size=10,
+                            hidden_size=128,
+                            num_layers=2,
                             batch_first=True,
                             dropout=dropout,
                             bidirectional=False
                             )
 
-        # RNN branch
-        # self.rnn = nn.RNN(1, 64, num_layers=2, batch_first=True)
-        self.rnn = nn.LSTM(2, 32, num_layers=1, batch_first=True)
-
         # Fully connected layers
         self.fc_layers = nn.Sequential(
-            nn.Linear(8064, 1024),
+            nn.Linear(4928, 1024),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(1024, 2 * num_classes)
         )
 
-    def forward(self, x, spatial_features, temporal_features):
+    def forward(self, x, spatial_features):
         # CNN branch
         # print(f"features: {features.shape}")
         # print(spatial_features.shape)
         # print(
         #     f'x` shape: {x.shape}, spatial_features shape: {spatial_features.shape}')
-        lstm_out, _ = self.lstm(spatial_features)
+        x_lstm = torch.squeeze(spatial_features, 1)
+        x_lstm = x_lstm.permute(0, 2, 1)
+        lstm_out, _ = self.lstm(x_lstm)
         last_hidden_state = lstm_out[:, -1, :]
         spatial_features = spatial_features.unsqueeze(1)
         cnn_out = self.cnn_layers(spatial_features)

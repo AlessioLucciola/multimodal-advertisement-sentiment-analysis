@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from datasets.GREX_dataset import GREXDataset
 from scipy.interpolate import CubicSpline
-from utils.ppg_utils import fft, onsets_and_hr, power_spectrum, wavelet_transform
+from utils.ppg_utils import wavelet_transform
 
 
 class GREXTransform:
@@ -157,16 +157,6 @@ class GREXDataLoader(DataLoader):
 
         self.ppg = torch.tensor(physio_trans_data_segments['filt_PPG'])
 
-        # self.ppg = (self.ppg - self.ppg.mean(dim=0, keepdim=True)
-        #             ) / self.ppg.std(dim=0, keepdim=True)
-
-        # self.ppg = self.ppg - self.ppg.min(dim=0, keepdim=True)[0] / \
-        #     (self.ppg.max(dim=0, keepdim=True)[
-        #      0] - self.ppg.min(dim=0, keepdim=True)[0])
-
-        # assert self.ppg.mean(dim=0).mean() < 1e-6, self.ppg.mean(dim=0).sum()
-        # assert self.ppg.std(dim=0).mean() - 1 < 1e-6, self.ppg.std(dim=0).sum()
-
         self.valence = torch.tensor(annotations['vl_seg']) - 1
         self.arousal = torch.tensor(annotations['ar_seg']) - 1
         self.uncertain = annotations['unc_seg']
@@ -190,20 +180,20 @@ class GREXDataLoader(DataLoader):
 
         self.data = df
 
-        std = self.data["ppg"].apply(lambda x: x.std())
-        mean = self.data["ppg"].apply(lambda x: x.mean())
+        # Apply standardization
+        # std = self.data["ppg"].apply(lambda x: x.std())
+        # mean = self.data["ppg"].apply(lambda x: x.mean())
+        # self.data["ppg"] = self.data["ppg"].apply(
+        #     lambda x: (x - mean.mean()) / std.mean())
 
-        self.data["ppg"] = self.data["ppg"].apply(
-            lambda x: (x - mean.mean()) / std.mean())
+        tqdm.pandas()
+        self.data["ppg_spatial_features"] = self.data["ppg"].progress_apply(
+            wavelet_transform)
 
-        # old_len = len(self.data)
-        # self.data = self.remove_bad_quality_samples(self.data)
-        # new_len = len(self.data)
-        # print(f"Removed {old_len - new_len} bad quality samples")
-        # raise ValueError
+        self.data = self.slice_data(self.data)
 
         self.train_df, self.val_df = train_test_split(
-            self.data, test_size=0.3, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
+            self.data, test_size=0.2, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
         # TODO: just for debug reasons to see if stratify is better, remove later
         self.test_df = self.val_df
 
@@ -231,25 +221,6 @@ class GREXDataLoader(DataLoader):
             f"Valence count VAL: {self.val_df['val'].value_counts()}")
         print(
             f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
-
-        tqdm.pandas()
-        self.train_df["ppg_spatial_features"] = self.train_df["ppg"].progress_apply(
-            wavelet_transform)
-        self.val_df["ppg_spatial_features"] = self.val_df["ppg"].progress_apply(
-            wavelet_transform)
-        self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
-            wavelet_transform)
-
-        # self.train_df["ppg_temporal_features"] = self.train_df["ppg"].progress_apply(
-        #     onsets_and_hr)
-        # self.val_df["ppg_temporal_features"] = self.val_df["ppg"].progress_apply(
-        #     onsets_and_hr)
-        # self.test_df["ppg_temporal_features"] = self.test_df["ppg"].progress_apply(
-        #     onsets_and_hr)
-
-        self.train_df = self.slice_data(self.train_df)
-        self.val_df = self.slice_data(self.val_df)
-        self.test_df = self.slice_data(self.test_df)
 
         if SAVE_DF:
             # TODO: implement serialization and deserialization
@@ -309,19 +280,6 @@ class GREXDataLoader(DataLoader):
                 new_df.append(new_row)
 
         new_df = pd.DataFrame(new_df)
-        for i, row in new_df.iterrows():
-            wavelet = row["ppg_spatial_features"]
-            print(f"Wavelet shape: {wavelet.shape}")
-
-        # new_df.to_csv("sliced_ppg.csv", index=False)
-        # Convert the numpy arrays to PyTorch tensors and concatenate them
-        # ppg_tensors = torch.cat([torch.from_numpy(x) for x in new_df['ppg']])
-        # # Calculate the mean and standard deviation
-        # mean = ppg_tensors.mean()
-        # std = ppg_tensors.std()
-        # # Standardize the ppg column
-        # new_df['ppg'] = new_df['ppg'].apply(lambda x: (
-        #     (torch.from_numpy(x) - mean) / std).numpy())
         return new_df
 
     def get_train_dataloader(self):

@@ -53,31 +53,13 @@ def statistical_features(x: torch.Tensor | np.ndarray) -> torch.Tensor:
 
 
 def wavelet_transform(x):
-    scale_step = 100
+    scale_step = 200
     # return np.zeros((2000 // scale_step,  2000))  # TODO: for debug
-
+    x = bvp.bvp(x, 100, show=False)["filtered"]
     scales = np.arange(1, len(x) + 1, scale_step)
     coef, freqs = pywt.cwt(x, scales, 'morl')
     # print(f"coef: {coef.shape}")
     return coef
-
-
-def differential_entropy(x):
-    # Estimate the probability density function of x by computing a histogram
-    hist, bin_edges = np.histogram(x, bins='auto', density=True)
-    # Compute the differential entropy
-    diff_entropy = -np.sum(hist * np.log2(hist + np.finfo(float).eps))
-
-    return diff_entropy
-
-
-def fft(x):
-    spectrum = np.abs(np.fft.rfft(x))
-    # normalized_spectrum = spectrum / sum(spectrum)
-    # normalized_frequencies = np.linspace(0, 1, len(spectrum))
-    # centroid = sum(normalized_frequencies * normalized_spectrum)
-    print(f'spectrum: {spectrum.shape}')
-    return spectrum
 
 
 def onsets_and_hr(x):
