@@ -32,7 +32,19 @@ def create_ravdess_csv_from_frames(path):
     statement = []
     repetition = []
     actor = []
+    frame = []
     for file in os.listdir(os.path.join(RAVDESS_FRAMES_FILES_DIR, path)):
+        # For example: 01-01-03-01-01-02-05_72.png:
+        # fileNname = 01-01-03-01-01-02-05_72.png
+        # Modality  = 01
+        # Vocal channel = 01
+        # Emotion = 03
+        # Emotion intensity = 01
+        # Statement = 01
+        # Repetition = 02
+        # Actor = 05
+        # Frame = 72
+
         file_names.append(file)
         file_info = file.split("_")[0].split("-")
         emotion.append(int(file_info[2])-1)
@@ -40,8 +52,9 @@ def create_ravdess_csv_from_frames(path):
         statement.append(int(file_info[4])-1)
         repetition.append(int(file_info[5])-1)
         actor.append(int(file_info[6])-1)
+        frame.append(int(file.split("_")[1].split(".")[0]))
 
-    data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor}
+    data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "frame": frame}
     df = pd.DataFrame(data)
     df.to_csv(DATASET_DIR + "/" + "ravdess_frames" +".csv", index=False)
 
@@ -73,13 +86,13 @@ def create_ravdess_csv_from_frames_w_pixels(path):
         img = ' '.join(str(p) for p in img)
         pixels_list.append(img)
 
-    data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "pixels": pixels_list}
+    data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor}
     df = pd.DataFrame(data)
     df.to_csv(DATASET_DIR + "/" + frames_path +"_w_pixels.csv", index=False)
 
 if __name__ == "__main__":
-    frames_path = 'ravdess_frames_128x128' # ravdess_frames_48x48 | ravdess_frames_128x128 | ravdess_frames_224x224
+    frames_path = 'ravdess_frames_224x224' # ravdess_frames_48x48 | ravdess_frames_128x128 | ravdess_frames_224x224
     # Comment / Uncomment the following lines to generate the desired CSV files
     create_ravdess_csv_from_video()
     create_ravdess_csv_from_frames(frames_path)
-    create_ravdess_csv_from_frames_w_pixels(frames_path)
+    # create_ravdess_csv_from_frames_w_pixels(frames_path)

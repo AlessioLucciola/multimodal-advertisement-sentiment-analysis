@@ -2,6 +2,7 @@ from utils.utils import save_results, set_seed, select_device, upload_scaler
 from config import *
 from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
+from dataloaders.video_custom_dataloader import video_custom_dataloader
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from tqdm import tqdm
@@ -11,7 +12,7 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import RAVDESS_emotion_mapping
+from shared.constants import general_emotion_mapping
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from utils.video_utils import select_model
 
@@ -167,7 +168,7 @@ def video_live_test(model):
                 log_ps = model.cpu()(X)
                 ps = torch.exp(log_ps)
                 top_p, top_class = ps.topk(1, dim=1)
-                pred = RAVDESS_emotion_mapping[int(top_class.numpy())]
+                pred = general_emotion_mapping[int(top_class.numpy())]
             cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
         
         cv2.imshow('frame', frame)

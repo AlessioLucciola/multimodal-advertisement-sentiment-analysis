@@ -62,7 +62,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                 
                 face = cv2.resize(face, resolution) # Resize face
 
-                face = face[5:-5, 5:-5] # Remove black border
+                # face = face[5:-5, 5:-5] # Remove black border
 
                 cv2.imwrite(output_path + f'/{filename}_{count}' + '.png', face) # Save face
             count += 1

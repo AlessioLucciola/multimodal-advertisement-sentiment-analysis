@@ -30,10 +30,7 @@ class video_custom_dataloader:
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
         
         # Drop unnecessary columns, mantain only 'pixels' and 'emotion' columns
-        self.data = self.data.drop(['file_name'], axis=1) 
-        self.data = self.data.drop(['emotion_intensity'], axis=1) 
-        self.data = self.data.drop(['repetition'], axis=1) 
-        self.data = self.data.drop(['actor'], axis=1)
+        self.data = self.data.drop(columns=["file_name", "emotion_intensity", "repetition", "actor"])
 
         # Split the dataset
         self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)

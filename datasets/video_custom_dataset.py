@@ -4,7 +4,6 @@ from config import IMG_SIZE
 import pandas as pd
 import numpy as np
 from torchvision import transforms
-from shared.constants import RAVDESS_emotion_mapping
 from PIL import Image
 import random
 from collections import Counter
@@ -21,7 +20,7 @@ class video_custom_dataset(Dataset):
                  is_train_dataset: bool = True,
                  apply_transformations: bool = True,
                  balance_dataset: bool = True,
-                 normalize: bool = False,
+                 normalize: bool = True,
                  ):
         self.data = data
         self.is_train_dataset = is_train_dataset
@@ -32,7 +31,7 @@ class video_custom_dataset(Dataset):
         train_tfms, val_tfms = self.get_transformations()
         self.transformations = train_tfms if self.is_train_dataset else val_tfms            
         self.tensor_transform = transforms.ToTensor()
-        self.emotions = RAVDESS_emotion_mapping
+
         # Reset index
         self.data.reset_index(drop=True, inplace=True)
 
@@ -117,17 +116,17 @@ class video_custom_dataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        row = self.data.iloc[idx]
-        img_id = int(row['emotion'])
-        img = np.copy(row[self.pix_cols].values.reshape(IMG_SIZE))
-        img.setflags(write=True)
+        row = self.data.iloc[idx] # Get the row at the given index
+        img_id = int(row['emotion']) # Get the image id (emotion)
+        img = np.copy(row[self.pix_cols].values.reshape(IMG_SIZE)) # Reshape the image to 48x48
+        img.setflags(write=True) # Set the write flag to True
 
         # Apply transformations to the image if provided
         if self.transformations:
-            img = Image.fromarray(img)
-            img = self.transformations(img)
+            img = Image.fromarray(img) # Convert to PIL image
+            img = self.transformations(img) # Apply transformations
         else:
-            img = self.tensor_transform(img)
+            img = self.tensor_transform(img) # Convert to tensor
             
         return img, img_id
     

@@ -62,7 +62,7 @@ LSTM_NUM_LAYERS = 2
 
 # VIDEO 
 # Dataset configurations
-VIDEO_DATASET_NAME = "ravdess_frames_48x48_w_pixels" # ravdess_frames_48x48_w_pixels | ravdess_frames_128x128_w_pixels | ravdess_frames_224x224_w_pixels 
+VIDEO_DATASET_NAME = "ravdess_frames_224x224" # ravdess_frames_48x48_w_pixels | ravdess_frames_224x224
 DATASET_DIR = os.path.join(DATA_DIR, "VIDEO")   
 RAVDESS_VIDEO_FILES_DIR = os.path.join(DATASET_DIR, "ravdess_video_files")
 RAVDESS_FRAMES_FILES_DIR = os.path.join(DATASET_DIR, "ravdess_frames_files")
@@ -71,11 +71,12 @@ VIDEO_NUM_CLASSES = 8 # Number of classes in the dataset (default: 8)
 NUM_WORKERS = os.cpu_count() # Number of workers for dataloader
 
 # Video configurations
-MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
+MODEL_NAME = 'resnet50' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
-IMG_SIZE = (48, 48) # (48, 48) | (128, 128) | (224, 224)
+IMG_SIZE = (224, 224) # (48, 48) | (128, 128) | (224, 224)
 
 # Train / Validation / Test configurations
+PRELOAD_FRAMES = True # Preload frames if True, load frames on the fly if False
 APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
 NORMALIZE = True # Normalize the images if True, use the original images if False
 LIVE_TEST = True # Test the model on live video if True, test on a video file if False
