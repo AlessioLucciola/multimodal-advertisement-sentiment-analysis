@@ -1,3 +1,4 @@
+from camera_input_live import camera_input_live
 import streamlit as st
 import pyaudio
 import sys
@@ -24,3 +25,6 @@ def get_audio_stream():
             st.write("__________")
         p.terminate()
         return None
+
+def get_video_stream():
+    return camera_input_live(stop_label="Stop video stream", start_label="Start video stream")

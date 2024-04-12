@@ -18,6 +18,7 @@ def main(model_path, audio_file, epoch, live_demo=False):
     model, scaler, _ = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
     features_list = preprocess_audio_file(audio_file, scaler, live_demo)
+    audio_processed_windows = []
     for feature in features_list:
         waveform = feature['waveform'].to(device)
         start_time = feature['start_time']
@@ -28,6 +29,17 @@ def main(model_path, audio_file, epoch, live_demo=False):
         pred = torch.argmax(output, -1).detach()
         emotion = general_emotion_mapping[pred.item()]
         print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
+        audio_processed_windows.append({
+            "start_time": start_time,
+            "end_time": end_time,
+            "longest_voice_segment_start": longest_voice_segment_start,
+            "longest_voice_segment_end": longest_voice_segment_end,
+            "longest_voice_segment_length": feature['longest_voice_segment_length'],
+            "emotion_label": pred.item(),
+            "emotion_string": emotion
+        })
+    print(audio_processed_windows)
+    return audio_processed_windows
 
 def preprocess_audio_file(audio_file, scaler, live_demo, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
     if live_demo:
@@ -97,5 +109,5 @@ if __name__ == "__main__":
     epoch = 484
     model_path = os.path.join("AudioNetCT_2024-04-08_17-00-51")
     # Offline audio file, it you want to test with a live audio stream use the demo instead
-    audio_file_path = os.path.join("data", "AUDIO", "test_audio_real.wav")
+    audio_file_path = os.path.join("data", "AUDIO", "test_audio.wav")
     main(model_path=model_path, audio_file=audio_file_path, epoch=epoch)
