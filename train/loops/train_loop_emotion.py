@@ -1,11 +1,10 @@
 from config import BATCH_SIZE, SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH
 from utils.utils import save_results, save_model, save_configurations, save_scaler
-from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
+from torchmetrics import Accuracy, Recall, Precision, F1Score
 from datetime import datetime
 from tqdm import tqdm
 import torch
 import wandb
-import copy
 
 
 def train_eval_loop(device,
@@ -120,11 +119,19 @@ def train_eval_loop(device,
             tr_epoch_loss_aro.backward()
             optimizer_aro.step()
 
+            # for name, param in model_aro.named_parameters():
+            #     print(
+            #         f"Gradients for the Arousal classifier: {name, param.grad}")
+            # for name, param in model_val.named_parameters():
+            #     print(
+            #         f"Gradients for the Valence classifier: {name, param.grad}")
+
             tr_step += 1
 
         with torch.no_grad():
             loss = (tr_cumulative_loss_val / tr_step +
                     tr_cumulative_loss_aro / tr_step) / 2
+
             tr_preds_val = torch.argmax(epoch_tr_preds_val, -1).detach()
             tr_preds_aro = torch.argmax(epoch_tr_preds_aro, -1).detach()
 
@@ -200,14 +207,11 @@ def train_eval_loop(device,
 
             if config["use_wandb"]:
                 wandb.log(
-                    {"Training Loss": val_loss.item()})
-                wandb.log({"Training Accuracy": (
+                    {"Validation Loss": val_loss.item()})
+                wandb.log({"Validation Accuracy": (
                     (val_accuracy_aro + val_accuracy_val) / 2).item()})
-                wandb.log({"Training Recall": (
+                wandb.log({"Validation Recall": (
                     (val_recall_aro + val_recall_val) / 2).item()})
-
-            # print('Validation -> Epoch [{}/{}], Loss: {:.4f}, Accuracy: {:.4f}%, Recall: {:.4f}%, Precision: {:.4f}%, F1: {:.4f}%, AUROC: {:.4f}%'
-            #       .format(epoch+1, config["epochs"], val_epoch_loss, val_accuracy, val_recall, val_precision, val_f1, val_auroc))
 
             # if best_accuracy is None or val_accuracy < best_accuracy:
             #     best_accuracy = val_accuracy

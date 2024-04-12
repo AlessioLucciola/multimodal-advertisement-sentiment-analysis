@@ -146,9 +146,17 @@ class GREXDataLoader(DataLoader):
 
         self.ppg = torch.tensor(physio_trans_data_segments['filt_PPG'])
 
+        # NOTE: Use valence in [0,4] and arousal in [0,4]
         self.valence = torch.tensor(annotations['vl_seg']) - 1
         self.arousal = torch.tensor(annotations['ar_seg']) - 1
-        self.uncertain = annotations['unc_seg']
+        # self.uncertain = annotations['unc_seg']
+
+        # OR use bad, neutral and good mood
+        self.labels = self.set_labels(self.valence, self.arousal)
+
+        # TODO: just for debug because I'm lazy
+        self.valence = self.labels
+        self.arousal = self.labels
 
         df = []
         for i in range(len(self.ppg)):
@@ -175,9 +183,10 @@ class GREXDataLoader(DataLoader):
         self.data["ppg"] = self.data["ppg"].apply(
             lambda x: (x - ppg_mean) / ppg_std)
 
-        tqdm.pandas()
-        self.data["ppg_spatial_features"] = self.data["ppg"].progress_apply(
-            wavelet_transform)
+        if not LOAD_DF:
+            tqdm.pandas()
+            self.data["ppg_spatial_features"] = self.data["ppg"].progress_apply(
+                wavelet_transform)
 
         if SAVE_DF:
             ppg_spatial_features = np.stack(
@@ -188,16 +197,30 @@ class GREXDataLoader(DataLoader):
         if LOAD_DF:
             ppg_spatial_features = np.load("ppg_spatial_features.npy")
             assert len(self.data) == len(ppg_spatial_features)
-            for i in range(len(self.data)):
-                self.data.iloc[i]["ppg_spatial_features"] = ppg_spatial_features[i].tolist(
-                )
-
-        self.data = self.slice_data(self.data)
+            loaded_df = []
+            for i, row in self.data.iterrows():
+                if i >= len(ppg_spatial_features):
+                    # TODO: see why the i goes until 1235 if len(self.data) is 1213
+                    print(f"Skipping {i}")
+                    continue
+                ppg_spatial_feature = ppg_spatial_features[i]
+                new_row = {"ppg": row["ppg"], "val": row["val"],
+                           "aro": row["aro"], "ppg_spatial_features": ppg_spatial_feature}
+                loaded_df.append(new_row)
+            self.data = pd.DataFrame(loaded_df)
 
         self.train_df, self.val_df = train_test_split(
-            self.data, test_size=0.2, stratify=self.data[["val", "aro"]], random_state=RANDOM_SEED)
+            self.data, test_size=0.3, stratify=self.data[["aro", "val"]], random_state=RANDOM_SEED)
         # TODO: just for debug reasons to see if stratify is better, remove later
         self.test_df = self.val_df
+
+        # self.train_df = self.slice_data(self.train_df)
+        # self.val_df = self.slice_data(self.val_df)
+        # self.test_df = self.slice_data(self.test_df)
+
+        # self.train_df = self.undersample(self.train_df)
+        # self.val_df = self.undersample(self.val_df)
+
         # self.val_df, self.test_df = train_test_split(
         #     temp_df, test_size=0.1, stratify=temp_df[["val", "aro"]], random_state=RANDOM_SEED)
 
@@ -213,23 +236,41 @@ class GREXDataLoader(DataLoader):
         if BALANCE_DATASET:
             self.train_df = GREXTransform(self.train_df).balance()
 
-        print(
-            f"Valence count TRAIN (after balance): {self.train_df['val'].value_counts()}")
-        print(
-            f"Arousal count TRAIN (after balance): {self.train_df['aro'].value_counts()}")
+        # print(
+        #     f"Valence count TRAIN (after balance): {self.train_df['val'].value_counts()}")
+        # print(
+        #     f"Arousal count TRAIN (after balance): {self.train_df['aro'].value_counts()}")
 
         print(
-            f"Valence count VAL: {self.val_df['val'].value_counts()}")
+            f"Train group size: \n{self.train_df.groupby(['aro', 'val']).size()}")
         print(
-            f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
-
-        print(
-            f"Valence count VAL: {self.val_df['val'].value_counts()}")
-        print(
-            f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
+            f"Validation group size: \n {self.val_df.groupby(['aro', 'val']).size()}")
+        # print(
+        #     f"Valence count VAL: {self.val_df['val'].value_counts()}")
+        # print(
+        #     f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
 
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
+
+    def undersample(self, df):
+        # Group by 'aro' and 'val' columns and get the size of each group
+        group_sizes = df.groupby(['aro', 'val']).size()
+
+        # Get the minimum group size
+        min_size = group_sizes.min()
+
+        # Function to apply to each group
+        def undersample_group(group):
+            return group.sample(min_size)
+
+        # Apply the function to each group
+        df_undersampled = df.groupby(['aro', 'val']).apply(undersample_group)
+
+        # Reset the index (groupby and apply result in a multi-index)
+        df_undersampled.reset_index(drop=True, inplace=True)
+
+        return df_undersampled
 
     def slice_data(self, df, length=LENGTH, step=STEP):
         """
@@ -259,7 +300,33 @@ class GREXDataLoader(DataLoader):
                 new_df.append(new_row)
 
         new_df = pd.DataFrame(new_df)
+
+        # # TODO: see if it makes sense to standardize here
+        # ppg_mean = np.stack(new_df["ppg"].to_numpy(), axis=0).mean()
+        # ppg_std = np.stack(new_df["ppg"].to_numpy(), axis=0).std()
+        # new_df["ppg"] = new_df["ppg"].apply(
+        #     lambda x: (x - ppg_mean) / ppg_std)
+
+        # # TODO: see if it makes sense to take the mean on the 0th axis or should I do something different
+        # features_mean = np.stack(
+        #     new_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
+        # features_std = np.stack(
+        #     new_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
+        # new_df["ppg_spatial_features"] = new_df["ppg_spatial_features"].apply(
+        #     lambda x: (x - features_mean) / features_std)
+
         return new_df
+
+    def set_labels(self, valence: torch.Tensor, arousal: torch.Tensor):
+        # bad mood: valence == 0,1; neutral: valence == 2, good: valence = 3,4
+        self.labels = torch.zeros_like(valence)
+        self.labels[(valence == 0) | (valence == 1)] = 0
+        self.labels[valence == 2] = 1
+        self.labels[(valence == 3) | (valence == 4)] = 2
+        print(f"Labels are {self.labels}")
+        return self.labels
+
+    pass
 
     def get_train_dataloader(self):
         dataset = GREXDataset(self.train_df)

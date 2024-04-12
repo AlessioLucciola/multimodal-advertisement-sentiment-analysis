@@ -12,9 +12,9 @@ BALANCE_DATASET = False
 USE_DML = False
 USE_MPS = True
 USE_WANDB = False
-SAVE_RESULTS = False
+SAVE_RESULTS = True
 SAVE_MODELS = False
-
+EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
 RESUME_EPOCH = 67
@@ -23,12 +23,11 @@ RESUME_EPOCH = 67
 
 # Train configurations
 LENGTH = 300
-STEP = 300
+STEP = 150
 BATCH_SIZE = 32
-N_EPOCHS = 5000
-LR = 1e-3
-REG = 0.0001
-# REG = 0
+N_EPOCHS = 200
+LR = 1e-4
+REG = 0.0005
 DROPOUT_P = 0.3
 LOAD_DF = True
 SAVE_DF = False

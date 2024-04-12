@@ -47,37 +47,15 @@ class EmotionNet(nn.Module):
         super(EmotionNet, self).__init__()
         self.num_classes = num_classes
 
-        # CNN branch
-        # self.cnn_layers = nn.Sequential(
-        #     nn.Conv2d(1, 8, 3, stride=1, padding=1),
-        #     nn.BatchNorm2d(8),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=4, stride=4),
-        #     nn.Dropout(dropout),
-
-        #     nn.Conv2d(8, 16, 3, stride=1, padding=1),
-        #     nn.BatchNorm2d(16),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=4, stride=4),
-        #     nn.Dropout(dropout),
-
-        #     nn.Conv2d(16, 32, 3, stride=1, padding=1),
-        #     nn.BatchNorm2d(23),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=4, stride=4),
-        #     nn.Dropout(dropout),
-
-        #     nn.Flatten(),
-        # )
-
         self.cnn_layers = nn.Sequential(
-            ResidualBlock(1, 16, 3, dropout),
+            ResidualBlock(1, 8, 3, dropout),
+            ResidualBlock(8, 16, 3, dropout),
             ResidualBlock(16, 32, 3, dropout),
             nn.Flatten()
         )
 
         self.lstm = nn.LSTM(input_size=100,
-                            hidden_size=128,
+                            hidden_size=64,
                             num_layers=2,
                             batch_first=True,
                             dropout=dropout,
@@ -86,18 +64,13 @@ class EmotionNet(nn.Module):
 
         # Fully connected layers
         self.fc_layers = nn.Sequential(
-            nn.Linear(3584, 1024),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(1024, num_classes)
+            # nn.Linear(1280, 1024),
+            # nn.ReLU(),
+            # nn.Dropout(dropout),
+            nn.Linear(1056, num_classes)
         )
 
     def forward(self, x, spatial_features):
-        # CNN branch
-        # print(f"features: {features.shape}")
-        # print(spatial_features.shape)
-        # print(
-        #     f'x` shape: {x.shape}, spatial_features shape: {spatial_features.shape}')
         x_lstm = torch.squeeze(spatial_features, 1)
         x_lstm = x_lstm.permute(0, 2, 1)
         lstm_out, _ = self.lstm(x_lstm)
@@ -105,18 +78,6 @@ class EmotionNet(nn.Module):
         spatial_features = spatial_features.unsqueeze(1)
         cnn_out = self.cnn_layers(spatial_features)
         out = torch.cat((cnn_out, last_hidden_state), dim=1)
-        # cnn_out = self.cnn_layers_1d(x.unsqueeze(1))
-
-        # RNN branch
-        # rnn_out, _ = self.rnn(temporal_features.view(
-        #     temporal_features.size(0), -1, 2))
-
-        # rnn_out = rnn_out[:, -1, :]  # Take the output from the last time step
-
-        # # # Concatenate the outputs from the two branches
-        # out = torch.cat((cnn_out, rnn_out), dim=1)
-        # Fully connected layers
-        # print(f"cnn_out: {cnn_out.shape}")
         out = self.fc_layers(out)
 
         return out.view(out.size(0), self.num_classes)

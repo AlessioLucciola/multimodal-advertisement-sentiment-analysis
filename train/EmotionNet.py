@@ -1,9 +1,9 @@
 import torch
-from config import AUGMENTATION_SIZE, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
+from config import AUGMENTATION_SIZE, EMOTION_NUM_CLASSES, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
 from dataloaders.GREX_dataloader import GREXDataLoader
-from train.loops.train_loop_emotion import train_eval_loop
+from train.loops.train_loop_emotion_single import train_eval_loop
 from utils.utils import set_seed, select_device
-from models.EmotionNet import EmotionNet
+from models.EmotionNetCL import EmotionNet
 from models.PreProcessedEmotionNet import PreProcessedEmotionNet
 
 
@@ -15,8 +15,10 @@ def main():
     train_loader = loader.get_train_dataloader()
     val_loader = loader.get_val_dataloader()
 
-    model_aro = EmotionNet(num_classes=5, dropout=DROPOUT_P).to(device)
-    model_val = EmotionNet(num_classes=5, dropout=DROPOUT_P).to(device)
+    model_aro = EmotionNet(num_classes=EMOTION_NUM_CLASSES,
+                           dropout=DROPOUT_P).to(device)
+    model_val = EmotionNet(num_classes=EMOTION_NUM_CLASSES,
+                           dropout=DROPOUT_P).to(device)
     model = [model_aro, model_val]
 
     # if RESUME_TRAINING:
@@ -48,7 +50,7 @@ def main():
         "epochs": N_EPOCHS,
         "reg": REG,
         "batch_size": BATCH_SIZE,
-        "num_classes": 5,
+        "num_classes": EMOTION_NUM_CLASSES,
         "dataset": "GREX",
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
