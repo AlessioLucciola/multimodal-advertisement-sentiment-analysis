@@ -9,11 +9,21 @@ from fusion.audio_processing import main as audio_main
 
 # Session states and other variables
 is_components_initialized = False
+if 'run' not in st.session_state:
+    st.session_state['text'] = 'Listening...'
+    st.session_state['run'] = False
+    st.session_state['audio_stream_frames'] = []
+    st.session_state['video_stream_frames'] = []
+    st.session_state['processed_windows'] = None
+
 # Initialize required components
 audio_stream = get_audio_stream()
-if audio_stream is not None:
-    is_components_initialized = True
-video_stream = get_video_stream()
+with st.sidebar:
+    st.title('Settings')
+    audio_stream = get_audio_stream()
+    if audio_stream is not None:
+        is_components_initialized = True
+    video_stream = get_video_stream()
     
 # Functions
 def start_listening():
@@ -61,6 +71,6 @@ if (is_components_initialized):
     col2.button('Stop recording', on_click=stop_listening, key='stop_button')
 
     if "processed_windows" in st.session_state and st.session_state["processed_windows"] is not None:
-        st.write("Processed audio windows:")
+        st.text("Processed audio windows:")
         st.write(st.session_state["processed_windows"])
 
