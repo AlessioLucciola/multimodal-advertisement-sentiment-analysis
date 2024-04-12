@@ -86,13 +86,13 @@ def create_ravdess_csv_from_frames_w_pixels(path):
         img = ' '.join(str(p) for p in img)
         pixels_list.append(img)
 
-    data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor}
+    data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "pixels": pixels_list}
     df = pd.DataFrame(data)
     df.to_csv(DATASET_DIR + "/" + frames_path +"_w_pixels.csv", index=False)
 
 if __name__ == "__main__":
-    frames_path = 'ravdess_frames_224x224' # ravdess_frames_48x48 | ravdess_frames_128x128 | ravdess_frames_224x224
+    frames_path = 'ravdess_frames_48x48' # ravdess_frames_48x48 | ravdess_frames_128x128 | ravdess_frames_224x224
     # Comment / Uncomment the following lines to generate the desired CSV files
-    create_ravdess_csv_from_video()
-    create_ravdess_csv_from_frames(frames_path)
-    # create_ravdess_csv_from_frames_w_pixels(frames_path)
+    # create_ravdess_csv_from_video()
+    # create_ravdess_csv_from_frames(frames_path)
+    create_ravdess_csv_from_frames_w_pixels(frames_path+"_w_pixels")

@@ -1,7 +1,6 @@
 import torch.nn as nn
 import torchvision.transforms as transforms
 import timm
-
 from config import DROPOUT_P
 
 class VideoViTPretrained(nn.Module):

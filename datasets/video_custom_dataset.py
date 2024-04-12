@@ -1,93 +1,98 @@
-from matplotlib import pyplot as plt
+from collections import Counter
+from pathlib import Path
 from torch.utils.data import Dataset
-from config import IMG_SIZE
+import random
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 from torchvision import transforms
 from PIL import Image
-import random
-from collections import Counter
-from tqdm import tqdm
-
-import warnings
-warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
-warnings.simplefilter("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
 
 class video_custom_dataset(Dataset):
-    def __init__(self, 
-                 data: pd.DataFrame, 
+    def __init__(self,
+                 data: pd.DataFrame,
+                 files_dir: str,
                  is_train_dataset: bool = True,
-                 apply_transformations: bool = True,
+                 preload_frames: bool = True,
                  balance_dataset: bool = True,
+                 apply_transformations: bool = True,
                  normalize: bool = True,
                  ):
         self.data = data
+        self.files_dir = Path(files_dir)
         self.is_train_dataset = is_train_dataset
+        self.dataset_size = len(self.data)
+        self.preload_frames_files = preload_frames
         self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
         self.normalize = normalize
-        
-        train_tfms, val_tfms = self.get_transformations()
-        self.transformations = train_tfms if self.is_train_dataset else val_tfms            
+
+        # Get transformations
+        self.transformations = self.get_transformations()
         self.tensor_transform = transforms.ToTensor()
 
-        # Reset index
-        self.data.reset_index(drop=True, inplace=True)
-
         # Balance the dataset
-        if self.balance_dataset and self.is_train_dataset: 
-            data = self.apply_balance_dataset(data)
-            data = data.drop(['balanced'], axis=1)
+        if self.balance_dataset and self.is_train_dataset:
+            self.data = self.apply_balance_dataset(self.data)
+            print(f"--Dataset-- Training dataset size: {self.dataset_size}")            
 
-        # Convert pixels to numpy array 
-        print("--Data Conversion-- Converting pixels to numpy array.")
-        pixels_values = [[int(i) for i in pix.split()]
-                         for pix in tqdm(self.data.pixels)]   # For storing pixel values
-        pixels_values = np.array(pixels_values)
+        # Preload frames files
+        if self.preload_frames_files:
+            self.frames = self.read_frames_files()
 
-        # Normalize pixel values
+        # Normalize frames
         if self.normalize:
-            print("--Data Normalization-- normalize set to True. Applying normalization to the images.")
-            pixels_values = pixels_values/255.0 # Normalize pixel values to [0, 1]
-        else:
-            pixels_values = np.array(pixels_values, dtype=np.float32)  # Convert to float
-        self.data.drop(columns=['pixels'], axis=1, inplace=True)
-        self.pix_cols = []  # For keeping track of column names  
+            self.frames = self.normalize_frames()
 
-        # Add pixel values to the dataframe as separate columns      
-        print("--Data Conversion-- Adding pixel values to the dataframe.")  
-        for i in tqdm(range(pixels_values.shape[1])):
-            self.pix_cols.append(f'pixel_{i}') # Column name
-            self.data[f'pixel_{i}'] = pixels_values[:, i] # Add pixel values to the dataframe
-            
-    def get_transformations(self):
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        frame_name = self.data.iloc[idx, 0]
+        emotion = self.data.iloc[idx, 1]
+
+        if self.preload_frames_files:
+            frame = self.frames[frame_name]
+        else:
+            frame = self.get_frame(frame_name)
+            frame = self.transformations(frame)
+
         if self.apply_transformations:
-            print("--Data Transformations-- apply_transformations set to True. Applying transformations to the images.")
-            train_trans = [
-                transforms.RandomCrop(48, padding=4, padding_mode='reflect'), # Random crop
-                transforms.RandomRotation(15), # Random rotation
-                transforms.RandomAffine( # Random affine transformation
-                    degrees=0,
-                    translate=(0.01, 0.12),
-                    shear=(0.01, 0.03),
-                ),
-                transforms.RandomHorizontalFlip(), # Random horizontal flip
-                transforms.ToTensor(),
-            ]
+            frame = self.transformations(frame)
         else:
-            train_trans = [
-                transforms.ToTensor(),
-            ]
+            frame = self.tensor_transform(frame)
 
-        val_trans = [
-            transforms.ToTensor(),
-        ]
+        sample = {'frame': frame, 'emotion': emotion}
 
-        train_transforms = transforms.Compose(train_trans)
-        valid_transforms = transforms.Compose(val_trans)
+        return sample
 
-        return train_transforms, valid_transforms
+    def get_frame(self, frame_name):
+        frame_path = self.files_dir / frame_name
+        with open(frame_path, 'rb') as f:
+            frame = Image.open(f).convert('L')
+
+        return frame
+    
+    def read_frames_files(self):
+        print("--Data Preloading-- Preloading frames files.")
+        frames = {}
+        for frame_name in tqdm(self.data.iloc[:, 0]):
+            frame = self.get_frame(frame_name)
+            frames[frame_name] = frame
+
+        return frames
+    
+    def get_transformations(self):
+        train_tfms = transforms.Compose([
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(degrees=15),
+            transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
+            transforms.ToTensor()
+        ])
+        val_tfms = transforms.Compose([
+            transforms.ToTensor()
+        ])
+        return train_tfms if self.is_train_dataset else val_tfms
     
     def apply_balance_dataset(self, data):
         print("--Data Balance-- balance_data set to True. Training data will be balanced.")
@@ -112,21 +117,22 @@ class video_custom_dataset(Dataset):
 
         return data
     
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        row = self.data.iloc[idx] # Get the row at the given index
-        img_id = int(row['emotion']) # Get the image id (emotion)
-        img = np.copy(row[self.pix_cols].values.reshape(IMG_SIZE)) # Reshape the image to 48x48
-        img.setflags(write=True) # Set the write flag to True
-
-        # Apply transformations to the image if provided
-        if self.transformations:
-            img = Image.fromarray(img) # Convert to PIL image
-            img = self.transformations(img) # Apply transformations
+    def normalize_frames(self):
+        print("--Data Normalization-- Normalizing frames.")
+        frames = {}
+        if self.preload_frames_files:
+            for key in tqdm(self.frames.keys()):
+                frames[key] = np.array(self.frames[key])
+                frames[key] = frames[key] / 255.0
+                frames[key] = transforms.ToPILImage()(frames[key])
         else:
-            img = self.tensor_transform(img) # Convert to tensor
-            
-        return img, img_id
-    
+            # Read frame from disk and normalize
+            for idx in tqdm(range(len(self.data))):
+                frame_name = self.data.iloc[idx, 0]
+                frame = self.get_frame(frame_name)
+                frame = np.array(frame)
+                frame = frame / 255.0
+                frames[frame_name] = frame
+                frames[frame_name] = transforms.ToPILImage()(frames[frame_name])
+       
+        return frames

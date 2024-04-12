@@ -72,7 +72,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
 
 if __name__ == "__main__":
     output_path = 'ravdess_frames'
-    resolution = (128, 128) # (48x48) | (128, 128) | (224, 224)
+    resolution = (48, 48) # (48, 48) | (128, 128) | (224, 224)
 
     filenames = []
     feats = []
