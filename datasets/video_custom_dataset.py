@@ -34,15 +34,15 @@ class video_custom_dataset(Dataset):
         # Balance the dataset
         if self.balance_dataset and self.is_train_dataset:
             self.data = self.apply_balance_dataset(self.data)
-            print(f"--Dataset-- Training dataset size: {self.dataset_size}")            
+            print(f"--Dataset-- Training dataset size: {self.dataset_size}")   
 
         # Preload frames files
         if self.preload_frames_files:
             self.frames = self.read_frames_files()
 
         # Normalize frames
-        if self.normalize:
-            self.frames = self.normalize_frames()
+        # if self.normalize:
+        #     self.frames = self.normalize_frames()
 
     def __len__(self):
         return len(self.data)
@@ -55,9 +55,9 @@ class video_custom_dataset(Dataset):
             frame = self.frames[frame_name]
         else:
             frame = self.get_frame(frame_name)
-            frame = self.transformations(frame)
 
-        if self.apply_transformations:
+        # Apply transformations only to train balanced data
+        if self.apply_transformations and self.is_train_dataset and self.data.iloc[idx, -1]:
             frame = self.transformations(frame)
         else:
             frame = self.tensor_transform(frame)
