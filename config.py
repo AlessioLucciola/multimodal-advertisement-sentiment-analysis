@@ -69,7 +69,7 @@ RAVDESS_FRAMES_FILES_DIR = os.path.join(DATASET_DIR, "ravdess_frames_files")
 VIDEO_METADATA_CSV = os.path.join(DATASET_DIR, VIDEO_DATASET_NAME + ".csv") 
 
 # Video configurations
-MODEL_NAME = 'resnet50' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
+MODEL_NAME = 'vit-pretrained' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
 IMG_SIZE = (224, 224) # (48, 48) | (128, 128) | (224, 224)
 VIDEO_NUM_CLASSES = 8 # Number of classes in the dataset (default: 8)

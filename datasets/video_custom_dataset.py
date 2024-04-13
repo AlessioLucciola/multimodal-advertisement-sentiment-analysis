@@ -69,7 +69,8 @@ class video_custom_dataset(Dataset):
     def get_frame(self, frame_name):
         frame_path = self.files_dir / frame_name
         with open(frame_path, 'rb') as f:
-            frame = Image.open(f).convert('L')
+            frame = Image.open(f)
+            frame = frame.convert('RGB') # Convert to RGB
 
         return frame
     

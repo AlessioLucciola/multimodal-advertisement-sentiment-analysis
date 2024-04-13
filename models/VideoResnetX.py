@@ -24,10 +24,6 @@ class ResNet18(nn.Module):
         super(ResNet18, self).__init__()
         self.model = models.resnet18(weights=ResNet18_Weights.DEFAULT)
 
-        # Change the first layer to accept 1 channel
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
         # In features: 512
@@ -79,10 +75,6 @@ class ResNet34(nn.Module):
     def __init__(self, hidden_layers, num_classes, dropout_p=DROPOUT_P):
         super(ResNet34, self).__init__()
         self.model = models.resnet34(weights=ResNet34_Weights.DEFAULT)
-
-        # Change the first layer to accept 1 channel
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
@@ -136,10 +128,6 @@ class ResNet50(nn.Module):
         super(ResNet50, self).__init__()
         self.model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
 
-        # Change the first layer to accept 1 channel
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
         # In features: 512
@@ -191,10 +179,6 @@ class ResNet101(nn.Module):
     def __init__(self, hidden_layers, num_classes, dropout_p=DROPOUT_P):
         super(ResNet101, self).__init__()
         self.model = models.resnet101(weights=ResNet101_Weights.DEFAULT)
-
-        # Change the first layer to accept 1 channel
-        self.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=7, stride=2, padding=3, bias=False)
 
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
