@@ -40,9 +40,8 @@ class video_custom_dataset(Dataset):
         if self.preload_frames_files:
             self.frames = self.read_frames_files()
 
-        # Normalize frames
-        # if self.normalize:
-        #     self.frames = self.normalize_frames()
+        if self.normalize:  
+            print("--Data Normalization-- Frames will be normalized.")
 
     def __len__(self):
         return len(self.data)
@@ -56,8 +55,12 @@ class video_custom_dataset(Dataset):
         else:
             frame = self.get_frame(frame_name)
 
+        # Apply normalization
+        if self.normalize:
+            frame = self.normalize_frame(frame)
+
         # Apply transformations only to train balanced data
-        if self.apply_transformations and self.is_train_dataset and self.data.iloc[idx, -1]:
+        if self.apply_transformations and self.data.iloc[idx, -1]:
             frame = self.transformations(frame)
         else:
             frame = self.tensor_transform(frame)
@@ -118,22 +121,10 @@ class video_custom_dataset(Dataset):
 
         return data
     
-    def normalize_frames(self):
-        print("--Data Normalization-- Normalizing frames.")
-        frames = {}
-        if self.preload_frames_files:
-            for key in tqdm(self.frames.keys()):
-                frames[key] = np.array(self.frames[key])
-                frames[key] = frames[key] / 255.0
-                frames[key] = transforms.ToPILImage()(frames[key])
-        else:
-            # Read frame from disk and normalize
-            for idx in tqdm(range(len(self.data))):
-                frame_name = self.data.iloc[idx, 0]
-                frame = self.get_frame(frame_name)
-                frame = np.array(frame)
-                frame = frame / 255.0
-                frames[frame_name] = frame
-                frames[frame_name] = transforms.ToPILImage()(frames[frame_name])
-       
-        return frames
+    def normalize_frame(self, frame):
+        # Apply ImageNet normalization 
+        frame = self.tensor_transform(frame)
+        frame = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(frame)
+        frame = transforms.ToPILImage()(frame)
+
+        return frame
