@@ -11,7 +11,7 @@ BALANCE_DATASET = False
 
 USE_DML = False
 USE_MPS = True
-USE_WANDB = False
+USE_WANDB = True
 SAVE_RESULTS = True
 SAVE_MODELS = False
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
@@ -22,13 +22,21 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-LENGTH = 300
-STEP = 150
-BATCH_SIZE = 32
-N_EPOCHS = 200
-LR = 1e-4
-REG = 0.0005
+LENGTH = 200
+STEP = 200
+BATCH_SIZE = 64
+N_EPOCHS = 1000
+LR = 0.001
+REG = 0
 DROPOUT_P = 0.3
+# EmotionNet Transformer config
+T_HEAD = 5
+T_ENC_LAYERS = 4
+T_DIM_FFW = 64
+T_KERN = 8
+T_STRIDE = 8
+T_MAXPOOL = True
+
 LOAD_DF = True
 SAVE_DF = False
 # TODO: put this in the dataset configuration (GREX dataset)

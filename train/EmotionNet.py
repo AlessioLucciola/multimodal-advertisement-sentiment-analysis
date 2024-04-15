@@ -1,10 +1,10 @@
 import torch
-from config import AUGMENTATION_SIZE, EMOTION_NUM_CLASSES, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME
+from config import AUGMENTATION_SIZE, EMOTION_NUM_CLASSES, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, T_HEAD, T_ENC_LAYERS, T_DIM_FFW, T_KERN, T_STRIDE, T_MAXPOOL
+
 from dataloaders.GREX_dataloader import GREXDataLoader
 from train.loops.train_loop_emotion_single import train_eval_loop
 from utils.utils import set_seed, select_device
-from models.EmotionNetCL import EmotionNet
-from models.PreProcessedEmotionNet import PreProcessedEmotionNet
+from models.EmotionNetCT import EmotionNet
 
 
 def main():
@@ -62,6 +62,13 @@ def main():
         "dropout_p": DROPOUT_P,
         "agumented_data": AUGMENTATION_SIZE,
         "message": "",
+        "transformer_config": {
+            "num_heads": T_HEAD,
+            "num_encoder_layers": T_ENC_LAYERS,
+            "num_dims_ffw": T_DIM_FFW,
+            "kernel, stride": (T_KERN, T_STRIDE),
+            "maxpool": T_MAXPOOL
+            }
 
     }
 

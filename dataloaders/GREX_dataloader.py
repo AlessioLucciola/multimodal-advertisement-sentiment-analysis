@@ -50,23 +50,6 @@ class GREXTransform:
         shift = np.random.randint(low=-LENGTH, high=LENGTH)
         return np.roll(data, shift)
 
-    # def window_slicing(self, data):
-    #     start = np.random.randint(low=0, high=data.shape[0]//2)
-    #     end = start + \
-    #         np.random.randint(low=data.shape[0]//2, high=data.shape[0])
-    #     sliced_data = data[start:end]
-
-    #     # Calculate the number of zeros to add
-    #     pad_length = 2000 - len(sliced_data)
-
-    #     # Pad the sliced data with zeros at the end
-    #     padded_data = np.pad(sliced_data, (0, pad_length))
-
-    #     return padded_data
-
-    # def flipping(self, data):
-    #     return -data
-
     def apply(self, item, p=0.5):
         self.transformations = {self.jitter,
                                 self.scaling, self.magnitude_warping}
@@ -122,23 +105,6 @@ class GREXDataLoader(DataLoader):
         physio_trans_data_segments = pickle.load(
             open(os.path.join(data_segments_path, "physio_trans_data_segments.pickle"), "rb"))
 
-        # physio_trans_data_session = pickle.load(
-        #     open(os.path.join(data_segments_path, "physio_trans_data_session.pickle"), "rb"))
-
-        # with open('session.json', 'w') as f:
-        #     json.dump(physio_trans_data_session, f, default=str)
-        # with open('segments.json', 'w') as f:
-        #     json.dump(physio_trans_data_segments, f, default=str)
-
-        # session_ppg = physio_trans_data_session['filt_PPG']
-        # segments_ppg = physio_trans_data_segments['filt_PPG']
-        # print(f"Session PPG: {len(session_ppg)}")
-        # print(f"Segment PPG: {len(segments_ppg)}")
-        # for session in session_ppg:
-        #     print(f"Session length: {len(session)}")
-        # for segment in segments_ppg:
-        #     print(f"Segment length: {len(segment)}")
-        # raise ValueError
 
         # NOTE: Important keys here are: 'ar_seg' and "vl_seg"
         annotations = pickle.load(
@@ -162,8 +128,6 @@ class GREXDataLoader(DataLoader):
         for i in range(len(self.ppg)):
             if (self.ppg[i] == 0.0).all():
                 continue
-            # if self.uncertain[i] is not None and self.uncertain[i] >= 2:
-            #     continue
             df.append({"ppg": self.ppg[i].numpy(), "val": int(
                 self.valence[i]), "aro": int(self.arousal[i]), "quality_idx": i})
 
@@ -209,8 +173,13 @@ class GREXDataLoader(DataLoader):
                 loaded_df.append(new_row)
             self.data = pd.DataFrame(loaded_df)
 
+        self.data = self.slice_data(self.data)
+
         self.train_df, self.val_df = train_test_split(
-            self.data, test_size=0.3, stratify=self.data[["aro", "val"]], random_state=RANDOM_SEED)
+                self.data, test_size=0.3,
+                stratify=self.data[["aro", "val"]],
+                random_state=RANDOM_SEED)
+
         # TODO: just for debug reasons to see if stratify is better, remove later
         self.test_df = self.val_df
 
@@ -236,19 +205,10 @@ class GREXDataLoader(DataLoader):
         if BALANCE_DATASET:
             self.train_df = GREXTransform(self.train_df).balance()
 
-        # print(
-        #     f"Valence count TRAIN (after balance): {self.train_df['val'].value_counts()}")
-        # print(
-        #     f"Arousal count TRAIN (after balance): {self.train_df['aro'].value_counts()}")
-
         print(
             f"Train group size: \n{self.train_df.groupby(['aro', 'val']).size()}")
         print(
             f"Validation group size: \n {self.val_df.groupby(['aro', 'val']).size()}")
-        # print(
-        #     f"Valence count VAL: {self.val_df['val'].value_counts()}")
-        # print(
-        #     f"Arousal count VAL: {self.val_df['aro'].value_counts()}")
 
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
