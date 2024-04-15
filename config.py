@@ -22,8 +22,10 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-LENGTH = 200
-STEP = 200
+
+# NOTE: short windows (like 100) improve performances and model accuracy.
+LENGTH = 100
+STEP = 100
 BATCH_SIZE = 64
 N_EPOCHS = 1000
 LR = 0.001
@@ -35,7 +37,8 @@ T_ENC_LAYERS = 4
 T_DIM_FFW = 64
 T_KERN = 8
 T_STRIDE = 8
-T_MAXPOOL = True
+T_MAXPOOL = 2
+
 
 LOAD_DF = True
 SAVE_DF = False

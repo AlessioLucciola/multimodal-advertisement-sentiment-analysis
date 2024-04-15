@@ -23,9 +23,9 @@ class EmotionNet(nn.Module):
         self.fc1_linear = nn.Linear(100, num_classes)
 
     def forward(self, _, x):
-        if T_MAXPOOL:
+        if T_MAXPOOL != 0:
             x = x.unsqueeze(1)
-        for _ in T_MAXPOOL:
+        for _ in range(T_MAXPOOL):
             x = self.transformer_maxpool(x)
             x = torch.squeeze(x, 1)
         x = x.permute(2, 0, 1)
