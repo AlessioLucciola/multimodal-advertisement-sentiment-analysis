@@ -13,7 +13,7 @@ USE_DML = False
 USE_MPS = True
 USE_WANDB = True
 SAVE_RESULTS = True
-SAVE_MODELS = False
+SAVE_MODELS = True
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
@@ -23,7 +23,9 @@ RESUME_EPOCH = 67
 
 # Train configurations
 
-# NOTE: short windows (like 100) improve performances and model accuracy.
+# NOTE: short windows (like 100) improve performances and model accuracy,
+# this should happen only in the slice-split case, since we have less windows
+# in common between train and val.
 LENGTH = 100
 STEP = 100
 BATCH_SIZE = 64
@@ -38,7 +40,8 @@ T_DIM_FFW = 64
 T_KERN = 8
 T_STRIDE = 8
 T_MAXPOOL = 2
-
+# MESSAGE = "Split -> Slice"
+MESSAGE = "Slice -> Split"
 
 LOAD_DF = True
 SAVE_DF = False

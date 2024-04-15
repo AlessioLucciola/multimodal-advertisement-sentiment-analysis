@@ -5,6 +5,7 @@ from datetime import datetime
 from tqdm import tqdm
 import torch
 import wandb
+import copy
 
 
 def train_eval_loop(device,
@@ -47,8 +48,6 @@ def train_eval_loop(device,
         if SAVE_RESULTS:
             # Save configurations in JSON
             save_configurations(data_name, config)
-            if scaler is not None:
-                save_scaler(data_name, scaler)
 
         if config["use_wandb"]:
             wandb.init(
@@ -57,6 +56,8 @@ def train_eval_loop(device,
                 resume=resume,
                 name=data_name
             )
+    best_model = None
+    best_accuracy = None
 
     accuracy_metric = Accuracy(
         task="multiclass", num_classes=config['num_classes']).to(device)
@@ -152,9 +153,10 @@ def train_eval_loop(device,
                            val_accuracy.item()})
                 wandb.log({"Validation Recall": val_recall.item()})
 
-            # if best_accuracy is None or val_accuracy < best_accuracy:
-            #     best_accuracy = val_accuracy
-            #     best_model = copy.deepcopy(model)
+            if best_accuracy is None or val_accuracy < best_accuracy:
+                best_accuracy = val_accuracy
+                best_model = copy.deepcopy(model)
+
             current_results = {
                 'epoch': epoch+1,
                 'training_loss': tr_cumulative_loss.item(),

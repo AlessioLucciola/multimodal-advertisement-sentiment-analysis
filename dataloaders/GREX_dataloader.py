@@ -173,15 +173,23 @@ class GREXDataLoader(DataLoader):
                 loaded_df.append(new_row)
             self.data = pd.DataFrame(loaded_df)
 
-        self.data = self.slice_data(self.data)
+        self.data, self.test_df = train_test_split(self.data,
+                                                   test_size=0.1,
+                                                   stratify=self.data["val"],
+                                                   random_state=RANDOM_SEED)
+
+        # self.data = self.slice_data(self.data)
 
         self.train_df, self.val_df = train_test_split(
                 self.data, test_size=0.3,
-                stratify=self.data[["aro", "val"]],
+                stratify=self.data["val"],
                 random_state=RANDOM_SEED)
 
+        self.train_df = self.slice_data(self.train_df)
+        self.val_df = self.slice_data(self.val_df)
+
         # TODO: just for debug reasons to see if stratify is better, remove later
-        self.test_df = self.val_df
+        # self.test_df = self.val_df
 
         # self.train_df = self.slice_data(self.train_df)
         # self.val_df = self.slice_data(self.val_df)
@@ -206,9 +214,12 @@ class GREXDataLoader(DataLoader):
             self.train_df = GREXTransform(self.train_df).balance()
 
         print(
-            f"Train group size: \n{self.train_df.groupby(['aro', 'val']).size()}")
+            f"Train group size: \n{self.train_df.groupby(['val']).size()}")
         print(
-            f"Validation group size: \n {self.val_df.groupby(['aro', 'val']).size()}")
+            f"Validation group size: \n {self.val_df.groupby(['val']).size()}")
+
+        print(
+            f"Test group size: \n {self.test_df.groupby(['val']).size()}")
 
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
