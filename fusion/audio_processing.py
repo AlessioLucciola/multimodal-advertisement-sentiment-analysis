@@ -28,7 +28,7 @@ def main(model_path, audio_file, epoch, live_demo=False):
         output = model(waveform)
         pred = torch.argmax(output, -1).detach()
         emotion = general_emotion_mapping[pred.item()]
-        print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
+        #print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
         audio_processed_windows.append({
             "start_time": start_time,
             "end_time": end_time,
@@ -36,9 +36,9 @@ def main(model_path, audio_file, epoch, live_demo=False):
             "longest_voice_segment_end": longest_voice_segment_end,
             "longest_voice_segment_length": feature['longest_voice_segment_length'],
             "emotion_label": pred.item(),
-            "emotion_string": emotion
+            "emotion_string": emotion,
+            "logits": torch.softmax(output, -1).cpu().detach().numpy()
         })
-    print(audio_processed_windows)
     return audio_processed_windows
 
 def preprocess_audio_file(audio_file, scaler, live_demo, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):

@@ -1,11 +1,11 @@
 from component_initializer import get_audio_stream, get_video_stream
-from camera_input_live import camera_input_live
+from datetime import datetime
 import streamlit as st
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import *
-from fusion.audio_processing import main as audio_main
+from fusion.fusion_main import main as fusion_main
 
 # Session states and other variables
 is_components_initialized = False
@@ -36,14 +36,20 @@ def stop_listening():
     st.session_state['run'] = False
     audio_stream_frames = b''.join(st.session_state['audio_stream_frames'])
     video_stream_frames = st.session_state['video_stream_frames']
-    st.session_state["processed_windows"] = audio_main(model_path="AudioNetCT_2024-04-08_17-00-51", audio_file=audio_stream_frames, epoch=484, live_demo=True)
-    print(len(video_stream_frames))
+    st.session_state["processed_windows"] = fusion_main(audio_model_path="AudioNetCT_2024-04-08_17-00-51",
+                                                        video_model_path=None,
+                                                        audio_model_epoch=484,
+                                                        video_model_epoch=None,
+                                                        audio_frames=audio_stream_frames,
+                                                        video_frames=video_stream_frames,
+                                                        live_demo=True)
 
 while st.session_state['run']:
     try:
         data = audio_stream.read(8000)
         st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
-        st.session_state['video_stream_frames'].append(video_stream)  # Append data to video stream frames
+        captured_video_frame = tuple((video_stream, datetime.now()))
+        st.session_state['video_stream_frames'].append(captured_video_frame)  # Append data to video stream frames
     except Exception as e:
         st.error('Error recording the audio')
         st.error(e)
