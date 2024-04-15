@@ -125,14 +125,14 @@ def get_model_and_dataloader(model_path, device, type):
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
         
-        dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_RAVDESS_CSV,
-                                             frames_dir=RAVDESS_FRAMES_FILES_DIR_YxY,
+        dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
+                                             frames_dir=FRAMES_FILES_DIR,
                                              batch_size=BATCH_SIZE,
                                              seed=RANDOM_SEED,
                                              limit=LIMIT,
                                              balance_dataset=BALANCE_DATASET,
                                              normalize=NORMALIZE,
-                                   )
+                                             )
         scaler = None
     else:
         raise ValueError(f"Unknown architecture {type}")
@@ -154,16 +154,14 @@ def video_live_test(model, device):
 
     while True:
         ret, frame = cap.read()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
-        faces = face_cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
             # Extract face from the frame
-            face = gray[y:y+h, x:x+w]
-            # Convert to RGB
-            face = cv2.cvtColor(face, cv2.COLOR_GRAY2RGB)
+            face = frame[y:y+h, x:x+w]
+  
             # Resize face
             face = cv2.resize(face, IMG_SIZE)
 

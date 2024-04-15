@@ -1,4 +1,4 @@
-from config import RAVDESS_VIDEO_FILES_DIR, RAVDESS_FRAMES_FILES_DIR, DATASET_DIR
+from config import VIDEO_FILES_DIR, FRAMES_FILES_DIR, VIDEO_DATASET_DIR
 import pandas as pd
 import os
 from tqdm import tqdm
@@ -12,7 +12,7 @@ def create_ravdess_csv_from_video():
     statement = []
     repetition = []
     actor = []
-    for file in os.listdir(RAVDESS_VIDEO_FILES_DIR):
+    for file in os.listdir(VIDEO_FILES_DIR):
         file_names.append(file)
         file_info = file.split("-")
         emotion.append(int(file_info[2])-1)
@@ -23,7 +23,7 @@ def create_ravdess_csv_from_video():
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor}
     df = pd.DataFrame(data)
-    df.to_csv(DATASET_DIR + "/" + "ravdess_original" +".csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_original" +".csv", index=False)
 
 def create_ravdess_csv_from_frames(path):
     file_names = []
@@ -33,16 +33,16 @@ def create_ravdess_csv_from_frames(path):
     repetition = []
     actor = []
     frame = []
-    for file in os.listdir(os.path.join(RAVDESS_FRAMES_FILES_DIR, path)):
+    for file in os.listdir(FRAMES_FILES_DIR):
         # For example: 01-01-03-01-01-02-05_72.png:
         # fileNname = 01-01-03-01-01-02-05_72.png
-        # Modality  = 01
-        # Vocal channel = 01
-        # Emotion = 03
-        # Emotion intensity = 01
-        # Statement = 01
-        # Repetition = 02
-        # Actor = 05
+        # Modality  = 01 (01 = full-AV, 02 = video-only, 03 = audio-only)
+        # Vocal channel = 01 (01 = speech, 02 = song)
+        # Emotion = 03 (01 = neutral, 02 = calm, 03 = happy, 04 = sad, 05 = angry, 06 = fearful, 07 = disgust, 08 = surprised)
+        # Emotion intensity = 01 (01 = normal, 02 = strong). NOTE: There is no strong intensity for the 'neutral' emotion.
+        # Statement = 01 
+        # Repetition = 02 
+        # Actor = 05 (01 to 24)
         # Frame = 72
 
         file_names.append(file)
@@ -56,7 +56,7 @@ def create_ravdess_csv_from_frames(path):
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "frame": frame}
     df = pd.DataFrame(data)
-    df.to_csv(DATASET_DIR + "/" + "ravdess_frames" +".csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_frames.csv", index=False)
 
 def create_ravdess_csv_from_frames_w_pixels(path):
     #  Retrieve size from path and convert into a tuple like (234, 234)
@@ -69,7 +69,7 @@ def create_ravdess_csv_from_frames_w_pixels(path):
     repetition = []
     actor = []
     pixels_list = []
-    for file in tqdm(os.listdir(os.path.join(RAVDESS_FRAMES_FILES_DIR, path))):
+    for file in tqdm(os.listdir(FRAMES_FILES_DIR)):
         file_names.append(file)
         file_info = file.split("_")[0].split("-")
         emotion.append(int(file_info[2])-1)
@@ -78,7 +78,7 @@ def create_ravdess_csv_from_frames_w_pixels(path):
         repetition.append(int(file_info[5])-1)
         actor.append(int(file_info[6])-1)
         # Generate pixels from image
-        img = Image.open(os.path.join(RAVDESS_FRAMES_FILES_DIR, path, file))
+        img = Image.open(os.path.join(FRAMES_FILES_DIR, path, file))
         img = img.convert('L')
         img = img.resize((img_size))
         img = np.array(img)
@@ -88,11 +88,11 @@ def create_ravdess_csv_from_frames_w_pixels(path):
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "pixels": pixels_list}
     df = pd.DataFrame(data)
-    df.to_csv(DATASET_DIR + "/" + frames_path +"_w_pixels.csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_frames_w_pixels.csv", index=False)
 
 if __name__ == "__main__":
-    frames_path = 'ravdess_frames_48x48' # ravdess_frames_48x48 | ravdess_frames_128x128 | ravdess_frames_224x224
+    frames_path = 'ravdess_frames' # ravdess_frames
     # Comment / Uncomment the following lines to generate the desired CSV files
-    # create_ravdess_csv_from_video()
-    # create_ravdess_csv_from_frames(frames_path)
-    create_ravdess_csv_from_frames_w_pixels(frames_path+"_w_pixels")
+    create_ravdess_csv_from_video()
+    create_ravdess_csv_from_frames(frames_path)
+    # create_ravdess_csv_from_frames_w_pixels(frames_path+"_w_pixels")

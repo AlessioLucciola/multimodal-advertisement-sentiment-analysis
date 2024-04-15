@@ -70,18 +70,14 @@ def extract_frames_from_video_file(file, desired_length_seconds):
 
         # Extract frames every interval
         if frame_count % interval == 0:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
-            faces = face_cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+            faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
 
             # Detect faces
             for (x, y, w, h) in faces:
                 # Extract face from the frame
-                face = gray[y:y+h, x:x+w]
-
-                # Convert to RGB
-                face = cv2.cvtColor(face, cv2.COLOR_GRAY2RGB)
+                face = frame[y:y+h, x:x+w]
 
                 # Resize face
                 face = cv2.resize(face, IMG_SIZE)

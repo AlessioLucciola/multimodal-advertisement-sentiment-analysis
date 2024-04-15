@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from config import DF_SPLITTING, RANDOM_SEED
+from config import DF_SPLITTING, RANDOM_SEED, VIDEO_METADATA_FRAMES_CSV
 import pandas as pd
 from datasets.video_custom_dataset import video_custom_dataset
 
@@ -33,8 +33,26 @@ class video_custom_dataloader(DataLoader):
                 self.data = self.data.sample(frac=self.limit, random_state=self.seed)
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
+        # Split the dataset using the original dataset (video)
         self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
         self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)
+
+        # For each video select its frames from the frames dataset
+        # Example:
+        # On the original datasetfile_name is: 01-01-01-01-01-01-01.mp4
+        # On the frames dataset file_name is: 01-01-01-01-01-01-01_1.png
+        # Select all the frames that contain the file_name "01-01-01-01-01-01-01"
+
+        # create a list of file_name without the extension
+        train_file_names = self.data["file_name"].apply(lambda x: x.split(".")[0])
+        val_file_names = self.val_df["file_name"].apply(lambda x: x.split(".")[0])
+        test_file_names = self.test_df["file_name"].apply(lambda x: x.split(".")[0])
+
+        # Load the frames dataset dataset and select the frames that contain the file_name
+        frames_data = pd.read_csv(VIDEO_METADATA_FRAMES_CSV)
+        self.train_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(train_file_names)]
+        self.val_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(val_file_names)]
+        self.test_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(test_file_names)]
 
     def get_train_dataloader(self):
         train_dataset = video_custom_dataset(data=self.train_df, 
