@@ -1,5 +1,5 @@
 from utils.audio_utils import apply_AWGN, extract_waveform_from_audio_file, extract_zcr_features, extract_rms_features, extract_mfcc_features, extract_features
-from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, AUDIO_FILES_DIR, FRAME_LENGTH, HOP_LENGTH, USE_RAVDESS_ONLY, RAVDESS_FILES_DIR, NUM_MFCC
+from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, AUDIO_FILES_DIR, FRAME_LENGTH, HOP_LENGTH, USE_RAVDESS_ONLY, AUDIO_RAVDESS_FILES_DIR, NUM_MFCC
 from collections import Counter
 from pathlib import Path
 from torch.utils.data import Dataset
@@ -53,7 +53,7 @@ class RAVDESSCustomDataset(Dataset):
         if self.preload_audio_files:
             audio_file = np.expand_dims(self.audio_files[self.data.iloc[idx, 0]], axis=0) # Add channel dimension to get a 4D tensor suitable for CNN
         else:
-            waveform = self.get_waveform(os.path.join(RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR, self.data.iloc[idx, 0]))
+            waveform = self.get_waveform(os.path.join(AUDIO_RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR, self.data.iloc[idx, 0]))
             # Apply data augmentation if the audio file is marked as augmented
             if (self.balance_dataset and self.is_train_dataset):
                 if (self.data.iloc[idx, 6] if USE_RAVDESS_ONLY else self.data.iloc[idx, 2]):
@@ -102,7 +102,7 @@ class RAVDESSCustomDataset(Dataset):
     def read_audio_files(self):
         waveform_dict = {}
         for i, audio_file in enumerate(tqdm(self.data.iloc[:, 0], desc="Loading audio files..", leave=False)):
-            waveform = self.get_waveform(os.path.join(RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR, audio_file))
+            waveform = self.get_waveform(os.path.join(AUDIO_RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR, audio_file))
             if (self.balance_dataset and self.is_train_dataset):
                 if (self.data.iloc[i, 6] if USE_RAVDESS_ONLY else self.data.iloc[i, 2]):
                     waveform = apply_AWGN(waveform)

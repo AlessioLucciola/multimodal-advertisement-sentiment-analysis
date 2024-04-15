@@ -40,9 +40,6 @@ class video_custom_dataset(Dataset):
         if self.preload_frames_files:
             self.frames = self.read_frames_files()
 
-        if self.normalize:  
-            print("--Data Normalization-- Frames will be normalized.")
-
     def __len__(self):
         return len(self.data)
     
@@ -50,6 +47,7 @@ class video_custom_dataset(Dataset):
         frame_name = self.data.iloc[idx, 0]
         emotion = self.data.iloc[idx, 1]
 
+        # Get frame from preloaded frames or load it from file
         if self.preload_frames_files:
             frame = self.frames[frame_name]
         else:
@@ -59,7 +57,7 @@ class video_custom_dataset(Dataset):
         if self.normalize:
             frame = self.normalize_frame(frame)
 
-        # Apply transformations only to train balanced data
+        # Apply transformations only to train balanced data (self.data.iloc[idx, -1]: balanced column)
         if self.apply_transformations and self.data.iloc[idx, -1]:
             frame = self.transformations(frame)
         else:
@@ -96,6 +94,7 @@ class video_custom_dataset(Dataset):
         val_tfms = transforms.Compose([
             transforms.ToTensor()
         ])
+        
         return train_tfms if self.is_train_dataset else val_tfms
     
     def apply_balance_dataset(self, data):
@@ -122,7 +121,7 @@ class video_custom_dataset(Dataset):
         return data
     
     def normalize_frame(self, frame):
-        # Apply ImageNet normalization 
+        # Apply ImageNet normalization
         frame = self.tensor_transform(frame)
         frame = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(frame)
         frame = transforms.ToPILImage()(frame)

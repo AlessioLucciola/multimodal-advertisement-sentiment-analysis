@@ -34,7 +34,7 @@ def test_loop(test_model, test_loader, device, model_path, criterion, num_classe
             if type == "AudioNetCT" or type == "AudioNetCL":
                 test_data, test_labels = tr_batch['audio'], tr_batch['emotion'] # data = audio, labels = emotions
             if type == "VideoNet":
-                test_data, test_labels = tr_batch[0], tr_batch[1] # data = pixel, labels = emotions
+                test_data, test_labels = tr_batch['frame'], tr_batch['emotion'] # data = pixel, labels = emotions
             test_data = test_data.to(device)
             test_labels = test_labels.to(device)
 
@@ -87,13 +87,13 @@ def get_model_and_dataloader(model_path, device, type):
     dataloader = None
     scaler = None
     if type == "AudioNetCT":
-        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = AudioNetCT(
             num_classes=num_classes, num_mfcc=num_mfcc, dropout_p=dropout_p).to(device)
-        dataloader = RAVDESSDataLoader(csv_file=METADATA_RAVDESS_CSV if USE_RAVDESS_ONLY else METADATA_ALL_CSV,
-                                        audio_files_dir=RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR,
+        dataloader = RAVDESSDataLoader(csv_file=AUDIO_METADATA_RAVDESS_CSV if USE_RAVDESS_ONLY else AUDIO_METADATA_ALL_CSV,
+                                        audio_files_dir=AUDIO_RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR,
                                         batch_size=BATCH_SIZE,
                                         seed=RANDOM_SEED,
                                         limit=LIMIT,
@@ -103,15 +103,15 @@ def get_model_and_dataloader(model_path, device, type):
                                         )
         scaler = upload_scaler(model_path)
     elif type == "AudioNetCL":
-        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         lstm_hidden_size = LSTM_HIDDEN_SIZE if configurations is None else configurations["lstm_hidden_size"]
         lstm_num_layers = LSTM_NUM_LAYERS if configurations is None else configurations["lstm_num_layers"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = AudioNetCL(
             num_classes=num_classes, num_mfcc=num_mfcc, num_layers=lstm_num_layers, hidden_size=lstm_hidden_size, dropout_p=dropout_p).to(device)
-        dataloader = RAVDESSDataLoader(csv_file=METADATA_RAVDESS_CSV if USE_RAVDESS_ONLY else METADATA_ALL_CSV,
-                                        audio_files_dir=RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR,
+        dataloader = RAVDESSDataLoader(csv_file=AUDIO_METADATA_RAVDESS_CSV if USE_RAVDESS_ONLY else AUDIO_METADATA_ALL_CSV,
+                                        audio_files_dir=AUDIO_RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR,
                                         batch_size=BATCH_SIZE,
                                         seed=RANDOM_SEED,
                                         limit=LIMIT,
@@ -121,16 +121,17 @@ def get_model_and_dataloader(model_path, device, type):
                                         )
         scaler = upload_scaler(model_path)
     elif type == "VideoNet":
-        num_classes = VIDEO_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
         
-        dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
-                                   batch_size=BATCH_SIZE,
-                                   seed=RANDOM_SEED,
-                                   limit=LIMIT,
-                                   balance_dataset=BALANCE_DATASET,
-                                   normalize=NORMALIZE,
+        dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_RAVDESS_CSV,
+                                             frames_dir=RAVDESS_FRAMES_FILES_DIR_YxY,
+                                             batch_size=BATCH_SIZE,
+                                             seed=RANDOM_SEED,
+                                             limit=LIMIT,
+                                             balance_dataset=BALANCE_DATASET,
+                                             normalize=NORMALIZE,
                                    )
         scaler = None
     else:
@@ -145,7 +146,7 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
-def video_live_test(model):
+def video_live_test(model, device):
     val_transform = transforms.Compose([
         transforms.ToTensor()])
 
@@ -156,20 +157,24 @@ def video_live_test(model):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
-        faces = face_cascade.detectMultiScale(frame)
+        faces = face_cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
-            resize_frame = cv2.resize(gray[y:y + h, x:x + w], IMG_SIZE)
-            X = resize_frame/256
-            X = Image.fromarray((X))
-            X = val_transform(X).unsqueeze(0)
-            with torch.no_grad():
-                model.eval()
-                log_ps = model.cpu()(X)
-                ps = torch.exp(log_ps)
-                top_p, top_class = ps.topk(1, dim=1)
-                pred = general_emotion_mapping[int(top_class.numpy())]
-            cv2.putText(frame, pred, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
+            # Extract face from the frame
+            face = gray[y:y+h, x:x+w]
+            # Convert to RGB
+            face = cv2.cvtColor(face, cv2.COLOR_GRAY2RGB)
+            # Resize face
+            face = cv2.resize(face, IMG_SIZE)
+
+            img = Image.fromarray(face)
+            img = val_transform(img).unsqueeze(0)
+            img = img.to(device)
+            output = model(img)
+            pred = torch.argmax(output, -1).detach()
+            emotion = general_emotion_mapping[pred.item()]
+
+            cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
         
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -188,7 +193,7 @@ def main(model_path, epoch):
 
     if LIVE_TEST:
         if type == "VideoNet":
-            video_live_test(model)
+            video_live_test(model, device)
     else:
         test_loader = dataloader.get_test_dataloader(scaler=scaler) if type == "AudioNetCT" or type == "AudioNetCL" else dataloader.get_test_dataloader()
         criterion = torch.nn.CrossEntropyLoss()
@@ -196,7 +201,7 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = PATH_MODEL_TO_RESUME
+    model_path = PATH_MODEL_TO_TEST
     # Specify the epoch number (e.g. 2) or "best" to get best model
     epoch = TEST_EPOCH
 

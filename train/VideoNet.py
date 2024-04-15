@@ -1,5 +1,5 @@
 import torch
-from config import PRELOAD_FRAMES, RAVDESS_FRAMES_FILES_DIR, VIDEO_DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
+from config import PRELOAD_FRAMES, RAVDESS_FRAMES_FILES_DIR_YxY, VIDEO_DATASET_NAME, DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_RAVDESS_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -9,9 +9,9 @@ def main():
     set_seed(RANDOM_SEED)
     device = select_device()
 
-    custom_dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
+    custom_dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_RAVDESS_CSV,
                                    batch_size=BATCH_SIZE,
-                                   frames_dir=RAVDESS_FRAMES_FILES_DIR+"/"+VIDEO_DATASET_NAME,
+                                   frames_dir=RAVDESS_FRAMES_FILES_DIR_YxY,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
                                    preload_frames=PRELOAD_FRAMES,
@@ -23,7 +23,7 @@ def main():
     train_loader = custom_dataloader.get_train_dataloader()
     val_loader = custom_dataloader.get_val_dataloader()
     
-    model = select_model(MODEL_NAME, HIDDEN_SIZE, VIDEO_NUM_CLASSES, DROPOUT_P).to(device)
+    model = select_model(MODEL_NAME, HIDDEN_SIZE, NUM_CLASSES, DROPOUT_P).to(device)
     
     if RESUME_TRAINING:
         model.load_state_dict(torch.load(
@@ -46,8 +46,8 @@ def main():
         "reg": REG,
         "batch_size": BATCH_SIZE,
         "hidden_size": HIDDEN_SIZE,
-        "num_classes": VIDEO_NUM_CLASSES,
-        "dataset": VIDEO_DATASET_NAME,
+        "num_classes": NUM_CLASSES,
+        "dataset": DATASET_NAME,
         "video_dataset": VIDEO_DATASET_NAME,
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
