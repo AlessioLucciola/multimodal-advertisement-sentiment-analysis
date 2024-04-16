@@ -140,7 +140,7 @@ def apply_AWGN(waveform, bits=16, snr_min=15, snr_max=30):
     
     return augmented_waveform
 
-def detect_speech(waveform, start_time, end_time, sr, frame_length=2048, hop_length=512, threshold_energy=0.01):
+def detect_speech(waveform, start_time, end_time, sr, frame_length=2048, hop_length=512, threshold_energy=0.1):
     # Calculate energy for each frame
     energy = librosa.feature.rms(y=waveform, frame_length=frame_length, hop_length=hop_length)[0]
 

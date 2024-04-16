@@ -39,6 +39,10 @@ def main(model_path, audio_file, epoch, live_demo=False):
             "emotion_string": emotion,
             "logits": torch.softmax(output, -1).cpu().detach().numpy()
         })
+    
+    audio_processed_windows = merge_overlapping_windows(audio_processed_windows)
+    for emotion in audio_processed_windows:
+        print(f"Emotion detected from {emotion['longest_voice_segment_start']:.2f}s to {emotion['longest_voice_segment_end']:.2f}s: {emotion['emotion_string']}")
     return audio_processed_windows
 
 def preprocess_audio_file(audio_file, scaler, live_demo, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
@@ -105,9 +109,80 @@ def get_model_and_dataloader(model_path, device, type):
         raise ValueError(f"Unknown architecture {type}")
     return model, scaler, num_classes
 
+def merge_overlapping_windows(data):
+    merged_windows = []
+    current_merge = None
+    
+    # Sort the data based on start_time
+    sorted_data = sorted(data, key=lambda x: (x['emotion_label'], x['start_time']))
+    
+    # Iterate through the sorted data to merge overlapping windows
+    for window in sorted_data:
+        if current_merge is None:
+            current_merge = window
+            current_merge['logits_sum'] = window['logits']
+            current_merge['num_windows'] = 1
+        elif window['emotion_label'] == current_merge['emotion_label'] and window['start_time'] <= current_merge['end_time']:
+            # Check if the current window completely includes the new window
+            if window['end_time'] <= current_merge['end_time']:
+                continue  # Skip the new window since it's completely included in the current one
+            else:
+                # Adjust the start time of the new window
+                if window['start_time'] < current_merge['end_time']:
+                    window['start_time'] = current_merge['end_time']
+                # Merge with the current window
+                current_merge['end_time'] = window['end_time']
+                current_merge['longest_voice_segment_end'] = max(current_merge['longest_voice_segment_end'], window['longest_voice_segment_end'])
+                current_merge['logits_sum'] += window['logits']
+                current_merge['num_windows'] += 1
+        else:
+            # Check for overlaps with the previous window and adjust start time if necessary
+            if current_merge['end_time'] > window['start_time']:
+                window['start_time'] = current_merge['end_time']
+            # Calculate the average logits
+            current_merge['logits'] = current_merge['logits_sum'] / current_merge['num_windows']
+            # Add the current merge to the list
+            merged_windows.append(current_merge)
+            current_merge = window
+            current_merge['logits_sum'] = window['logits']
+            current_merge['num_windows'] = 1
+    
+    # Check if there's a current merge to be added
+    if current_merge is not None:
+        # Calculate the average logits
+        current_merge['logits'] = current_merge['logits_sum'] / current_merge['num_windows']
+        merged_windows.append(current_merge)
+
+    sorted_windows = sorted(merged_windows, key=lambda x: x['num_windows'], reverse=True)
+    
+    # Initialize a set to keep track of occupied time intervals
+    occupied_intervals = set()
+    
+    for window in sorted_windows:
+        start_time = window['longest_voice_segment_start']
+        end_time = window['longest_voice_segment_end']
+        
+        # Check for overlaps with previous windows
+        for interval in occupied_intervals:
+            interval_start, interval_end = interval
+            if start_time < interval_end and end_time > interval_start:
+                # If overlap, adjust the start and end times
+                start_time = max(start_time, interval_end)
+                end_time = start_time + (window['longest_voice_segment_end'] - window['longest_voice_segment_start'])
+        
+        # Update the occupied_intervals set with the adjusted interval
+        occupied_intervals.add((start_time, end_time))
+        
+        # Update the window dictionary with adjusted start and end times
+        window['longest_voice_segment_start'] = start_time
+        window['longest_voice_segment_end'] = end_time
+    
+    return sorted_windows
+    
+
 if __name__ == "__main__":
     epoch = 484
     model_path = os.path.join("AudioNetCT_2024-04-08_17-00-51")
     # Offline audio file, it you want to test with a live audio stream use the demo instead
-    audio_file_path = os.path.join("data", "AUDIO", "test_audio.wav")
+    audio_file_path = os.path.join("data", "AUDIO", "test_audio_real.wav")
     main(model_path=model_path, audio_file=audio_file_path, epoch=epoch)
