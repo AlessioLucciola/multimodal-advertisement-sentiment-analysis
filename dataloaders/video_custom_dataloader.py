@@ -38,6 +38,13 @@ class video_custom_dataloader(DataLoader):
         self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
         self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)
 
+        # Get the subjects for each dataset
+        train_subjects = self.train_df["actor"].unique()
+        val_subjects = self.val_df["actor"].unique()
+        test_subjects = self.test_df["actor"].unique()
+
+        print(f"Train subjects: {train_subjects} \nValidation subjects: {val_subjects} \nTest subjects: {test_subjects}")
+
         # For each video select its frames from the frames dataset
         # Example:
         # On the original datasetfile_name is: 01-01-01-01-01-01-01.mp4
