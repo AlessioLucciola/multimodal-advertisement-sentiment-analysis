@@ -18,7 +18,7 @@ BALANCE_DATASET = True # Balance the dataset if True, use the original dataset i
 NUM_CLASSES = 8 # Number of classes in the dataset (default: 8)
 
 # Test configurations
-PATH_MODEL_TO_TEST = "VideoNet_vit-pretrained_2024-04-16_17-03-48"
+PATH_MODEL_TO_TEST = "VideoNet_resnet34_2024-04-16_20-18-20"
 TEST_EPOCH = 7 # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
@@ -70,7 +70,7 @@ VIDEO_METADATA_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME + "_orig
 VIDEO_METADATA_FRAMES_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME + "_frames.csv")
 
 # Video configurations
-MODEL_NAME = 'vit-pretrained' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
+MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
 IMG_SIZE = (224, 224)
 NUM_WORKERS = os.cpu_count() # Number of workers for dataloader, set to 0 if you want to run the code in a single process

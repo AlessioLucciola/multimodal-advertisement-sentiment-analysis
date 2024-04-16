@@ -33,6 +33,11 @@ class video_custom_dataloader(DataLoader):
                 self.data = self.data.sample(frac=self.limit, random_state=self.seed)
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
+        # Split the dataset
+        # self.split_dataset_from_video_files()
+        self.split_dataset_from_subjects()
+
+    def split_dataset_from_video_files(self):
         # Test 1: Split the dataset using the original dataset (video)
         # Split the subjects using DF_SPLITTING configuration
         self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
@@ -64,47 +69,49 @@ class video_custom_dataloader(DataLoader):
 
         print(f"--Dataloader-- Train dataset size: {self.train_df.__len__()} | Validation dataset size: {self.val_df.__len__()} | Test dataset size: {self.test_df.__len__()}")
         
-        # -----------------------------------------
-        
+    def split_dataset_from_subjects(self):
         # Test 2: Split the dataset using the original dataset (video), x subjects for train, y subjects for val and z subjects for test (where x != y != z)
-        # # Get the subjects
-        # subjects = self.data["actor"].unique()
-        # print(f"--Dataloader-- Subjects: {subjects}")
+        # Get the subjects
+        subjects = self.data["actor"].unique()
+        print(f"--Dataloader-- Subjects: {subjects}")
 
-        # # Split the subjects using DF_SPLITTING configuration
-        # train_subjects, temp_subjects = train_test_split(subjects, test_size=DF_SPLITTING[0], random_state=self.seed)
-        # val_subjects, test_subjects = train_test_split(temp_subjects, test_size=DF_SPLITTING[1], random_state=self.seed)
+        USE_DF_SPLITTING = False
 
-        # # Split the subjects: n - 1 for train, 1 for val and 1 for test
-        # # train_subjects, tmp_subjects = train_test_split(subjects, test_size=0.05, random_state=self.seed)
-        # # val_subjects, test_subjects = train_test_split(tmp_subjects, test_size=0.5, random_state=self.seed)
+        if USE_DF_SPLITTING:
+            # Split the subjects using DF_SPLITTING configuration
+            train_subjects, temp_subjects = train_test_split(subjects, test_size=DF_SPLITTING[0], random_state=self.seed)
+            val_subjects, test_subjects = train_test_split(temp_subjects, test_size=DF_SPLITTING[1], random_state=self.seed)
+        else:
+            # Split the subjects: n - 1 for train, 1 for val and 1 for test
+            train_subjects, tmp_subjects = train_test_split(subjects, test_size=0.05, random_state=self.seed)
+            val_subjects, test_subjects = train_test_split(tmp_subjects, test_size=0.5, random_state=self.seed)
 
-        # print(f"Train subjects: {train_subjects} \nValidation subjects: {val_subjects} \nTest subjects: {test_subjects}")
+        print(f"Train subjects: {train_subjects} \nValidation subjects: {val_subjects} \nTest subjects: {test_subjects}")
 
-        # # For each actor select its frames from the frames dataset
-        # # Example:
-        # # On the original datasetfile_name is: 01-01-01-01-01-01-01.mp4
-        # # On the frames dataset file_name is: 01-01-01-01-01-01-01_1.png
-        # # Select all the frames that contain "*-01_*" in the file_name (actor 01)
+        # For each actor select its frames from the frames dataset
+        # Example:
+        # On the original datasetfile_name is: 01-01-01-01-01-01-01.mp4
+        # On the frames dataset file_name is: 01-01-01-01-01-01-01_1.png
+        # Select all the frames that contain "*-01_*" in the file_name (actor 01)
 
-        # # create a list of file_name without the extension
-        # train_file_names = self.data[self.data["actor"].isin(train_subjects)]["file_name"].apply(lambda x: x.split(".")[0])
-        # val_file_names = self.data[self.data["actor"].isin(val_subjects)]["file_name"].apply(lambda x: x.split(".")[0])
-        # test_file_names = self.data[self.data["actor"].isin(test_subjects)]["file_name"].apply(lambda x: x.split(".")[0])
+        # create a list of file_name without the extension
+        train_file_names = self.data[self.data["actor"].isin(train_subjects)]["file_name"].apply(lambda x: x.split(".")[0])
+        val_file_names = self.data[self.data["actor"].isin(val_subjects)]["file_name"].apply(lambda x: x.split(".")[0])
+        test_file_names = self.data[self.data["actor"].isin(test_subjects)]["file_name"].apply(lambda x: x.split(".")[0])
 
-        # # Save to .csv the selected file names
-        # train_file_names.to_csv("train_file_names.csv", index=False)
-        # val_file_names.to_csv("val_file_names.csv", index=False)
-        # test_file_names.to_csv("test_file_names.csv", index=False)
+        # Save to .csv the selected file names
+        train_file_names.to_csv("train_file_names.csv", index=False)
+        val_file_names.to_csv("val_file_names.csv", index=False)
+        test_file_names.to_csv("test_file_names.csv", index=False)
 
-        # # Load the frames dataset dataset and select the frames that contain the file_name
-        # frames_data = pd.read_csv(VIDEO_METADATA_FRAMES_CSV)
-        # self.train_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(train_file_names)]
-        # self.val_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(val_file_names)]
-        # self.test_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(test_file_names)]
+        # Load the frames dataset dataset and select the frames that contain the file_name
+        frames_data = pd.read_csv(VIDEO_METADATA_FRAMES_CSV)
+        self.train_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(train_file_names)]
+        self.val_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(val_file_names)]
+        self.test_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(test_file_names)]
 
-        # print(f"--Dataloader-- Train dataset size: {self.train_df.__len__()} | Validation dataset size: {self.val_df.__len__()} | Test dataset size: {self.test_df.__len__()}")
-
+        print(f"--Dataloader-- Train dataset size: {self.train_df.__len__()} | Validation dataset size: {self.val_df.__len__()} | Test dataset size: {self.test_df.__len__()}")
+    
     def get_train_dataloader(self):
         train_dataset = video_custom_dataset(data=self.train_df, 
                                               files_dir=self.frames_dir, 
