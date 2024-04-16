@@ -86,6 +86,7 @@ def get_model_and_dataloader(model_path, device, type):
     model = None
     dataloader = None
     scaler = None
+    num_classes = None
     if type == "AudioNetCT":
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
@@ -124,16 +125,15 @@ def get_model_and_dataloader(model_path, device, type):
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
-        
-        dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
-                                             frames_dir=FRAMES_FILES_DIR,
-                                             batch_size=BATCH_SIZE,
-                                             seed=RANDOM_SEED,
-                                             limit=LIMIT,
-                                             balance_dataset=BALANCE_DATASET,
-                                             normalize=NORMALIZE,
-                                             )
-        scaler = None
+        if not LIVE_TEST:
+            dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
+                                                frames_dir=FRAMES_FILES_DIR,
+                                                batch_size=BATCH_SIZE,
+                                                seed=RANDOM_SEED,
+                                                limit=LIMIT,
+                                                balance_dataset=BALANCE_DATASET,
+                                                normalize=NORMALIZE,
+                                                )
     else:
         raise ValueError(f"Unknown architecture {type}")
 
