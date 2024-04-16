@@ -70,9 +70,18 @@ def extract_frames_from_video_file(file, desired_length_seconds):
 
         # Extract frames every interval
         if frame_count % interval == 0:
-
             face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
+
             faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
+                    
+            if len(faces) == 0: # No face detected
+                faces = face_cascade.detectMultiScale(frame, scaleFactor=1.02, minNeighbors=9) # Try again with different parameters
+                if len(faces) == 0: # Still no face detected
+                    continue
+            if len(faces) > 1: # More than one face detected
+                # Choose the most prominent face
+                face = max(faces, key=lambda x: x[2] * x[3])
+                faces = [face]
 
             # Detect faces
             for (x, y, w, h) in faces:
@@ -93,7 +102,6 @@ def extract_frames_from_video_file(file, desired_length_seconds):
                     "start_time": frame_count / frame_rate,
                     "end_time": (frame_count + interval) / frame_rate
                 })
-
         frame_count += 1
     cap.release()
 

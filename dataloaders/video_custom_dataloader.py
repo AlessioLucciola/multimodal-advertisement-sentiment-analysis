@@ -63,6 +63,7 @@ class video_custom_dataloader(DataLoader):
                                               apply_transformations=self.apply_transformations, 
                                               normalize=self.normalize
                                               )
+        print(f"--Dataset-- Validation dataset size: {train_dataset.__len__()}")
         return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
     
     def get_val_dataloader(self):
@@ -74,6 +75,7 @@ class video_custom_dataloader(DataLoader):
                                             apply_transformations=self.apply_transformations, 
                                             normalize=self.normalize
                                             )
+        print(f"--Dataset-- Validation dataset size: {val_dataset.__len__()}")
         return DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
     
     def get_test_dataloader(self):
@@ -85,4 +87,5 @@ class video_custom_dataloader(DataLoader):
                                              apply_transformations=self.apply_transformations, 
                                              normalize=self.normalize
                                              )
+        print(f"--Dataset-- Validation dataset size: {test_dataset.__len__()}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)

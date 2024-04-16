@@ -146,17 +146,25 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
-def video_live_test(model, device):
+def video_live_test(model, cap, device):
     val_transform = transforms.Compose([
         transforms.ToTensor()])
 
-    cap = cv2.VideoCapture(0)
-
     while True:
         ret, frame = cap.read()
-
         face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
+
         faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
+                    
+        if len(faces) == 0: # No face detected
+            faces = face_cascade.detectMultiScale(frame, scaleFactor=1.02, minNeighbors=9) # Try again with different parameters
+            if len(faces) == 0: # Still no face detected
+                continue
+        if len(faces) > 1: # More than one face detected
+            # Choose the most prominent face
+            face = max(faces, key=lambda x: x[2] * x[3])
+            faces = [face]
+
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
             # Extract face from the frame
@@ -172,7 +180,8 @@ def video_live_test(model, device):
             pred = torch.argmax(output, -1).detach()
             emotion = general_emotion_mapping[pred.item()]
 
-            cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)
+            cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
+
         
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -191,7 +200,11 @@ def main(model_path, epoch):
 
     if LIVE_TEST:
         if type == "VideoNet":
-            video_live_test(model, device)
+            if USE_OFFLINE_VIDEO:
+                cap = cv2.VideoCapture(VIDEO_OFFLINE_FILE)
+            else:
+                cap = cv2.VideoCapture(0)
+            video_live_test(model, cap, device)
     else:
         test_loader = dataloader.get_test_dataloader(scaler=scaler) if type == "AudioNetCT" or type == "AudioNetCL" else dataloader.get_test_dataloader()
         criterion = torch.nn.CrossEntropyLoss()

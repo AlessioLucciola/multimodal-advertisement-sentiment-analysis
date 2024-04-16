@@ -34,7 +34,6 @@ class video_custom_dataset(Dataset):
         # Balance the dataset
         if self.balance_dataset and self.is_train_dataset:
             self.data = self.apply_balance_dataset(self.data)
-            print(f"--Dataset-- Training dataset size: {self.dataset_size}")   
 
         # Preload frames files
         if self.preload_frames_files:
