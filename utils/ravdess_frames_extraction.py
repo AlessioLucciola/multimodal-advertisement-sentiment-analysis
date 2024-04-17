@@ -1,6 +1,6 @@
 import os
 import cv2
-from config import RAVDESS_VIDEO_FILES_DIR, RAVDESS_FRAMES_FILES_DIR, DATASET_DIR
+from config import VIDEO_FILES_DIR, FRAMES_FILES_DIR, VIDEO_DATASET_DIR
 
 # To keep track of frames with no face or multiple faces
 no_face = []
@@ -9,7 +9,7 @@ multiple_faces = []
 def prepare_all_videos(filenames, paths, output_path, resolution, skip=1):
     # Create output directory
     resolution_name = f'_{resolution[0]}x{resolution[1]}'
-    output_path = RAVDESS_FRAMES_FILES_DIR + "/"+ output_path + resolution_name
+    output_path = FRAMES_FILES_DIR
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -34,7 +34,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
             if (count % skip == 0 and count > 20):
                 if not ret:
                     break
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
                 faces = haar_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
                     
                 if len(faces) == 0: # No face detected
@@ -44,7 +44,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                         print(f"No face detected in {filename}")
                         no_face.append(filename)
                         # Save list on disk
-                        with open(DATASET_DIR + '/TOREMOVE_no_face.txt', 'w') as f:
+                        with open(VIDEO_DATASET_DIR + '/TOREMOVE_no_face.txt', 'w') as f:
                             for item in no_face:
                                 f.write("%s\n" % item)
 
@@ -53,7 +53,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                     print(f"More than one face detected in {filename}")
                     multiple_faces.append(filename)
                     # Save list on disk
-                    with open(DATASET_DIR + '/TOREMOVE_multiple_faces.txt', 'w') as f:
+                    with open(VIDEO_DATASET_DIR + '/TOREMOVE_multiple_faces.txt', 'w') as f:
                         for item in multiple_faces:
                             f.write("%s\n" % item)
 
@@ -62,7 +62,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                 
                 face = cv2.resize(face, resolution) # Resize face
 
-                face = face[5:-5, 5:-5] # Remove black border
+                # face = face[5:-5, 5:-5] # Remove black border
 
                 cv2.imwrite(output_path + f'/{filename}_{count}' + '.png', face) # Save face
             count += 1
@@ -72,14 +72,14 @@ def save_frames(filename, input_path, output_path, resolution, skip):
 
 if __name__ == "__main__":
     output_path = 'ravdess_frames'
-    resolution = (128, 128) # (48x48) | (128, 128) | (224, 224)
+    resolution = (224, 224)
 
     filenames = []
     feats = []
     labels = []
     paths = []
 
-    for (dirpath, dirnames, fn) in os.walk(RAVDESS_VIDEO_FILES_DIR):
+    for (dirpath, dirnames, fn) in os.walk(VIDEO_FILES_DIR):
         for name in fn:
             filename = name.split('.')[0]
             feat = filename.split('-')[2:]

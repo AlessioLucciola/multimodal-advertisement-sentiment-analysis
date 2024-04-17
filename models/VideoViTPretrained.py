@@ -1,7 +1,6 @@
 import torch.nn as nn
-import torchvision.transforms as transforms
 import timm
-
+import numpy as np
 from config import DROPOUT_P
 
 class VideoViTPretrained(nn.Module):
@@ -36,10 +35,10 @@ class VideoViTPretrained(nn.Module):
         self.classifier = nn.Sequential(*self.layers)
         self.model.head = self.classifier
 
-        self.resize = transforms.Resize((224, 224))  # Resize input to 224x224
+        model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
+        params = sum([np.prod(p.size()) for p in model_parameters])
+        print(f'Model has {params} trainable params.')
 
     def forward(self, x):
-        x = self.resize(x)  # Resize input to match model's expected size
-        x = x.repeat(1, 3, 1, 1)  # Repeat the single channel input to have 3 channels
         x = self.model(x)
         return x

@@ -1,9 +1,9 @@
-from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, RAVDESS_NUM_CLASSES, RANDOM_SEED
+from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, NUM_CLASSES, RANDOM_SEED
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
 from utils.utils import upload_scaler, select_device, set_seed
-from shared.constants import general_emotion_mapping
+from shared.constants import RAVDESS_emotion_mapping
 import numpy as np
 import torch
 import json
@@ -24,7 +24,7 @@ def main(model_path, audio_file_path, epoch):
         longest_voice_segment_end = feature['longest_voice_segment_end']
         output = model(waveform)
         pred = torch.argmax(output, -1).detach()
-        emotion = general_emotion_mapping[pred.item()]
+        emotion = RAVDESS_emotion_mapping[pred.item()]
         print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
 
 def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
@@ -80,14 +80,14 @@ def get_model_and_dataloader(model_path, device, type):
     model = None
     scaler = None
     if type == "AudioNetCT":
-        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = AudioNetCT(
             num_classes=num_classes, num_mfcc=num_mfcc, dropout_p=dropout_p).to(device)
         scaler = upload_scaler(model_path)
     elif type == "AudioNetCL":
-        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         lstm_hidden_size = LSTM_HIDDEN_SIZE if configurations is None else configurations["lstm_hidden_size"]
         lstm_num_layers = LSTM_NUM_LAYERS if configurations is None else configurations["lstm_num_layers"]
