@@ -125,7 +125,7 @@ def get_model_and_dataloader(model_path, device, type):
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
-        if not LIVE_TEST:
+        if not USE_VIDEO:
             dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
                                                 frames_dir=FRAMES_FILES_DIR,
                                                 batch_size=BATCH_SIZE,
@@ -136,7 +136,7 @@ def get_model_and_dataloader(model_path, device, type):
                                                 )
     else:
         raise ValueError(f"Unknown architecture {type}")
-
+    
     return model, dataloader, scaler, num_classes
 
 def load_test_model(model, model_path, epoch, device):
@@ -146,7 +146,7 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
-def video_live_test(model, cap, device):
+def video_test(model, cap, device):
     val_transform = transforms.Compose([
         transforms.ToTensor()])
 
@@ -198,17 +198,21 @@ def main(model_path, epoch):
     model, dataloader, scaler, num_classes = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
 
-    if LIVE_TEST:
-        if type == "VideoNet":
-            if USE_OFFLINE_VIDEO:
-                cap = cv2.VideoCapture(VIDEO_OFFLINE_FILE)
-            else:
+    if type == "VideoNet":
+        if USE_VIDEO:
+            if LIVE_VIDEO:
+                print("--Test-- Live video test")
                 cap = cv2.VideoCapture(0)
-            video_live_test(model, cap, device)
-    else:
-        test_loader = dataloader.get_test_dataloader(scaler=scaler) if type == "AudioNetCT" or type == "AudioNetCL" else dataloader.get_test_dataloader()
-        criterion = torch.nn.CrossEntropyLoss()
-        test_loop(model, test_loader, device, model_path, criterion, num_classes)
+            else:
+                print("--Test-- Offline video test")
+                cap = cv2.VideoCapture(VIDEO_OFFLINE_FILE)
+            video_test(model, cap, device)
+            return
+        
+    print("--Test-- Test dataset")
+    test_loader = dataloader.get_test_dataloader(scaler=scaler) if type == "AudioNetCT" or type == "AudioNetCL" else dataloader.get_test_dataloader()
+    criterion = torch.nn.CrossEntropyLoss()
+    test_loop(model, test_loader, device, model_path, criterion, num_classes)
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
