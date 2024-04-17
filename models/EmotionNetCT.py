@@ -1,4 +1,4 @@
-from config import DROPOUT_P, T_HEAD, T_ENC_LAYERS, T_DIM_FFW, T_KERN, T_STRIDE, T_MAXPOOL
+from config import DROPOUT_P, T_HEAD, T_ENC_LAYERS, T_DIM_FFW, T_KERN, T_STRIDE, T_MAXPOOL, LENGTH, WAVELET_STEP
 import torch.nn as nn
 import torch
 
@@ -9,8 +9,9 @@ class EmotionNet(nn.Module):
         self.transformer_maxpool = nn.MaxPool2d(
                 kernel_size=[1, T_KERN], stride=[1, T_STRIDE])
 
+        d_model = LENGTH // WAVELET_STEP
         transformer_layer = nn.TransformerEncoderLayer(
-                d_model=100,
+                d_model=d_model,
                 nhead=T_HEAD,
                 dim_feedforward=T_DIM_FFW,
                 dropout=dropout,
@@ -20,7 +21,7 @@ class EmotionNet(nn.Module):
         self.transformer_encoder = nn.TransformerEncoder(
                 transformer_layer, num_layers=T_ENC_LAYERS)
 
-        self.fc1_linear = nn.Linear(100, num_classes)
+        self.fc1_linear = nn.Linear(d_model, num_classes)
 
     def forward(self, _, x):
         if T_MAXPOOL != 0:

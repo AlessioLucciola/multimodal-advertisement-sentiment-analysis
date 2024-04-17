@@ -1,20 +1,17 @@
 import pywt
-from typing import Callable
 import torch
 import numpy as np
 from pyteap.signals.bvp import get_bvp_features
 import pandas as pd
-from tqdm import tqdm
 from scipy.signal import resample
 from biosppy.signals import bvp
-from torch import nn
 
-from config import LENGTH
+from config import WAVELET_STEP
 
 
 def extract_ppg_features(x: torch.Tensor | np.ndarray) -> torch.Tensor:
     x = np.concatenate((x, np.zeros(200)), axis=0)
-    SR = 100
+    SR = 1
     x = resample(x, int(len(x) * SR / 100))
     features = torch.zeros((1, 17))
     return features
@@ -53,10 +50,9 @@ def statistical_features(x: torch.Tensor | np.ndarray) -> torch.Tensor:
 
 
 def wavelet_transform(x):
-    scale_step = 20
     # return np.zeros((2000 // scale_step,  2000))  # TODO: for debug
-    x = bvp.bvp(x, 100, show=False)["filtered"]
-    scales = np.arange(1, len(x) + 1, scale_step)
+    # x = bvp.bvp(x, 100, show=False)["filtered"]
+    scales = np.arange(1, len(x) + 1, WAVELET_STEP)
     coef, freqs = pywt.cwt(x, scales, 'morl')
     # print(f"coef: {coef.shape}")
     return coef

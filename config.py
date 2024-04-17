@@ -1,5 +1,4 @@
 import os
-
 # Common configurations
 DATA_DIR = "data"
 PATH_TO_SAVE_RESULTS = "results"
@@ -7,13 +6,13 @@ RANDOM_SEED = 42
 # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 LIMIT = None
 # Balance the dataset if True, use the original dataset if False
-BALANCE_DATASET = False
+BALANCE_DATASET = True
 
 USE_DML = False
 USE_MPS = True
 USE_WANDB = True
 SAVE_RESULTS = True
-SAVE_MODELS = True
+SAVE_MODELS = False
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
@@ -27,26 +26,29 @@ RESUME_EPOCH = 67
 # this should happen only in the slice-split case, since we have less windows
 # in common between train and val.
 LENGTH = 100
-STEP = 100
-BATCH_SIZE = 64
+STEP = 50
+WAVELET_STEP = 1
+BATCH_SIZE = 128
+
 N_EPOCHS = 1000
-LR = 0.001
+LR = 0.0001
 REG = 0
 DROPOUT_P = 0.3
 # EmotionNet Transformer config
-T_HEAD = 5
+T_HEAD = 4
 T_ENC_LAYERS = 4
-T_DIM_FFW = 64
-T_KERN = 8
-T_STRIDE = 8
-T_MAXPOOL = 2
-# MESSAGE = "Split -> Slice"
-MESSAGE = "Slice -> Split"
+T_DIM_FFW = 128
+T_KERN = 4
+T_STRIDE = 4
+T_MAXPOOL = 0
+# MESSAGE = "Slice -> Wavelet Transform"
+MESSAGE = "Wavelet -> Slice"
 
 LOAD_DF = True
 SAVE_DF = False
 # TODO: put this in the dataset configuration (GREX dataset)
 AUGMENTATION_SIZE = 0
+ADD_NOISE = False
 
 # ----------------------------
 
@@ -63,24 +65,24 @@ USE_RAVDESS_ONLY = True  # Use only RAVDESS dataset if True, use all datasets if
 PRELOAD_AUDIO_FILES = True
 
 # Audio configurations (RAVDESS dataset)
-AUDIO_SAMPLE_RATE = 48000
-AUDIO_DURATION = 3
-AUDIO_TRIM = 0.5
-RAVDESS_NUM_CLASSES = 8
-AUDIO_OFFSET = 0.5
-HOP_LENGTH = 512
-FRAME_LENGTH = 2048
-AUDIO_NUM_CLASSES = 8
-SCALE_AUDIO_FILES = True
-NUM_MFCC = 40
-LSTM_HIDDEN_SIZE = 128
-LSTM_NUM_LAYERS = 2
+# AUDIO_SAMPLE_RATE = 48000
+# AUDIO_DURATION = 3
+# AUDIO_TRIM = 0.5
+# RAVDESS_NUM_CLASSES = 8
+# AUDIO_OFFSET = 0.5
+# HOP_LENGTH = 512
+# FRAME_LENGTH = 2048
+# AUDIO_NUM_CLASSES = 8
+# SCALE_AUDIO_FILES = True
+# NUM_MFCC = 40
+# LSTM_HIDDEN_SIZE = 128
+# LSTM_NUM_LAYERS = 2
 
-# ----------------------------
+# # ----------------------------
 
-# VIDEO
-# Dataset configurations (FER dataset)
-DATASET_NAME = "fer2013"  # Datasets: fer2013 | ...
+# # VIDEO
+# # Dataset configurations (FER dataset)
+# DATASET_NAME = "fer2013"  # Datasets: fer2013 | ...
 DATASET_DIR = os.path.join(DATA_DIR, "VIDEO/FER/")  # Dir: FER | ...
 METADATA_CSV = os.path.join(DATASET_DIR, DATASET_NAME + ".csv")
 VAL_SIZE = 0.2  # Validation size

@@ -1,5 +1,7 @@
 import torch
-from config import AUGMENTATION_SIZE, EMOTION_NUM_CLASSES, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, T_HEAD, T_ENC_LAYERS, T_DIM_FFW, T_KERN, T_STRIDE, T_MAXPOOL
+from config import AUGMENTATION_SIZE, EMOTION_NUM_CLASSES, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, T_HEAD, T_ENC_LAYERS, T_DIM_FFW, T_KERN, T_STRIDE, T_MAXPOOL, MESSAGE, ADD_NOISE
+
+
 
 from dataloaders.GREX_dataloader import GREXDataLoader
 from train.loops.train_loop_emotion_single import train_eval_loop
@@ -34,12 +36,19 @@ def main():
 
     optimizer = [optimizer_aro, optimizer_val]
 
-    # scheduler = torch.optim.lr_scheduler.OneCycleLR(
-    #     optimizer=optimizer,
-    #     max_lr=LR,
-    #     epochs=N_EPOCHS,
-    #     steps_per_epoch=len(train_loader))
-    scheduler = None
+    scheduler_val = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer=optimizer_val,
+        max_lr=LR,
+        epochs=N_EPOCHS,
+        steps_per_epoch=len(train_loader))
+
+    scheduler_aro = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer=optimizer_aro,
+        max_lr=LR,
+        epochs=N_EPOCHS,
+        steps_per_epoch=len(train_loader))
+
+    schedulers = [scheduler_aro, scheduler_val]
 
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -61,7 +70,8 @@ def main():
         "step": STEP,
         "dropout_p": DROPOUT_P,
         "agumented_data": AUGMENTATION_SIZE,
-        "message": "",
+        "add_noise": ADD_NOISE,
+        "message": MESSAGE,
         "transformer_config": {
             "num_heads": T_HEAD,
             "num_encoder_layers": T_ENC_LAYERS,
@@ -78,7 +88,7 @@ def main():
                     models=model,
                     config=config,
                     optimizers=optimizer,
-                    scheduler=scheduler,
+                    schedulers=schedulers,
                     criterion=criterion,
                     scaler=None,
                     resume=RESUME_TRAINING)

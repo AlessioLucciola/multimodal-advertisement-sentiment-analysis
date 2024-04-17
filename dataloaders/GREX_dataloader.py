@@ -1,9 +1,8 @@
+from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, LENGTH, LOAD_DF, MODEL_NAME, RANDOM_SEED, SAVE_DF, STEP, WAVELET_STEP, ADD_NOISE
 import pickle
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, LENGTH, LOAD_DF, MODEL_NAME, RANDOM_SEED, SAVE_DF, STEP
 import os
-import pickle
 import torch
 import pandas as pd
 import numpy as np
@@ -19,7 +18,7 @@ class GREXTransform:
         self.transformations = set()
 
     def jitter(self, data):
-        sigma_min, sigma_max = 0.01, 0.2
+        sigma_min, sigma_max = 0.01, 0.3
         sigma = np.random.uniform(sigma_min, sigma_max)
         noise = np.random.normal(loc=0., scale=sigma, size=data.shape)
         return data + noise
@@ -49,7 +48,7 @@ class GREXTransform:
     def time_shifting(self, data):
         shift = np.random.randint(low=-LENGTH, high=LENGTH)
         return np.roll(data, shift)
-
+    
     def apply(self, item, p=0.5):
         self.transformations = {self.jitter,
                                 self.scaling, self.magnitude_warping}
@@ -72,6 +71,15 @@ class GREXTransform:
         print(f"Augmented data: {len(augmented_data)}")
         df = pd.concat([self.df, pd.DataFrame(augmented_data)])
         return df
+
+    def apply_jitter(self):
+        new_df = []
+        for i, row in self.df.iterrows():
+            ppg, val, aro = row["ppg"], row["val"], row["aro"]
+            new_item = {"ppg": self.jitter(ppg), "val": val, "aro": aro}
+            print(f"type of jittered ppg is: {type(new_item['ppg'])}")
+            new_df.append(new_item)
+        return pd.DataFrame(new_df)
 
     def balance(self):
         for class_name in ["val", "aro"]:
@@ -128,6 +136,8 @@ class GREXDataLoader(DataLoader):
         for i in range(len(self.ppg)):
             if (self.ppg[i] == 0.0).all():
                 continue
+
+            #TODO: change "val" here to "label", and also in the train and dataset
             df.append({"ppg": self.ppg[i].numpy(), "val": int(
                 self.valence[i]), "aro": int(self.arousal[i]), "quality_idx": i})
 
@@ -147,31 +157,19 @@ class GREXDataLoader(DataLoader):
         self.data["ppg"] = self.data["ppg"].apply(
             lambda x: (x - ppg_mean) / ppg_std)
 
-        if not LOAD_DF:
-            tqdm.pandas()
-            self.data["ppg_spatial_features"] = self.data["ppg"].progress_apply(
-                wavelet_transform)
 
-        if SAVE_DF:
-            ppg_spatial_features = np.stack(
-                self.data["ppg_spatial_features"].to_numpy(), axis=0)
-            print(f"Saving ppg_spatial_features: {ppg_spatial_features.shape}")
-            np.save("ppg_spatial_features.npy", ppg_spatial_features)
+        # if not LOAD_DF:
+        #     tqdm.pandas()
+        #     self.data["ppg_spatial_features"] = self.data["ppg"].progress_apply(
+        #         wavelet_transform)
 
-        if LOAD_DF:
-            ppg_spatial_features = np.load("ppg_spatial_features.npy")
-            assert len(self.data) == len(ppg_spatial_features)
-            loaded_df = []
-            for i, row in self.data.iterrows():
-                if i >= len(ppg_spatial_features):
-                    # TODO: see why the i goes until 1235 if len(self.data) is 1213
-                    print(f"Skipping {i}")
-                    continue
-                ppg_spatial_feature = ppg_spatial_features[i]
-                new_row = {"ppg": row["ppg"], "val": row["val"],
-                           "aro": row["aro"], "ppg_spatial_features": ppg_spatial_feature}
-                loaded_df.append(new_row)
-            self.data = pd.DataFrame(loaded_df)
+        # if SAVE_DF:
+        #     self.save_wavelets(self.data, f"data_{LENGTH}_{WAVELET_STEP}")
+
+        # if LOAD_DF:
+        #     print("Loading dataframes...")
+        #     self.data = self.load_wavelets(self.data, f"data_{LENGTH}_{WAVELET_STEP}")
+
 
         self.data, self.test_df = train_test_split(self.data,
                                                    test_size=0.1,
@@ -188,30 +186,51 @@ class GREXDataLoader(DataLoader):
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
 
-        # TODO: just for debug reasons to see if stratify is better, remove later
-        # self.test_df = self.val_df
+        if ADD_NOISE:
+            self.train_df = GREXTransform(self.train_df).apply_jitter()
+            # self.val_df = GREXTransform(self.val_df).apply_jitter()
 
-        # self.train_df = self.slice_data(self.train_df)
-        # self.val_df = self.slice_data(self.val_df)
-        # self.test_df = self.slice_data(self.test_df)
+        if not LOAD_DF:
+            tqdm.pandas()
+            self.train_df["ppg_spatial_features"] = self.train_df["ppg"].progress_apply(
+                wavelet_transform)
+            self.val_df["ppg_spatial_features"] = self.val_df["ppg"].progress_apply(
+                wavelet_transform)
+              # self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
+              #    wavelet_transform)
 
-        # self.train_df = self.undersample(self.train_df)
-        # self.val_df = self.undersample(self.val_df)
+        if SAVE_DF:
+            self.save_wavelets(self.train_df, f"train_df_{LENGTH}_{WAVELET_STEP}")
+            self.save_wavelets(self.val_df, f"val_df_{LENGTH}_{WAVELET_STEP}")
 
-        # self.val_df, self.test_df = train_test_split(
-        #     temp_df, test_size=0.1, stratify=temp_df[["val", "aro"]], random_state=RANDOM_SEED)
+        if LOAD_DF:
+            print("Loading dataframes...")
+            self.train_df = self.load_wavelets(self.train_df, f"train_df_{LENGTH}_{WAVELET_STEP}")
+            self.val_df = self.load_wavelets(self.val_df, f"val_df_{LENGTH}_{WAVELET_STEP}")
 
-        # self.train_df, temp_df = train_test_split(
-        #     self.data, test_size=0.3, random_state=RANDOM_SEED)
-        # self.val_df, self.test_df = train_test_split(
-        #     temp_df, test_size=0.5, random_state=RANDOM_SEED)
+        # ppg_mean = np.stack(self.train_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
+        # ppg_std = np.stack(self.train_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
+        # self.train_df["ppg_spatial_features"] = self.train_df["ppg_spatial_features"].apply(
+        #     lambda x: (x - ppg_mean) / ppg_std)
+        # ppg_mean = np.stack(self.val_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
+        # ppg_std = np.stack(self.val_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
+        # self.val_df["ppg_spatial_features"] = self.val_df["ppg_spatial_features"].apply(
+        #     lambda x: (x - ppg_mean) / ppg_std)
+
+        if BALANCE_DATASET:
+            self.train_df = self.undersample(self.train_df)
+            self.val_df = self.undersample(self.val_df)
+            self.test_df = self.undersample(self.test_df)
 
         if AUGMENTATION_SIZE > 0:
+            raise ValueError("augmentation is deprecated")
             self.train_df = GREXTransform(
                 self.train_df).augment(n=AUGMENTATION_SIZE)
 
-        if BALANCE_DATASET:
-            self.train_df = GREXTransform(self.train_df).balance()
+
+        # if BALANCE_DATASET:
+        #     raise ValueError("augmentation is deprecated")
+        #     self.train_df = GREXTransform(self.train_df).balance()
 
         print(
             f"Train group size: \n{self.train_df.groupby(['val']).size()}")
@@ -224,23 +243,41 @@ class GREXDataLoader(DataLoader):
         print(
             f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
 
+    def save_wavelets(self, df: pd.DataFrame, name: str):
+        ppg_spatial_features = np.stack(df["ppg_spatial_features"].to_numpy(), axis=0)
+        np.save(f"ppg_spatial_features_{name}.npy", ppg_spatial_features)
+
+    def load_wavelets(self, df: pd.DataFrame, name: str) -> pd.DataFrame:
+        path = f"ppg_spatial_features_{name}.npy"
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"File {path} cannot be found")
+        ppg_spatial_features = np.load(path)
+        assert len(df) == len(ppg_spatial_features)
+        loaded_df = []
+        for i, row in df.iterrows():
+            if i >= len(ppg_spatial_features):
+                # TODO: see why the i goes until 1235 if len(self.data) is 1213
+                print(f"Skipping {i}")
+                continue
+            ppg_spatial_feature = ppg_spatial_features[i]
+            new_row = {"ppg": row["ppg"], "val": row["val"],
+                       "aro": row["aro"], "ppg_spatial_features": ppg_spatial_feature}
+            loaded_df.append(new_row)
+        return pd.DataFrame(loaded_df)
+
     def undersample(self, df):
         # Group by 'aro' and 'val' columns and get the size of each group
-        group_sizes = df.groupby(['aro', 'val']).size()
-
+        group_sizes = df.groupby(['val']).size()
         # Get the minimum group size
         min_size = group_sizes.min()
-
         # Function to apply to each group
+
         def undersample_group(group):
             return group.sample(min_size)
-
         # Apply the function to each group
-        df_undersampled = df.groupby(['aro', 'val']).apply(undersample_group)
-
+        df_undersampled = df.groupby(['val']).apply(undersample_group)
         # Reset the index (groupby and apply result in a multi-index)
         df_undersampled.reset_index(drop=True, inplace=True)
-
         return df_undersampled
 
     def slice_data(self, df, length=LENGTH, step=STEP):
@@ -264,6 +301,7 @@ class GREXDataLoader(DataLoader):
                 segment = ppg[i:i + length]
                 if "ppg_spatial_features" in row:
                     segment_wavelet = wavelet[:, i:i + length]
+                    print(f"segment wavelet shape is {segment_wavelet.shape}")
                     new_row = {"ppg": segment, "val": val, "aro": aro,
                                "ppg_spatial_features": segment_wavelet}
                 else:
@@ -296,8 +334,6 @@ class GREXDataLoader(DataLoader):
         self.labels[(valence == 3) | (valence == 4)] = 2
         print(f"Labels are {self.labels}")
         return self.labels
-
-    pass
 
     def get_train_dataloader(self):
         dataset = GREXDataset(self.train_df)

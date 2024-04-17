@@ -14,7 +14,7 @@ def train_eval_loop(device,
                     models,
                     config,
                     optimizers,
-                    scheduler,
+                    schedulers,
                     criterion,
                     scaler,
                     resume=False):
@@ -66,6 +66,7 @@ def train_eval_loop(device,
 
     model = models[0]
     optimizer = optimizers[0]
+    scheduler = schedulers[0]
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
         tr_cumulative_loss = 0
         val_cumulative_loss = 0
