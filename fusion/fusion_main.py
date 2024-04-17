@@ -21,17 +21,23 @@ def main(audio_model_path: str,
     # Note: The following code is a placeholder for the actual fusion logic
     for duration, _ in video_frames:
         emotions = compute_softmax([random.random() for _ in range(len(general_emotion_mapping.keys()))])
-        video_output.append({'frame_duration': duration, 'emotions': emotions})
+        video_output.append({'frame_duration': duration, 'output': emotions})
     ###
 
-    compute_predictions(audio_output, video_output)
+    fused_emotion_lists = compute_fused_predictions(audio_output, video_output) # Fusion logic in the time windows in which both audio and video are available
+    remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output) # Compute predictions for the remaining time windows only with video
+
+    all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
+    for f in all_frames:
+        print(f)
+    return all_frames
 
 def get_frames_duration(video_frames):
     start_time = datetime.timestamp(video_frames[0][1])
     frame_duration = [(datetime.timestamp(frame[1]) - start_time, frame[0]) for frame in video_frames]
     return frame_duration
 
-def compute_predictions(audio_output, video_output):
+def compute_fused_predictions(audio_output, video_output):
     # Compute the average of logits for each video frame within the corresponding audio window
     audio_start_times = [audio['longest_voice_segment_start'] for audio in audio_output]
     audio_end_times = [audio['longest_voice_segment_end'] for audio in audio_output]
@@ -45,26 +51,82 @@ def compute_predictions(audio_output, video_output):
         for video_frame in video_output:
             frame_duration = video_frame['frame_duration']
             if window_start <= frame_duration <= window_end:
-                video_logits_sum += video_frame['emotions'] # Sum the logits of the video frame
+                video_logits_sum += video_frame['output'] # Sum the logits of the video frame
                 video_frame_count += 1
         video_logits_avg = video_logits_sum / video_frame_count
         
-        audio_logits = audio_output[i]['logits'][0] # Get the logits of the audio window
+        audio_logits = audio_output[i]['logits_sum'][0] # Get the logits of the audio window
+        audio_logits = compute_softmax(audio_logits) # Convert logits to probabilities using softmax
         fused_logits = audio_logits + video_logits_avg # Sum the logits of the audio window and video frames
         
-        fused_emotions = compute_softmax(fused_logits) # Convert logits to probabilities using softmax
+        fused_emotions = fused_logits / 2 # Average the audio and video logits
         pred = np.argmax(fused_emotions, -1)
         emotion = general_emotion_mapping[pred.item()]
 
         fused_emotions_list.append({
+            "output": fused_logits,
             "start_time": audio_output[i]["longest_voice_segment_start"],
             "end_time": audio_output[i]["longest_voice_segment_end"],
             "emotion_label": pred.item(),
             "emotion_string": emotion,
-            "logits": fused_logits
+            "window_type": "fusion"
         })
         
-    print(fused_emotions_list)
+    return fused_emotions_list
+
+def compute_remaining_video_predictions(fused_emotion_list, video_output):
+    video_output = substitute_frame_duration(video_output)
+    remaining_video_frames = []
+
+    for frame_video in video_output:
+        intersected = False
+        for frame_fused in fused_emotion_list:
+            if (frame_fused['start_time'] <= frame_video['start_time'] <= frame_fused['end_time'] or
+                frame_fused['start_time'] <= frame_video['end_time'] <= frame_fused['end_time'] or
+                (frame_video['start_time'] <= frame_fused['start_time'] and frame_video['end_time'] >= frame_fused['end_time'])):
+                intersected = True
+                break
+        
+        if not intersected:
+            remaining_video_frames.append(frame_video)
+
+    # Add index to each frame to keep track of the video frames in the next step
+    for i, d in enumerate(remaining_video_frames):
+        d['index'] = i
+    
+    fused_emotion_list = sorted(fused_emotion_list, key=lambda x: x['start_time'])
+    for i, fused_frame in enumerate(fused_emotion_list):
+        nearest_video_end_frame = min(remaining_video_frames, key=lambda x: abs(x['start_time'] - fused_frame['start_time']))
+        nearest_video_end_frame_index = nearest_video_end_frame['index']
+        remaining_video_frames[nearest_video_end_frame_index]['end_time'] = fused_frame['start_time']
+        nearest_video_start_frame = min(remaining_video_frames, key=lambda x: abs(x['start_time'] - fused_frame['end_time']))
+        nearest_video_start_frame_index = nearest_video_start_frame['index']
+        remaining_video_frames[nearest_video_start_frame_index]['start_time'] = fused_frame['end_time']
+    
+    # Discard all the video frames that have a duration of 0
+    remaining_video_frames = [frame for frame in remaining_video_frames if frame['start_time'] != frame['end_time']]
+
+    # Compute the predictions for the remaining video frames, remove the index and add the window type
+    for frame in remaining_video_frames:
+        pred = np.argmax(frame['output'], -1)
+        frame['emotion_label'] = pred.item() # Get the emotion label
+        frame['emotion_string'] = general_emotion_mapping[pred.item()] # Get the emotion string
+        del frame['index'] # Remove the index
+        frame['window_type'] = 'video' # Add the window type
+    
+    return remaining_video_frames
+
+
+def substitute_frame_duration(video_output):
+    for i in range(len(video_output)):
+        if i == 0:
+            video_output[i]['start_time'] = 0.0
+            video_output[i]['end_time'] = video_output[i]['frame_duration']
+        else:
+            video_output[i]['start_time'] = video_output[i - 1]['end_time']
+            video_output[i]['end_time'] = video_output[i]['frame_duration']
+        del video_output[i]['frame_duration']
+    return video_output
 
 def compute_softmax(logits):
     return np.exp(logits) / np.sum(np.exp(logits), axis=0)

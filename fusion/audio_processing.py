@@ -134,6 +134,7 @@ def merge_overlapping_windows(data):
                 current_merge['end_time'] = window['end_time']
                 current_merge['longest_voice_segment_end'] = max(current_merge['longest_voice_segment_end'], window['longest_voice_segment_end'])
                 current_merge['logits_sum'] += window['logits']
+                print(window['emotion_string'], window['logits'], current_merge['logits_sum'])
                 current_merge['num_windows'] += 1
         else:
             # Check for overlaps with the previous window and adjust start time if necessary
