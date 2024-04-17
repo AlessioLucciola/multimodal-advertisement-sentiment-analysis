@@ -17,7 +17,6 @@ EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
 RESUME_EPOCH = 67
-
 # ----------------------------
 
 # Train configurations
