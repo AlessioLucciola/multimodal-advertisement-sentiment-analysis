@@ -9,10 +9,6 @@ class VideoDenseNet121(nn.Module):
         super(VideoDenseNet121, self).__init__()
         self.model = models.densenet121(weights=DenseNet121_Weights.DEFAULT)
 
-        # Change the first layer to accept 1 channel
-        self.model.features.conv0 = nn.Conv2d(
-            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
 

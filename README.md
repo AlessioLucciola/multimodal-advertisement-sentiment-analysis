@@ -27,6 +27,9 @@ Inside the `data` folder, there should be these elements:
     -   `audio_ravdess_files`: A folder in which to put the ravdess audio files (downloadable from Google Drive);
     -   `audio_merged_datasets_files`: A folder in which to put the merged datasets audio files (downloadable from Google Drive).
 - For the video models, put these files in the `VIDEO` directory:
-    - `ravdess_frames_YxY_w_pixels.csv`: A file containing the (self-generated) metadata of the merged datasets video files where YxY can be 48x48, 224x224 or 128x128;
+    - `ravdess_frames_files`: A folder containing the extracted frames from the video files (downloadable from Google Drive);
+    - `ravdess_original.csv`: A file containing the (self-generated) metadata of the video files (downloadable from Google Drive);
+    - `ravdess_frames.csv`: A file containing the (self-generated) metadata of the frames (downloadable from Google Drive);
+    - `[OPTIONAL] ravdess_video_files`: A folder containing the original ravdess video files (downloadable from Google Drive);
 
 All the files required for the audio and video model are zipped in the "AUDIO" and "VIDEO" folders in Google Drive.

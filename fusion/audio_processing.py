@@ -1,9 +1,9 @@
-from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, RAVDESS_NUM_CLASSES, RANDOM_SEED
+from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, NUM_CLASSES, RANDOM_SEED, USE_POSITIVE_NEGATIVE_LABELS
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_multiple_waveforms_from_buffer, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
 from utils.utils import upload_scaler, select_device, set_seed
-from shared.constants import general_emotion_mapping
+from shared.constants import RAVDESS_emotion_mapping, merged_emotion_mapping
 import numpy as np
 import torch
 import json
@@ -27,29 +27,11 @@ def main(model_path, audio_file, epoch, live_demo=False):
         longest_voice_segment_end = feature['longest_voice_segment_end']
         output = model(waveform)
         pred = torch.argmax(output, -1).detach()
-        emotion = general_emotion_mapping[pred.item()]
-        #print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
-        audio_processed_windows.append({
-            "start_time": start_time,
-            "end_time": end_time,
-            "longest_voice_segment_start": longest_voice_segment_start,
-            "longest_voice_segment_end": longest_voice_segment_end,
-            "longest_voice_segment_length": feature['longest_voice_segment_length'],
-            "emotion_label": pred.item(),
-            "emotion_string": emotion,
-            "logits": torch.softmax(output, -1).cpu().detach().numpy()
-        })
-    
-    audio_processed_windows = merge_overlapping_windows(audio_processed_windows)
-    for emotion in audio_processed_windows:
-        print(f"Emotion detected from {emotion['longest_voice_segment_start']:.2f}s to {emotion['longest_voice_segment_end']:.2f}s: {emotion['emotion_string']}")
-    return audio_processed_windows
+        emotion = merged_emotion_mapping[pred.item()] if USE_POSITIVE_NEGATIVE_LABELS else RAVDESS_emotion_mapping[pred.item()] 
+        print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
 
-def preprocess_audio_file(audio_file, scaler, live_demo, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
-    if live_demo:
-        segments = extract_multiple_waveforms_from_buffer(buffer=audio_file, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
-    else:
-        segments = extract_multiple_waveforms_from_audio_file(file=audio_file, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
+    segments = extract_multiple_waveforms_from_audio_file(file=audio_file_path, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
     preprocessed_segments = []
     for segment in segments:
         speech_segments = detect_speech(waveform=segment['waveform'], start_time=segment['start_time'], end_time=segment['end_time'], sr=AUDIO_SAMPLE_RATE)
@@ -90,14 +72,14 @@ def get_model_and_dataloader(model_path, device, type):
     model = None
     scaler = None
     if type == "AudioNetCT":
-        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = AudioNetCT(
             num_classes=num_classes, num_mfcc=num_mfcc, dropout_p=dropout_p).to(device)
         scaler = upload_scaler(model_path)
     elif type == "AudioNetCL":
-        num_classes = RAVDESS_NUM_CLASSES if configurations is None else configurations["num_classes"]
+        num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
         lstm_hidden_size = LSTM_HIDDEN_SIZE if configurations is None else configurations["lstm_hidden_size"]
         lstm_num_layers = LSTM_NUM_LAYERS if configurations is None else configurations["lstm_num_layers"]
@@ -182,8 +164,7 @@ def merge_overlapping_windows(data):
     
 
 if __name__ == "__main__":
-    epoch = 484
-    model_path = os.path.join("AudioNetCT_2024-04-08_17-00-51")
-    # Offline audio file, it you want to test with a live audio stream use the demo instead
-    audio_file_path = os.path.join("data", "AUDIO", "test_audio_real.wav")
-    main(model_path=model_path, audio_file=audio_file_path, epoch=epoch)
+    epoch = 156
+    model_path = os.path.join("AudioNetCT_2024-04-18_11-09-07")
+    audio_file_path = os.path.join("data", "AUDIO", "full_2.wav")
+    main(model_path=model_path, audio_file_path=audio_file_path, epoch=epoch)

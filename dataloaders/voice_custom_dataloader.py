@@ -1,8 +1,9 @@
 from torch.utils.data import DataLoader
+from shared.constants import mapping_to_positive_negative
 from sklearn.model_selection import train_test_split
 from config import DF_SPLITTING, RANDOM_SEED
-import pandas as pd
 from datasets.voice_custom_dataset import RAVDESSCustomDataset
+import pandas as pd
 
 class RAVDESSDataLoader(DataLoader):
     def __init__(self,
@@ -13,7 +14,8 @@ class RAVDESSDataLoader(DataLoader):
                  limit: int = None,
                  balance_dataset: bool = True,
                  preload_audio_files: bool = True,
-                 scale_audio_files: bool = True
+                 scale_audio_files: bool = True,
+                 use_positive_negative_labels: bool = False
                  ):
         self.batch_size = batch_size
         self.data = pd.read_csv(csv_file)
@@ -24,6 +26,7 @@ class RAVDESSDataLoader(DataLoader):
         self.balance_dataset = balance_dataset
         self.preload_audio_files = preload_audio_files
         self.scale_audio_files = scale_audio_files
+        self.use_positive_negative_labels = use_positive_negative_labels
 
         if self.limit is not None:
             if self.limit <= 0 or self.limit > 1:
@@ -31,6 +34,10 @@ class RAVDESSDataLoader(DataLoader):
             else:
                 self.data = self.data.sample(frac=self.limit, random_state=self.seed)
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
+        
+        if self.use_positive_negative_labels:
+            print("--Dataloader-- Using positive/negative labels mapping.")
+            self.data['emotion'] = self.data['emotion'].astype(int).map(mapping_to_positive_negative)
 
         self.train_df, temp_df = train_test_split(self.data, test_size=DF_SPLITTING[0], random_state=self.seed)
         self.val_df, self.test_df = train_test_split(temp_df, test_size=DF_SPLITTING[1], random_state=self.seed)
