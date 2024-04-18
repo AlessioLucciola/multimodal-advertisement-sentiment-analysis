@@ -1,3 +1,4 @@
+from typing import List
 import os
 
 # General configurations
@@ -11,11 +12,13 @@ SAVE_RESULTS = True
 SAVE_MODELS = True
 
 # Dataset configurations
-DATASET_NAME = "RAVDESS" # Datasets: RAVDESS | ALL
-DF_SPLITTING = [0.20, 0.50] #[train/test splitting, test/val splitting]
-LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
-BALANCE_DATASET = True # Balance the dataset if True, use the original dataset if False
-NUM_CLASSES = 8 # Number of classes in the dataset (default: 8)
+DATASET_NAME: str = "RAVDESS" # Datasets: RAVDESS | ALL
+DF_SPLITTING: List = [0.20, 0.50] #[train/test splitting, test/val splitting]
+LIMIT: int | str = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
+BALANCE_DATASET: bool = True # Balance the dataset if True, use the original dataset if False
+USE_POSITIVE_NEGATIVE_LABELS: bool = True
+NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes in the dataset (default: 8)
+
 
 # Test configurations
 PATH_MODEL_TO_TEST = "AudioNetCL_2024-04-17_10-28-10"
