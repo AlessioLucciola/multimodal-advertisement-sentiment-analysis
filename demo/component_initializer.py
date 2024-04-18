@@ -1,5 +1,5 @@
-from camera_input_live import camera_input_live
 import streamlit as st
+import imageio.v3
 import pyaudio
 import sys
 import os
@@ -27,5 +27,4 @@ def get_audio_stream():
         return None
 
 def get_video_stream():
-    #return camera_input_live(stop_label="Stop video stream", start_label="Start video stream")
-    return ""
+    return imageio.v3.imiter('<video0>')
