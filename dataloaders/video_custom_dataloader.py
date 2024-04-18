@@ -1,12 +1,13 @@
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from config import OVERLAP_SUBJECTS_FRAMES, DF_SPLITTING, RANDOM_SEED, VIDEO_METADATA_FRAMES_CSV
+from config import OVERLAP_SUBJECTS_FRAMES, DF_SPLITTING, RANDOM_SEED
 import pandas as pd
 from datasets.video_custom_dataset import video_custom_dataset
 
 class video_custom_dataloader(DataLoader):
     def __init__(self,
-                 csv_file: str,
+                 csv_original_files: str,
+                 csv_frames_files: str,
                  batch_size: int,
                  frames_dir: str,
                  seed: int = RANDOM_SEED,
@@ -17,7 +18,8 @@ class video_custom_dataloader(DataLoader):
                  normalize: bool = True,
                  ):
         self.batch_size = batch_size
-        self.data = pd.read_csv(csv_file)
+        self.data = pd.read_csv(csv_original_files)
+        self.csv_frames_files = pd.read_csv(csv_frames_files)
         self.frames_dir = frames_dir
         self.seed = seed
         self.limit = limit
@@ -67,8 +69,6 @@ class video_custom_dataloader(DataLoader):
 
         # Load the frames dataset dataset and select the frames that contain the file_name
         self.load_frames_from_file_names(train_file_names, val_file_names, test_file_names)
-
-        print(f"--Dataloader-- Train dataset size: {self.train_df.__len__()} | Validation dataset size: {self.val_df.__len__()} | Test dataset size: {self.test_df.__len__()}")
      
     def split_datasets_without_overlapping_subjects(self):
         # Split the dataset using the original dataset (video), frame's subjects can't overlap between train, val and test
@@ -100,10 +100,9 @@ class video_custom_dataloader(DataLoader):
     
     def load_frames_from_file_names(self, train_file_names, val_file_names, test_file_names):
         # Load the frames dataset dataset and select the frames that contain the file_name
-        frames_data = pd.read_csv(VIDEO_METADATA_FRAMES_CSV)
-        self.train_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(train_file_names)]
-        self.val_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(val_file_names)]
-        self.test_df = frames_data[frames_data["file_name"].apply(lambda x: x.split("_")[0]).isin(test_file_names)]
+        self.train_df = self.csv_frames_files[self.csv_frames_files["file_name"].apply(lambda x: x.split("_")[0]).isin(train_file_names)]
+        self.val_df = self.csv_frames_files[self.csv_frames_files["file_name"].apply(lambda x: x.split("_")[0]).isin(val_file_names)]
+        self.test_df = self.csv_frames_files[self.csv_frames_files["file_name"].apply(lambda x: x.split("_")[0]).isin(test_file_names)]
 
     def get_train_dataloader(self):
         train_dataset = video_custom_dataset(data=self.train_df, 

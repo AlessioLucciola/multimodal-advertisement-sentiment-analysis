@@ -6,7 +6,7 @@ PATH_TO_SAVE_RESULTS = "results"
 RANDOM_SEED = 42
 USE_DML = False
 USE_MPS = False
-USE_WANDB = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -15,11 +15,11 @@ DATASET_NAME = "RAVDESS" # Datasets: RAVDESS | ALL
 DF_SPLITTING = [0.20, 0.50] #[train/test splitting, test/val splitting]
 LIMIT = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 BALANCE_DATASET = True # Balance the dataset if True, use the original dataset if False
-NUM_CLASSES = 8 # Number of classes in the dataset (default: 8)
+NUM_CLASSES = 3 # 3 (merged) | 8 (default)
 
 # Test configurations
-PATH_MODEL_TO_TEST = "VideoNet_resnet34_2024-04-17_17-59-29"
-TEST_EPOCH = 19 # Number of epoch to test or "best" to test the best model
+PATH_MODEL_TO_TEST = "VideoNet_vit-pretrained_2024-04-18_09-28-15"
+TEST_EPOCH = 3 # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -67,7 +67,7 @@ VIDEO_DATASET_DIR = os.path.join(DATA_DIR, "VIDEO")
 VIDEO_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, "ravdess_video_files")
 FRAMES_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, "ravdess_frames_files")
 VIDEO_METADATA_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME + "_metadata_original.csv") 
-VIDEO_METADATA_FRAMES_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME + "_metadata_frames_remapped.csv") # _metadata_frames | _metadata_frames_remapped.csv
+VIDEO_METADATA_FRAMES_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME + "_metadata_frames_remapped.csv") # _metadata_frames | _metadata_frames_remapped
 
 # Models configurations
 MODEL_NAME = 'vit-pretrained' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
@@ -81,7 +81,7 @@ PRELOAD_FRAMES = True # Preload frames if True, load frames on the fly if False
 APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
 NORMALIZE = True # Normalize the images if True, use the original images if False
 USE_VIDEO_FOR_TESTING = False # Use test video or live video if True, use test dataset if False
-USE_LIVE_VIDEO_FOR_TESTING = True # If USE_VIDEO = True, use live video if True, use offline video test file if False
+USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
 OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video.mp4") # Offline video file
 
 # Fusion configurations

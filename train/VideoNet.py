@@ -1,5 +1,5 @@
 import torch
-from config import OVERLAP_SUBJECTS_FRAMES, PRELOAD_FRAMES, FRAMES_FILES_DIR, VIDEO_DATASET_NAME, DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
+from config import OVERLAP_SUBJECTS_FRAMES, PRELOAD_FRAMES, VIDEO_METADATA_FRAMES_CSV, FRAMES_FILES_DIR, VIDEO_DATASET_NAME, DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
@@ -9,7 +9,8 @@ def main():
     set_seed(RANDOM_SEED)
     device = select_device()
 
-    custom_dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
+    custom_dataloader = video_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
+                                   csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
                                    batch_size=BATCH_SIZE,
                                    frames_dir=FRAMES_FILES_DIR,
                                    seed=RANDOM_SEED,

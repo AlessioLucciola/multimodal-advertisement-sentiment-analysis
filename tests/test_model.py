@@ -12,8 +12,7 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import merged_emotion_mapping
-from dataloaders.video_custom_dataloader import video_custom_dataloader
+from shared.constants import general_emotion_mapping
 from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
@@ -126,14 +125,17 @@ def get_model_and_dataloader(model_path, device, type):
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
         if not USE_VIDEO_FOR_TESTING:
-            dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
-                                                frames_dir=FRAMES_FILES_DIR,
-                                                batch_size=BATCH_SIZE,
-                                                seed=RANDOM_SEED,
-                                                limit=LIMIT,
-                                                balance_dataset=BALANCE_DATASET,
-                                                normalize=NORMALIZE,
-                                                )
+            dataloader = video_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
+                                   csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
+                                   batch_size=BATCH_SIZE,
+                                   frames_dir=FRAMES_FILES_DIR,
+                                   seed=RANDOM_SEED,
+                                   limit=LIMIT,
+                                   preload_frames=PRELOAD_FRAMES,
+                                   apply_transformations=APPLY_TRANSFORMATIONS,
+                                   balance_dataset=BALANCE_DATASET,
+                                   normalize=NORMALIZE,
+                                   )
     else:
         raise ValueError(f"Unknown architecture {type}")
     
@@ -178,7 +180,7 @@ def video_test(model, cap, device):
             img = img.to(device)
             output = model(img)
             pred = torch.argmax(output, -1).detach()
-            emotion = merged_emotion_mapping[pred.item()]
+            emotion = general_emotion_mapping[pred.item()]
 
             cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
 
