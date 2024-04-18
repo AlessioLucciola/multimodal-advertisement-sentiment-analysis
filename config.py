@@ -6,7 +6,7 @@ RANDOM_SEED = 42
 # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 LIMIT = None
 # Balance the dataset if True, use the original dataset if False
-BALANCE_DATASET = True
+BALANCE_DATASET = False
 
 USE_DML = False
 USE_MPS = True
@@ -21,30 +21,30 @@ RESUME_EPOCH = 67
 
 # Train configurations
 
-# NOTE: short windows (like 100) improve performances and model accuracy,
-# this should happen only in the slice-split case, since we have less windows
-# in common between train and val.
-LENGTH = 100
-STEP = 50
-WAVELET_STEP = 1
-BATCH_SIZE = 128
+LENGTH = 500
+STEP = 475
+WAVELET_STEP = 10
+BATCH_SIZE = 32 
 
 N_EPOCHS = 1000
-LR = 0.0001
+LR = 0.00001
 REG = 0
-DROPOUT_P = 0.3
+DROPOUT_P = 0
 # EmotionNet Transformer config
-T_HEAD = 4
-T_ENC_LAYERS = 4
-T_DIM_FFW = 128
+T_HEAD = 5
+T_ENC_LAYERS = 6
+T_DIM_FFW = 256
 T_KERN = 4
 T_STRIDE = 4
 T_MAXPOOL = 0
-# MESSAGE = "Slice -> Wavelet Transform"
 MESSAGE = "Wavelet -> Slice"
 
-LOAD_DF = True
-SAVE_DF = False
+# LOAD_DF = True
+# SAVE_DF = False
+
+LOAD_DF = False
+SAVE_DF = True
+
 # TODO: put this in the dataset configuration (GREX dataset)
 AUGMENTATION_SIZE = 0
 ADD_NOISE = False

@@ -1,4 +1,15 @@
-from config import AUGMENTATION_SIZE, BALANCE_DATASET, DATA_DIR, LENGTH, LOAD_DF, MODEL_NAME, RANDOM_SEED, SAVE_DF, STEP, WAVELET_STEP, ADD_NOISE
+from config import (
+    AUGMENTATION_SIZE,
+    BALANCE_DATASET,
+    DATA_DIR,
+    LENGTH,
+    LOAD_DF,
+    RANDOM_SEED,
+    SAVE_DF,
+    STEP,
+    WAVELET_STEP,
+    ADD_NOISE,
+)
 import pickle
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -18,15 +29,15 @@ class GREXTransform:
         self.transformations = set()
 
     def jitter(self, data):
-        sigma_min, sigma_max = 0.01, 0.3
+        sigma_min, sigma_max = 0.01, 0.2
         sigma = np.random.uniform(sigma_min, sigma_max)
-        noise = np.random.normal(loc=0., scale=sigma, size=data.shape)
+        noise = np.random.normal(loc=0.0, scale=sigma, size=data.shape)
         return data + noise
 
     def scaling(self, data):
         sigma_min, sigma_max = 0.01, 0.3
         sigma = np.random.uniform(sigma_min, sigma_max)
-        noise = np.random.normal(loc=1., scale=sigma, size=data.shape)
+        noise = np.random.normal(loc=1.0, scale=sigma, size=data.shape)
         return data * noise
 
     def magnitude_warping(self, data):
@@ -37,8 +48,13 @@ class GREXTransform:
         seq_len = data.shape[0]
         step = seq_len // knot
         # Get random curve
-        control_points = np.concatenate((np.zeros(1), np.random.normal(
-            loc=1.0, scale=sigma, size=(knot - 2)), np.zeros(1)))
+        control_points = np.concatenate(
+            (
+                np.zeros(1),
+                np.random.normal(loc=1.0, scale=sigma, size=(knot - 2)),
+                np.zeros(1),
+            )
+        )
         locs = np.arange(0, seq_len, step)
 
         # Apply cubic spline interpolation
@@ -48,10 +64,9 @@ class GREXTransform:
     def time_shifting(self, data):
         shift = np.random.randint(low=-LENGTH, high=LENGTH)
         return np.roll(data, shift)
-    
+
     def apply(self, item, p=0.5):
-        self.transformations = {self.jitter,
-                                self.scaling, self.magnitude_warping}
+        self.transformations = {self.jitter, self.scaling, self.magnitude_warping}
 
         # subset = [item for item in self.transformations if np.random.rand() < p]
         for transform in self.transformations:
@@ -103,27 +118,28 @@ class GREXDataLoader(DataLoader):
     def __init__(self, batch_size):
         self.batch_size = batch_size
 
-        data_segments_path = os.path.join(
-            DATA_DIR, "GREX", '3_Physio', 'Transformed')
+        data_segments_path = os.path.join(DATA_DIR, "GREX", "3_Physio", "Transformed")
 
-        annotation_path = os.path.join(
-            DATA_DIR, "GREX", '4_Annotation', 'Transformed')
+        annotation_path = os.path.join(DATA_DIR, "GREX", "4_Annotation", "Transformed")
 
         # NOTE: Important keys here are: "filt_PPG" and "raw_PPG". Sampling rate is 100.
         physio_trans_data_segments = pickle.load(
-            open(os.path.join(data_segments_path, "physio_trans_data_segments.pickle"), "rb"))
-
+            open(
+                os.path.join(data_segments_path, "physio_trans_data_segments.pickle"),
+                "rb",
+            )
+        )
 
         # NOTE: Important keys here are: 'ar_seg' and "vl_seg"
         annotations = pickle.load(
-            open(os.path.join(annotation_path, "ann_trans_data_segments.pickle"), "rb"))
+            open(os.path.join(annotation_path, "ann_trans_data_segments.pickle"), "rb")
+        )
 
-        self.ppg = torch.tensor(physio_trans_data_segments['filt_PPG'])
+        self.ppg = torch.tensor(physio_trans_data_segments["filt_PPG"])
 
         # NOTE: Use valence in [0,4] and arousal in [0,4]
-        self.valence = torch.tensor(annotations['vl_seg']) - 1
-        self.arousal = torch.tensor(annotations['ar_seg']) - 1
-        # self.uncertain = annotations['unc_seg']
+        self.valence = torch.tensor(annotations["vl_seg"]) - 1
+        self.arousal = torch.tensor(annotations["ar_seg"]) - 1
 
         # OR use bad, neutral and good mood
         self.labels = self.set_labels(self.valence, self.arousal)
@@ -137,9 +153,15 @@ class GREXDataLoader(DataLoader):
             if (self.ppg[i] == 0.0).all():
                 continue
 
-            #TODO: change "val" here to "label", and also in the train and dataset
-            df.append({"ppg": self.ppg[i].numpy(), "val": int(
-                self.valence[i]), "aro": int(self.arousal[i]), "quality_idx": i})
+            # TODO: change "val" here to "label", and also in the train and dataset
+            df.append(
+                {
+                    "ppg": self.ppg[i].numpy(),
+                    "val": int(self.valence[i]),
+                    "aro": int(self.arousal[i]),
+                    "quality_idx": i,
+                }
+            )
 
         idx_to_keep = physio_trans_data_segments["PPG_quality_idx"]
 
@@ -154,9 +176,9 @@ class GREXDataLoader(DataLoader):
         # Apply standardization
         ppg_mean = np.stack(self.data["ppg"].to_numpy(), axis=0).mean()
         ppg_std = np.stack(self.data["ppg"].to_numpy(), axis=0).std()
-        self.data["ppg"] = self.data["ppg"].apply(
-            lambda x: (x - ppg_mean) / ppg_std)
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: (x - ppg_mean) / ppg_std)
 
+        # NOTE: uncomment if you want to do wavelet -> split
 
         # if not LOAD_DF:
         #     tqdm.pandas()
@@ -170,18 +192,21 @@ class GREXDataLoader(DataLoader):
         #     print("Loading dataframes...")
         #     self.data = self.load_wavelets(self.data, f"data_{LENGTH}_{WAVELET_STEP}")
 
-
-        self.data, self.test_df = train_test_split(self.data,
-                                                   test_size=0.1,
-                                                   stratify=self.data["val"],
-                                                   random_state=RANDOM_SEED)
+        self.data, self.test_df = train_test_split(
+            self.data,
+            test_size=0.1,
+            stratify=self.data["val"],
+            random_state=RANDOM_SEED,
+        )
 
         # self.data = self.slice_data(self.data)
 
         self.train_df, self.val_df = train_test_split(
-                self.data, test_size=0.3,
-                stratify=self.data["val"],
-                random_state=RANDOM_SEED)
+            self.data,
+            test_size=0.2,
+            stratify=self.data["val"],
+            random_state=RANDOM_SEED,
+        )
 
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
@@ -193,55 +218,43 @@ class GREXDataLoader(DataLoader):
         if not LOAD_DF:
             tqdm.pandas()
             self.train_df["ppg_spatial_features"] = self.train_df["ppg"].progress_apply(
-                wavelet_transform)
+                wavelet_transform
+            )
             self.val_df["ppg_spatial_features"] = self.val_df["ppg"].progress_apply(
-                wavelet_transform)
-              # self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
-              #    wavelet_transform)
+                wavelet_transform
+            )
+            # self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
+            #    wavelet_transform)
 
         if SAVE_DF:
-            self.save_wavelets(self.train_df, f"train_df_{LENGTH}_{WAVELET_STEP}")
+            self.save_wavelets(
+                self.train_df,
+                f"train_df_{LENGTH}_{WAVELET_STEP}",
+            )
             self.save_wavelets(self.val_df, f"val_df_{LENGTH}_{WAVELET_STEP}")
 
         if LOAD_DF:
             print("Loading dataframes...")
-            self.train_df = self.load_wavelets(self.train_df, f"train_df_{LENGTH}_{WAVELET_STEP}")
-            self.val_df = self.load_wavelets(self.val_df, f"val_df_{LENGTH}_{WAVELET_STEP}")
-
-        # ppg_mean = np.stack(self.train_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
-        # ppg_std = np.stack(self.train_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
-        # self.train_df["ppg_spatial_features"] = self.train_df["ppg_spatial_features"].apply(
-        #     lambda x: (x - ppg_mean) / ppg_std)
-        # ppg_mean = np.stack(self.val_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
-        # ppg_std = np.stack(self.val_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
-        # self.val_df["ppg_spatial_features"] = self.val_df["ppg_spatial_features"].apply(
-        #     lambda x: (x - ppg_mean) / ppg_std)
+            self.train_df = self.load_wavelets(
+                self.train_df, f"train_df_{LENGTH}_{WAVELET_STEP}"
+            )
+            self.val_df = self.load_wavelets(
+                self.val_df, f"val_df_{LENGTH}_{WAVELET_STEP}"
+            )
 
         if BALANCE_DATASET:
             self.train_df = self.undersample(self.train_df)
-            self.val_df = self.undersample(self.val_df)
-            self.test_df = self.undersample(self.test_df)
 
         if AUGMENTATION_SIZE > 0:
             raise ValueError("augmentation is deprecated")
-            self.train_df = GREXTransform(
-                self.train_df).augment(n=AUGMENTATION_SIZE)
+            self.train_df = GREXTransform(self.train_df).augment(n=AUGMENTATION_SIZE)
 
-
-        # if BALANCE_DATASET:
-        #     raise ValueError("augmentation is deprecated")
-        #     self.train_df = GREXTransform(self.train_df).balance()
-
+        print(f"Train group size: \n{self.train_df.groupby(['val']).size()}")
+        print(f"Validation group size: \n {self.val_df.groupby(['val']).size()}")
+        print(f"Test group size: \n {self.test_df.groupby(['val']).size()}")
         print(
-            f"Train group size: \n{self.train_df.groupby(['val']).size()}")
-        print(
-            f"Validation group size: \n {self.val_df.groupby(['val']).size()}")
-
-        print(
-            f"Test group size: \n {self.test_df.groupby(['val']).size()}")
-
-        print(
-            f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}")
+            f"Train: {len(self.train_df)}, Val: {len(self.val_df)}, Test: {len(self.test_df)}"
+        )
 
     def save_wavelets(self, df: pd.DataFrame, name: str):
         ppg_spatial_features = np.stack(df["ppg_spatial_features"].to_numpy(), axis=0)
@@ -260,22 +273,27 @@ class GREXDataLoader(DataLoader):
                 print(f"Skipping {i}")
                 continue
             ppg_spatial_feature = ppg_spatial_features[i]
-            new_row = {"ppg": row["ppg"], "val": row["val"],
-                       "aro": row["aro"], "ppg_spatial_features": ppg_spatial_feature}
+            new_row = {
+                "ppg": row["ppg"],
+                "val": row["val"],
+                "aro": row["aro"],
+                "ppg_spatial_features": ppg_spatial_feature,
+            }
             loaded_df.append(new_row)
         return pd.DataFrame(loaded_df)
 
     def undersample(self, df):
         # Group by 'aro' and 'val' columns and get the size of each group
-        group_sizes = df.groupby(['val']).size()
+        group_sizes = df.groupby(["val"]).size()
         # Get the minimum group size
         min_size = group_sizes.min()
         # Function to apply to each group
 
         def undersample_group(group):
             return group.sample(min_size)
+
         # Apply the function to each group
-        df_undersampled = df.groupby(['val']).apply(undersample_group)
+        df_undersampled = df.groupby(["val"]).apply(undersample_group)
         # Reset the index (groupby and apply result in a multi-index)
         df_undersampled.reset_index(drop=True, inplace=True)
         return df_undersampled
@@ -287,42 +305,37 @@ class GREXDataLoader(DataLoader):
         length `length` with a sliding window step of `step`.
         """
         if length > 2000:
-            raise ValueError(
-                "Length cannot be greater than original length 2000")
+            raise ValueError("Length cannot be greater than original length 2000")
         new_df = []
         for _, row in df.iterrows():
             if "ppg_spatial_features" in row:
-                ppg, val, aro, wavelet = row["ppg"], row["val"], row["aro"], row["ppg_spatial_features"]
+                ppg, val, aro, wavelet = (
+                    row["ppg"],
+                    row["val"],
+                    row["aro"],
+                    row["ppg_spatial_features"],
+                )
             else:
                 ppg, val, aro = row["ppg"], row["val"], row["aro"]
             for i in range(0, len(ppg) - length + 1, step):
-                assert ppg[i:i +
-                           length].shape[0] == length, f"Shape is not consistent: {ppg[i:i + length].shape} != {length}"
-                segment = ppg[i:i + length]
+                assert (
+                    ppg[i : i + length].shape[0] == length
+                ), f"Shape is not consistent: {ppg[i:i + length].shape} != {length}"
+                segment = ppg[i : i + length]
                 if "ppg_spatial_features" in row:
-                    segment_wavelet = wavelet[:, i:i + length]
+                    segment_wavelet = wavelet[:, i : i + length]
                     print(f"segment wavelet shape is {segment_wavelet.shape}")
-                    new_row = {"ppg": segment, "val": val, "aro": aro,
-                               "ppg_spatial_features": segment_wavelet}
+                    new_row = {
+                        "ppg": segment,
+                        "val": val,
+                        "aro": aro,
+                        "ppg_spatial_features": segment_wavelet,
+                    }
                 else:
                     new_row = {"ppg": segment, "val": val, "aro": aro}
                 new_df.append(new_row)
 
         new_df = pd.DataFrame(new_df)
-
-        # # TODO: see if it makes sense to standardize here
-        # ppg_mean = np.stack(new_df["ppg"].to_numpy(), axis=0).mean()
-        # ppg_std = np.stack(new_df["ppg"].to_numpy(), axis=0).std()
-        # new_df["ppg"] = new_df["ppg"].apply(
-        #     lambda x: (x - ppg_mean) / ppg_std)
-
-        # # TODO: see if it makes sense to take the mean on the 0th axis or should I do something different
-        # features_mean = np.stack(
-        #     new_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
-        # features_std = np.stack(
-        #     new_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
-        # new_df["ppg_spatial_features"] = new_df["ppg_spatial_features"].apply(
-        #     lambda x: (x - features_mean) / features_std)
 
         return new_df
 

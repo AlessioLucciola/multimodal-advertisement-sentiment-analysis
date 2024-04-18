@@ -1,12 +1,33 @@
 import torch
-from config import AUGMENTATION_SIZE, EMOTION_NUM_CLASSES, LENGTH, RANDOM_SEED, STEP, USE_WANDB, VAL_SIZE, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, FER_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, DATASET_NAME, T_HEAD, T_ENC_LAYERS, T_DIM_FFW, T_KERN, T_STRIDE, T_MAXPOOL, MESSAGE, ADD_NOISE
-
-
-
+from config import (
+    ADD_NOISE,
+    AUGMENTATION_SIZE,
+    BALANCE_DATASET,
+    BATCH_SIZE,
+    DROPOUT_P,
+    EMOTION_NUM_CLASSES,
+    LENGTH,
+    LIMIT,
+    LR,
+    MESSAGE,
+    N_EPOCHS,
+    RANDOM_SEED,
+    REG,
+    RESUME_TRAINING,
+    STEP,
+    T_DIM_FFW,
+    T_ENC_LAYERS,
+    T_HEAD,
+    T_KERN,
+    T_MAXPOOL,
+    T_STRIDE,
+    USE_WANDB,
+    WAVELET_STEP
+)
 from dataloaders.GREX_dataloader import GREXDataLoader
-from train.loops.train_loop_emotion_single import train_eval_loop
-from utils.utils import set_seed, select_device
 from models.EmotionNetCT import EmotionNet
+from train.loops.train_loop_emotion_single import train_eval_loop
+from utils.utils import select_device, set_seed
 
 
 def main():
@@ -48,7 +69,8 @@ def main():
         epochs=N_EPOCHS,
         steps_per_epoch=len(train_loader))
 
-    schedulers = [scheduler_aro, scheduler_val]
+    # schedulers = [scheduler_aro, scheduler_val]
+    schedulers = [None, None]
 
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -72,6 +94,7 @@ def main():
         "agumented_data": AUGMENTATION_SIZE,
         "add_noise": ADD_NOISE,
         "message": MESSAGE,
+        "wavelet_step": WAVELET_STEP,
         "transformer_config": {
             "num_heads": T_HEAD,
             "num_encoder_layers": T_ENC_LAYERS,
