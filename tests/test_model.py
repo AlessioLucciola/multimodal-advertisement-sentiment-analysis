@@ -12,7 +12,7 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import general_emotion_mapping
+from shared.constants import merged_emotion_mapping
 from dataloaders.video_custom_dataloader import video_custom_dataloader
 from utils.video_utils import select_model
 
@@ -125,7 +125,7 @@ def get_model_and_dataloader(model_path, device, type):
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
-        if not USE_VIDEO:
+        if not USE_VIDEO_FOR_TESTING:
             dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
                                                 frames_dir=FRAMES_FILES_DIR,
                                                 batch_size=BATCH_SIZE,
@@ -178,7 +178,7 @@ def video_test(model, cap, device):
             img = img.to(device)
             output = model(img)
             pred = torch.argmax(output, -1).detach()
-            emotion = general_emotion_mapping[pred.item()]
+            emotion = merged_emotion_mapping[pred.item()]
 
             cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
 
@@ -199,13 +199,13 @@ def main(model_path, epoch):
     model = load_test_model(model, model_path, epoch, device)
 
     if type == "VideoNet":
-        if USE_VIDEO:
-            if LIVE_VIDEO:
+        if USE_VIDEO_FOR_TESTING:
+            if USE_LIVE_VIDEO_FOR_TESTING:
                 print("--Test-- Live video test")
                 cap = cv2.VideoCapture(0)
             else:
                 print("--Test-- Offline video test")
-                cap = cv2.VideoCapture(VIDEO_OFFLINE_FILE)
+                cap = cv2.VideoCapture(OFFLINE_VIDEO_FILE)
             video_test(model, cap, device)
             return
         

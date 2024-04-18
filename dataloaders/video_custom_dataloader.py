@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from config import OVERLAP_SUBJETS_FRAMES, USE_DF_SPLITTING, DF_SPLITTING, RANDOM_SEED, VIDEO_METADATA_FRAMES_CSV
+from config import OVERLAP_SUBJECTS_FRAMES, DF_SPLITTING, RANDOM_SEED, VIDEO_METADATA_FRAMES_CSV
 import pandas as pd
 from datasets.video_custom_dataset import video_custom_dataset
 
@@ -34,7 +34,7 @@ class video_custom_dataloader(DataLoader):
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
         # Split the dataset into train, validation and test
-        if OVERLAP_SUBJETS_FRAMES:
+        if OVERLAP_SUBJECTS_FRAMES:
             print("--Dataloader-- Splitting the dataset WITH overlapping between subjects")
             self.split_datasets_overlapping_subjects()
         else:
@@ -52,7 +52,7 @@ class video_custom_dataloader(DataLoader):
         val_subjects = self.val_df["actor"].unique()
         test_subjects = self.test_df["actor"].unique()
 
-        print(f"Train subjects: {train_subjects} \nValidation subjects: {val_subjects} \nTest subjects: {test_subjects}")
+        print(f"--- Train subjects: {train_subjects} \n--- Validation subjects: {val_subjects} \n--- Test subjects: {test_subjects}")
 
         # For each video select its frames from the frames dataset
         # Example:
@@ -71,22 +71,16 @@ class video_custom_dataloader(DataLoader):
         print(f"--Dataloader-- Train dataset size: {self.train_df.__len__()} | Validation dataset size: {self.val_df.__len__()} | Test dataset size: {self.test_df.__len__()}")
      
     def split_datasets_without_overlapping_subjects(self):
-        # Test 2: Split the dataset using the original dataset (video), frame's subjects can't overlap between train, val and test
+        # Split the dataset using the original dataset (video), frame's subjects can't overlap between train, val and test
         # x subjects for train, y subjects for val and z subjects for test (where x != y != z)
         # Get the subjects
         subjects = self.data["actor"].unique()
         print(f"--Dataloader-- Subjects: {subjects}")
 
-        if USE_DF_SPLITTING:
-            # Split the subjects using DF_SPLITTING configuration
-            print(f"--Dataloader-- Splitting the dataset using DF_SPLITTING configuration: {DF_SPLITTING}")
-            train_subjects, temp_subjects = train_test_split(subjects, test_size=DF_SPLITTING[0], random_state=self.seed)
-            val_subjects, test_subjects = train_test_split(temp_subjects, test_size=DF_SPLITTING[1], random_state=self.seed)
-        else:
-            # Split the subjects: n - 1 for train, 1 for val and 1 for test
-            print("--Dataloader-- Splitting the dataset using n-1 subjects for train, 1 for val and 1 for test")
-            train_subjects, tmp_subjects = train_test_split(subjects, test_size=0.05, random_state=self.seed)
-            val_subjects, test_subjects = train_test_split(tmp_subjects, test_size=0.5, random_state=self.seed)
+        # Split the subjects: n - 1 for train, 1 for val and 1 for test
+        print("--Dataloader-- Splitting the dataset using n-1 subjects for train, 1 for val and 1 for test")
+        train_subjects, tmp_subjects = train_test_split(subjects, test_size=0.05, random_state=self.seed)
+        val_subjects, test_subjects = train_test_split(tmp_subjects, test_size=0.5, random_state=self.seed)
 
         print(f"Train subjects: {train_subjects} \nValidation subjects: {val_subjects} \nTest subjects: {test_subjects}")
 
@@ -103,8 +97,6 @@ class video_custom_dataloader(DataLoader):
 
         # Load the frames dataset dataset and select the frames that contain the file_name
         self.load_frames_from_file_names(train_file_names, val_file_names, test_file_names)
-
-        print(f"--Dataloader-- Train dataset size: {self.train_df.__len__()} | Validation dataset size: {self.val_df.__len__()} | Test dataset size: {self.test_df.__len__()}")
     
     def load_frames_from_file_names(self, train_file_names, val_file_names, test_file_names):
         # Load the frames dataset dataset and select the frames that contain the file_name
@@ -122,7 +114,7 @@ class video_custom_dataloader(DataLoader):
                                               apply_transformations=self.apply_transformations, 
                                               normalize=self.normalize
                                               )
-        print(f"--Dataset-- Validation dataset size: {train_dataset.__len__()}")
+        print(f"--Dataset-- Train dataset size: {train_dataset.__len__()}")
         return DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
     
     def get_val_dataloader(self):
@@ -146,5 +138,5 @@ class video_custom_dataloader(DataLoader):
                                              apply_transformations=self.apply_transformations, 
                                              normalize=self.normalize
                                              )
-        print(f"--Dataset-- Validation dataset size: {test_dataset.__len__()}")
+        print(f"--Dataset-- Test dataset size: {test_dataset.__len__()}")
         return DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)

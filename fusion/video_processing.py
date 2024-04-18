@@ -1,6 +1,6 @@
 from config import *
 from utils.utils import select_device, set_seed
-from shared.constants import general_emotion_mapping
+from shared.constants import merged_emotion_mapping
 import numpy as np
 import torch
 import json
@@ -26,7 +26,7 @@ def main(model_path, video_file, epoch, live_demo=False):
         end_time = feature['end_time']
         output = model(frame)
         pred = torch.argmax(output, -1).detach()
-        emotion = general_emotion_mapping[pred.item()]
+        emotion = merged_emotion_mapping[pred.item()]
         print(f"Emotion detected from {start_time:.2f}s to {end_time:.2f}s: {emotion}")
 
         video_processed_windows.append({

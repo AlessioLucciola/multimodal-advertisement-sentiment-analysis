@@ -3,7 +3,6 @@ from pathlib import Path
 from torch.utils.data import Dataset
 import random
 import pandas as pd
-import numpy as np
 from tqdm import tqdm
 from torchvision import transforms
 from PIL import Image
