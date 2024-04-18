@@ -18,8 +18,8 @@ BALANCE_DATASET = True # Balance the dataset if True, use the original dataset i
 NUM_CLASSES = 3 # 3 (merged) | 8 (default)
 
 # Test configurations
-PATH_MODEL_TO_TEST = "VideoNet_vit-pretrained_2024-04-18_09-28-15"
-TEST_EPOCH = 3 # Number of epoch to test or "best" to test the best model
+PATH_MODEL_TO_TEST = "VideoNet_vit-pretrained_2024-04-18_17-31-58"
+TEST_EPOCH = 5 # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -76,7 +76,7 @@ IMG_SIZE = (224, 224)
 NUM_WORKERS = os.cpu_count() # Number of workers for dataloader, set to 0 if you want to run the code in a single process
 
 # Train / Validation / Test configurations
-OVERLAP_SUBJECTS_FRAMES = True # Overlap the frames of the subjects between train, validation and test if True, False otherwise
+OVERLAP_SUBJECTS_FRAMES = False # Overlap the frames of the subjects between train, validation and test if True, False otherwise
 PRELOAD_FRAMES = True # Preload frames if True, load frames on the fly if False
 APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
 NORMALIZE = True # Normalize the images if True, use the original images if False
