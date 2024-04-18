@@ -1,9 +1,9 @@
-from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, NUM_CLASSES, RANDOM_SEED, USE_POSITIVE_NEGATIVE_LABELS
+from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, NUM_CLASSES, RANDOM_SEED
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_multiple_waveforms_from_buffer, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
 from utils.utils import upload_scaler, select_device, set_seed
-from shared.constants import RAVDESS_emotion_mapping, merged_emotion_mapping
+from shared.constants import general_emotion_mapping, merged_emotion_mapping
 import numpy as np
 import torch
 import json
@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def main(model_path, audio_file, epoch, live_demo=False):
+def main(model_path, audio_file, epoch, use_positive_negative_labels=True, live_demo=False):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[0]
@@ -27,11 +27,29 @@ def main(model_path, audio_file, epoch, live_demo=False):
         longest_voice_segment_end = feature['longest_voice_segment_end']
         output = model(waveform)
         pred = torch.argmax(output, -1).detach()
-        emotion = merged_emotion_mapping[pred.item()] if USE_POSITIVE_NEGATIVE_LABELS else RAVDESS_emotion_mapping[pred.item()] 
-        print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
+        emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
+        #print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
+        audio_processed_windows.append({
+            "start_time": start_time,
+            "end_time": end_time,
+            "longest_voice_segment_start": longest_voice_segment_start,
+            "longest_voice_segment_end": longest_voice_segment_end,
+            "longest_voice_segment_length": feature['longest_voice_segment_length'],
+            "emotion_label": pred.item(),
+            "emotion_string": emotion,
+            "logits": torch.softmax(output, -1).cpu().detach().numpy()
+        })
+    
+    audio_processed_windows = merge_overlapping_windows(audio_processed_windows)
+    for emotion in audio_processed_windows:
+        print(f"Emotion detected from {emotion['longest_voice_segment_start']:.2f}s to {emotion['longest_voice_segment_end']:.2f}s: {emotion['emotion_string']}")
+    return audio_processed_windows
 
-def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
-    segments = extract_multiple_waveforms_from_audio_file(file=audio_file_path, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+def preprocess_audio_file(audio_file, scaler, live_demo, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
+    if live_demo:
+        segments = extract_multiple_waveforms_from_buffer(buffer=audio_file, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
+    else:
+        segments = extract_multiple_waveforms_from_audio_file(file=audio_file, desired_length_seconds=desired_length_seconds, desired_sample_rate=desired_sample_rate)
     preprocessed_segments = []
     for segment in segments:
         speech_segments = detect_speech(waveform=segment['waveform'], start_time=segment['start_time'], end_time=segment['end_time'], sr=AUDIO_SAMPLE_RATE)
@@ -116,7 +134,6 @@ def merge_overlapping_windows(data):
                 current_merge['end_time'] = window['end_time']
                 current_merge['longest_voice_segment_end'] = max(current_merge['longest_voice_segment_end'], window['longest_voice_segment_end'])
                 current_merge['logits_sum'] += window['logits']
-                print(window['emotion_string'], window['logits'], current_merge['logits_sum'])
                 current_merge['num_windows'] += 1
         else:
             # Check for overlaps with the previous window and adjust start time if necessary
@@ -161,10 +178,4 @@ def merge_overlapping_windows(data):
         window['longest_voice_segment_end'] = end_time
     
     return sorted_windows
-    
 
-if __name__ == "__main__":
-    epoch = 156
-    model_path = os.path.join("AudioNetCT_2024-04-18_11-09-07")
-    audio_file_path = os.path.join("data", "AUDIO", "full_2.wav")
-    main(model_path=model_path, audio_file_path=audio_file_path, epoch=epoch)

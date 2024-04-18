@@ -36,9 +36,9 @@ def stop_listening():
     st.session_state['run'] = False
     audio_stream_frames = b''.join(st.session_state['audio_stream_frames'])
     video_stream_frames = st.session_state['video_stream_frames']
-    st.session_state["processed_windows"] = fusion_main(audio_model_path="AudioNetCT_2024-04-08_17-00-51",
+    st.session_state["processed_windows"] = fusion_main(audio_model_path="AudioNetCT_2024-04-18_11-09-07",
                                                         video_model_path=None,
-                                                        audio_model_epoch=484,
+                                                        audio_model_epoch=155,
                                                         video_model_epoch=None,
                                                         audio_frames=audio_stream_frames,
                                                         video_frames=video_stream_frames,
@@ -46,7 +46,7 @@ def stop_listening():
 
 while st.session_state['run']:
     try:
-        data = audio_stream.read(8000)
+        data = audio_stream.read(12000)
         st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
         captured_video_frame = tuple((video_stream, datetime.now()))
         st.session_state['video_stream_frames'].append(captured_video_frame)  # Append data to video stream frames
