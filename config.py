@@ -30,11 +30,11 @@ PATH_MODEL_TO_RESUME = "VideoNet_vit-pretrained_2024-04-08_15-27-18"
 RESUME_EPOCH = 66
 
 # Train configurations
-BATCH_SIZE = 32 # Max (for ViT): 512 | Max (for CNN): 32
-N_EPOCHS = 30
+BATCH_SIZE = 128 # Max (for ViT): 512 | Max (for CNN): 32
+N_EPOCHS = 500
 LR = 1e-3
 REG = 1e-3
-DROPOUT_P = 0.2
+DROPOUT_P = 0.3
 
 # ----------------------------
 
