@@ -18,16 +18,16 @@ BALANCE_DATASET = True # Balance the dataset if True, use the original dataset i
 NUM_CLASSES = 3 # 3 (merged) | 8 (default)
 
 # Test configurations
-PATH_MODEL_TO_TEST = "VideoNet_vit-pretrained_2024-04-18_17-31-58"
+PATH_MODEL_TO_TEST = "VideoNet_resnet34_2024-04-19_14-52-37"
 TEST_EPOCH = 5 # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
-PATH_MODEL_TO_RESUME = "VideoNet_vit-pretrained_2024-04-08_15-27-18"
-RESUME_EPOCH = 66
+PATH_MODEL_TO_RESUME = "VideoNet_resnet34_2024-04-19_14-23-24"
+RESUME_EPOCH = 5
 
 # Train configurations
-BATCH_SIZE = 512 # Max (for ViT): 512 | Max (for CNN): 32
+BATCH_SIZE = 32 # Max (for ViT): 512 | Max (for CNN): 32
 N_EPOCHS = 20
 LR = 1e-2
 REG = 1e-2
@@ -70,7 +70,7 @@ VIDEO_METADATA_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME + "_meta
 VIDEO_METADATA_FRAMES_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME + "_metadata_frames_remapped.csv") # _metadata_frames | _metadata_frames_remapped
 
 # Models configurations
-MODEL_NAME = 'vit-pretrained' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
+MODEL_NAME = 'resnet34' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
 IMG_SIZE = (224, 224)
 NUM_WORKERS = os.cpu_count() # Number of workers for dataloader, set to 0 if you want to run the code in a single process
