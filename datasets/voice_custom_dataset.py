@@ -1,4 +1,4 @@
-from utils.audio_utils import apply_AWGN, extract_waveform_from_audio_file, extract_zcr_features, extract_rms_features, extract_mfcc_features, extract_features
+from utils.audio_utils import apply_AWGN_with_pitch_shift, extract_waveform_from_audio_file, extract_zcr_features, extract_rms_features, extract_mfcc_features, extract_features
 from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, AUDIO_FILES_DIR, FRAME_LENGTH, HOP_LENGTH, USE_RAVDESS_ONLY, AUDIO_RAVDESS_FILES_DIR, NUM_MFCC
 from collections import Counter
 from pathlib import Path
@@ -57,7 +57,7 @@ class RAVDESSCustomDataset(Dataset):
             # Apply data augmentation if the audio file is marked as augmented
             if (self.balance_dataset and self.is_train_dataset):
                 if (self.data.iloc[idx, 6] if USE_RAVDESS_ONLY else self.data.iloc[idx, 2]):
-                    waveform = apply_AWGN(waveform)
+                    waveform = apply_AWGN_with_pitch_shift(waveform=waveform, sr=AUDIO_SAMPLE_RATE)
             audio_file = np.expand_dims(self.get_audio_features(waveform), axis=0) # Add channel dimension to get a 4D tensor suitable for CNN
         emotion = self.data.iloc[idx, 1]
 
@@ -105,7 +105,7 @@ class RAVDESSCustomDataset(Dataset):
             waveform = self.get_waveform(os.path.join(AUDIO_RAVDESS_FILES_DIR if USE_RAVDESS_ONLY else AUDIO_FILES_DIR, audio_file))
             if (self.balance_dataset and self.is_train_dataset):
                 if (self.data.iloc[i, 6] if USE_RAVDESS_ONLY else self.data.iloc[i, 2]):
-                    waveform = apply_AWGN(waveform)
+                    waveform = apply_AWGN_with_pitch_shift(waveform=waveform, sr=AUDIO_SAMPLE_RATE)
             waveform = self.get_audio_features(waveform)
             waveform_dict[audio_file] = waveform
         return waveform_dict
