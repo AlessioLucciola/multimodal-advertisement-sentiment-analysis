@@ -7,6 +7,8 @@ from tqdm import tqdm
 from torchvision import transforms
 from PIL import Image
 
+pd.set_option('future.no_silent_downcasting', True) # Raise errors instead of warnings for pd.to_numeric
+
 class video_custom_dataset(Dataset):
     def __init__(self,
                  data: pd.DataFrame,
@@ -32,7 +34,7 @@ class video_custom_dataset(Dataset):
 
         # Balance the dataset
         if self.balance_dataset and self.is_train_dataset:
-            self.data = self.apply_balance_dataset(self.data)
+            self.apply_balance_dataset()
 
         # Preload frames files
         if self.preload_frames_files:
@@ -95,28 +97,26 @@ class video_custom_dataset(Dataset):
         
         return train_tfms if self.is_train_dataset else val_tfms
     
-    def apply_balance_dataset(self, data):
+    def apply_balance_dataset(self):
         print("--Data Balance-- balance_data set to True. Training data will be balanced.")
-        print("--Data Balance-- Classes before balancing: ", data.emotion.value_counts().to_dict())
-        emotion_counts = Counter(data.emotion)
+        print("--Data Balance-- Classes before balancing: ", self.data.emotion.value_counts().to_dict())
+        emotion_counts = Counter(self.data.emotion)
         max_emotion, max_count = max(emotion_counts.items(), key=lambda x: x[1])
         print(f"--Data Balance-- The most common class is {max_emotion} with {max_count} images.")
 
-        for emotion in data.emotion.unique():
-            emotion_indices = data[data.emotion == emotion].index
+        for emotion in self.data.emotion.unique():
+            emotion_indices = self.data[self.data.emotion == emotion].index
             current_images = len(emotion_indices)
 
             if current_images < max_count:
                 num_images_to_add = max_count - current_images
                 print(f"--Data Balance (Oversampling)-- Adding {num_images_to_add} to {emotion} class..")
                 aug_indices = random.choices(emotion_indices.tolist(), k=num_images_to_add)
-                data = pd.concat([data, data.loc[aug_indices]])
-                data.loc[aug_indices, "balanced"] = True
-                emotion_indices = data[data["emotion"] == emotion].index
-        data.fillna({"balanced": False}, inplace=True)
-        print("--Data Balance-- Classes after balancing: ", data.emotion.value_counts().to_dict())
-
-        return data
+                self.data = pd.concat([self.data, self.data.loc[aug_indices]])
+                self.data.loc[aug_indices, "balanced"] = True
+                emotion_indices = self.data[self.data["emotion"] == emotion].index
+        self.data = self.data.fillna({"balanced": False}).infer_objects(copy=False)
+        print("--Data Balance-- Classes after balancing: ", self.data.emotion.value_counts().to_dict())
     
     def normalize_frame(self, frame):
         # Apply ImageNet normalization

@@ -179,4 +179,5 @@ def train_eval_loop(device,
             if epoch == config["epochs"]-1 and SAVE_MODELS:
                 save_model(data_name, best_model, epoch=None, is_best=True)
 
-        #scheduler.step()
+        # Update the learning rate with the scheduler
+        # scheduler.step()

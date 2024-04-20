@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from config import OVERLAP_SUBJECTS_FRAMES, DF_SPLITTING, RANDOM_SEED
 import pandas as pd
 from datasets.video_custom_dataset import video_custom_dataset
+from shared.constants import mapping_to_positive_negative
 
 class video_custom_dataloader(DataLoader):
     def __init__(self,
@@ -12,6 +13,7 @@ class video_custom_dataloader(DataLoader):
                  frames_dir: str,
                  seed: int = RANDOM_SEED,
                  limit: int = None,
+                 use_positive_negative_labels: bool = True,
                  preload_frames: bool = True,
                  apply_transformations: bool = True,
                  balance_dataset: bool = True,
@@ -23,6 +25,7 @@ class video_custom_dataloader(DataLoader):
         self.frames_dir = frames_dir
         self.seed = seed
         self.limit = limit
+        self.use_positive_negative_labels = use_positive_negative_labels
         self.preload_frames = preload_frames
         self.apply_transformations = apply_transformations
         self.balance_dataset = balance_dataset
@@ -103,6 +106,16 @@ class video_custom_dataloader(DataLoader):
         self.train_df = self.csv_frames_files[self.csv_frames_files["file_name"].apply(lambda x: x.split("_")[0]).isin(train_file_names)]
         self.val_df = self.csv_frames_files[self.csv_frames_files["file_name"].apply(lambda x: x.split("_")[0]).isin(val_file_names)]
         self.test_df = self.csv_frames_files[self.csv_frames_files["file_name"].apply(lambda x: x.split("_")[0]).isin(test_file_names)]
+
+        # Map the emotions to positive/negative labels
+        if self.use_positive_negative_labels:
+            print("--Dataloader-- Using positive/negative labels mapping.")
+            self.train_df.loc[:, 'emotion'] = self.train_df['emotion'].astype(int).map(mapping_to_positive_negative)
+            self.val_df.loc[:, 'emotion'] = self.val_df['emotion'].astype(int).map(mapping_to_positive_negative)
+            self.test_df.loc[:, 'emotion'] = self.test_df['emotion'].astype(int).map(mapping_to_positive_negative)
+
+        # Print unique values in the column 'emotion'
+        print(f"--- Train emotions: {self.train_df['emotion'].unique()} \n--- Validation emotions: {self.val_df['emotion'].unique()} \n--- Test emotions: {self.test_df['emotion'].unique()}")
 
     def get_train_dataloader(self):
         train_dataset = video_custom_dataset(data=self.train_df, 

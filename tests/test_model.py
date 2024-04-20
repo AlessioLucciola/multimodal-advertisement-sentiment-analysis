@@ -12,7 +12,7 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import general_emotion_mapping
+from shared.constants import merged_emotion_mapping
 from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
@@ -180,7 +180,7 @@ def video_test(model, cap, device):
             img = img.to(device)
             output = model(img)
             pred = torch.argmax(output, -1).detach()
-            emotion = general_emotion_mapping[pred.item()]
+            emotion = merged_emotion_mapping[pred.item()]
 
             cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
 
