@@ -121,16 +121,23 @@ def get_model_and_dataloader(model_path, device, type):
                                         )
         scaler = upload_scaler(model_path)
     elif type == "VideoNet":
+        hidden_size = HIDDEN_SIZE if configurations is None else configurations["hidden_size"]
+        batch_size = BATCH_SIZE if configurations is None else configurations["batch_size"]
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
-        model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
+        use_positive_negative_labels = USE_POSITIVE_NEGATIVE_LABELS if configurations is None else configurations["use_positive_negative_labels"]
+        overlap_subjects_frames = OVERLAP_SUBJECTS_FRAMES if configurations is None else configurations["overlap_subjects_frames"]
+
+        model = select_model(model_path.split('_')[1], hidden_size, num_classes, dropout_p).to(device)
         if not USE_VIDEO_FOR_TESTING:
             dataloader = video_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
                                    csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
-                                   batch_size=BATCH_SIZE,
+                                   batch_size=batch_size,
                                    frames_dir=FRAMES_FILES_DIR,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
+                                   overlap_subjects_frames=overlap_subjects_frames,
+                                   use_positive_negative_labels=use_positive_negative_labels,
                                    preload_frames=PRELOAD_FRAMES,
                                    apply_transformations=APPLY_TRANSFORMATIONS,
                                    balance_dataset=BALANCE_DATASET,
@@ -148,7 +155,14 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
-def video_test(model, cap, device):
+def video_test(model, num_classes, cap, device):
+    model.eval()
+    accuracy_metric = Accuracy(task="multiclass", num_classes=num_classes).to(device)
+    recall_metric = Recall(task="multiclass", num_classes=num_classes, average='macro').to(device)
+    precision_metric = Precision(task="multiclass", num_classes=num_classes, average='macro').to(device)
+    f1_metric = F1Score(task="multiclass", num_classes=num_classes, average='macro').to(device)
+    auroc_metric = AUROC(task="multiclass", num_classes=num_classes).to(device)
+
     val_transform = transforms.Compose([
         transforms.ToTensor()])
 
@@ -174,14 +188,16 @@ def video_test(model, cap, device):
   
             # Resize face
             face = cv2.resize(face, IMG_SIZE)
-
             img = Image.fromarray(face)
             img = val_transform(img).unsqueeze(0)
             img = img.to(device)
+
+            # Get prediction from model
             output = model(img)
             pred = torch.argmax(output, -1).detach()
             emotion = merged_emotion_mapping[pred.item()]
 
+            # Display the emotion
             cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
 
         
@@ -191,7 +207,6 @@ def video_test(model, cap, device):
 
     cap.release()
     cv2.destroyAllWindows()
-
 
 def main(model_path, epoch):
     set_seed(RANDOM_SEED)
@@ -208,7 +223,7 @@ def main(model_path, epoch):
             else:
                 print("--Test-- Offline video test")
                 cap = cv2.VideoCapture(OFFLINE_VIDEO_FILE)
-            video_test(model, cap, device)
+            video_test(model, num_classes, cap, device)
             return
         
     print("--Test-- Test dataset")

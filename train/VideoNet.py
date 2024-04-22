@@ -4,7 +4,7 @@ from dataloaders.video_custom_dataloader import video_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
 from utils.video_utils import select_model
-from shared.constants import video_cnn_models_list, video_vit_models_list
+from shared.constants import video_cnn_models_list
 
 def main():
     set_seed(RANDOM_SEED)
@@ -17,6 +17,7 @@ def main():
                                    frames_dir=FRAMES_FILES_DIR,
                                    seed=RANDOM_SEED,
                                    limit=LIMIT,
+                                   overlap_subjects_frames=OVERLAP_SUBJECTS_FRAMES,
                                    use_positive_negative_labels=USE_POSITIVE_NEGATIVE_LABELS,
                                    preload_frames=PRELOAD_FRAMES,
                                    apply_transformations=APPLY_TRANSFORMATIONS,

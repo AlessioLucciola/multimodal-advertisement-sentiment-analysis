@@ -13,6 +13,7 @@ class video_custom_dataloader(DataLoader):
                  frames_dir: str,
                  seed: int = RANDOM_SEED,
                  limit: int = None,
+                 overlap_subjects_frames: bool = True,
                  use_positive_negative_labels: bool = True,
                  preload_frames: bool = True,
                  apply_transformations: bool = True,
@@ -25,6 +26,7 @@ class video_custom_dataloader(DataLoader):
         self.frames_dir = frames_dir
         self.seed = seed
         self.limit = limit
+        self.overlap_subjects_frames = overlap_subjects_frames
         self.use_positive_negative_labels = use_positive_negative_labels
         self.preload_frames = preload_frames
         self.apply_transformations = apply_transformations
@@ -39,7 +41,7 @@ class video_custom_dataloader(DataLoader):
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
         # Split the dataset into train, validation and test
-        if OVERLAP_SUBJECTS_FRAMES:
+        if overlap_subjects_frames:
             print("--Dataloader-- Splitting the dataset WITH overlapping between subjects")
             self.split_datasets_overlapping_subjects()
         else:
