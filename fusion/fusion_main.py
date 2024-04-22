@@ -1,11 +1,11 @@
 from shared.constants import general_emotion_mapping, merged_emotion_mapping
 from fusion.audio_processing import main as audio_main
-from config import NUM_CLASSES
+from config import DEMO_DIR, NUM_CLASSES
 from datetime import datetime
+from PIL import Image
 import numpy as np
 import random
 import os
-from datetime import datetime
 
 def main(audio_model_path: str,
          audio_model_epoch: int,
@@ -22,8 +22,21 @@ def main(audio_model_path: str,
     # Video processing
     video_frames = get_frames_duration(video_frames)   
     video_output = []
+
     # Note: The following code is a placeholder for the actual fusion logic (Replace the prediction logic here)
-    for duration, _ in video_frames:
+    current_datetime = datetime.now()
+    current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+    video_path = os.path.join(DEMO_DIR, "video_files", str(current_datetime_str))
+    if not os.path.exists(video_path):
+        os.makedirs(video_path)
+    for duration, video_frame in video_frames:
+        # Save the video frame to the disk
+        image_array = np.array(video_frame)
+        height, width, channels = image_array.shape
+        pixels = image_array.reshape((height * width, channels))
+        pixels = pixels.astype(np.uint8)
+        image = Image.fromarray(pixels.reshape((height, width, channels)))
+        image.save(os.path.join(video_path, f"{current_datetime_str}_{duration}.jpg"))
         labels_num = NUM_CLASSES        
         emotions = compute_softmax([random.random() for _ in range(labels_num)])
         # In the real code, for each frame you should return the logits of each emotion

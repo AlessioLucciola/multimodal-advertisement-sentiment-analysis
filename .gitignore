@@ -1,4 +1,5 @@
 *.wav
+*.jpg
 __pycache__
 results
 data
