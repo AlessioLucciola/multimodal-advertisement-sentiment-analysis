@@ -1,9 +1,9 @@
-from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, NUM_CLASSES, RANDOM_SEED
+from config import AUDIO_SAMPLE_RATE, AUDIO_OFFSET, AUDIO_DURATION, DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, NUM_MFCC, FRAME_LENGTH, HOP_LENGTH, PATH_TO_SAVE_RESULTS, NUM_CLASSES, RANDOM_SEED, USE_POSITIVE_NEGATIVE_LABELS
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from utils.audio_utils import extract_mfcc_features, extract_multiple_waveforms_from_audio_file, extract_waveform_from_audio_file, extract_features, detect_speech, extract_speech_segment_from_waveform
 from utils.utils import upload_scaler, select_device, set_seed
-from shared.constants import RAVDESS_emotion_mapping
+from shared.constants import RAVDESS_emotion_mapping, merged_emotion_mapping
 import numpy as np
 import torch
 import json
@@ -24,7 +24,7 @@ def main(model_path, audio_file_path, epoch):
         longest_voice_segment_end = feature['longest_voice_segment_end']
         output = model(waveform)
         pred = torch.argmax(output, -1).detach()
-        emotion = RAVDESS_emotion_mapping[pred.item()]
+        emotion = merged_emotion_mapping[pred.item()] if USE_POSITIVE_NEGATIVE_LABELS else RAVDESS_emotion_mapping[pred.item()] 
         print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
 
 def preprocess_audio_file(audio_file_path, scaler, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):
@@ -100,7 +100,7 @@ def get_model_and_dataloader(model_path, device, type):
     return model, scaler, num_classes
 
 if __name__ == "__main__":
-    epoch = 484
-    model_path = os.path.join("AudioNetCT_2024-04-08_09-33-56")
-    audio_file_path = os.path.join("data", "AUDIO", "test_audio_real.wav")
+    epoch = 156
+    model_path = os.path.join("AudioNetCT_2024-04-18_11-09-07")
+    audio_file_path = os.path.join("data", "AUDIO", "full_2.wav")
     main(model_path=model_path, audio_file_path=audio_file_path, epoch=epoch)

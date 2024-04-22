@@ -13,6 +13,14 @@ def create_ravdess_csv_from_video():
     repetition = []
     actor = []
     for file in os.listdir(VIDEO_FILES_DIR):
+        # For example: 01-01-03-01-01-02-05_72.png:
+            # Modality  = 01 (01 = full-AV, 02 = video-only, 03 = audio-only)
+            # Vocal channel = 01 (01 = speech, 02 = song)
+            # Emotion = 03 (01 = neutral, 02 = calm, 03 = happy, 04 = sad, 05 = angry, 06 = fearful, 07 = disgust, 08 = surprised)
+            # Emotion intensity = 01 (01 = normal, 02 = strong). NOTE: There is no strong intensity for the 'neutral' emotion.
+            # Statement = 01 (01 = "Kids are talking by the door", 02 = "Dogs are sitting by the door").
+            # Repetition = 02 (01 = 1st repetition, 02 = 2nd repetition).
+            # Actor = 05 (01 to 24. Odd numbered actors are male, even numbered actors are female).
         file_names.append(file)
         file_info = file.split("-")
         emotion.append(int(file_info[2])-1)
@@ -23,7 +31,7 @@ def create_ravdess_csv_from_video():
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor}
     df = pd.DataFrame(data)
-    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_original" +".csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_metadata_original" +".csv", index=False)
 
 def create_ravdess_csv_from_frames(path):
     file_names = []
@@ -34,16 +42,15 @@ def create_ravdess_csv_from_frames(path):
     actor = []
     frame = []
     for file in os.listdir(FRAMES_FILES_DIR):
-        # For example: 01-01-03-01-01-02-05_72.png:
-        # fileNname = 01-01-03-01-01-02-05_72.png
-        # Modality  = 01 (01 = full-AV, 02 = video-only, 03 = audio-only)
-        # Vocal channel = 01 (01 = speech, 02 = song)
-        # Emotion = 03 (01 = neutral, 02 = calm, 03 = happy, 04 = sad, 05 = angry, 06 = fearful, 07 = disgust, 08 = surprised)
-        # Emotion intensity = 01 (01 = normal, 02 = strong). NOTE: There is no strong intensity for the 'neutral' emotion.
-        # Statement = 01 
-        # Repetition = 02 
-        # Actor = 05 (01 to 24)
-        # Frame = 72
+         # For example: 01-01-03-01-01-02-05_72.png:
+            # Modality  = 01 (01 = full-AV, 02 = video-only, 03 = audio-only)
+            # Vocal channel = 01 (01 = speech, 02 = song)
+            # Emotion = 03 (01 = neutral, 02 = calm, 03 = happy, 04 = sad, 05 = angry, 06 = fearful, 07 = disgust, 08 = surprised)
+            # Emotion intensity = 01 (01 = normal, 02 = strong). NOTE: There is no strong intensity for the 'neutral' emotion.
+            # Statement = 01 (01 = "Kids are talking by the door", 02 = "Dogs are sitting by the door").
+            # Repetition = 02 (01 = 1st repetition, 02 = 2nd repetition).
+            # Actor = 05 (01 to 24. Odd numbered actors are male, even numbered actors are female).
+            # Frame = 72
 
         file_names.append(file)
         file_info = file.split("_")[0].split("-")
@@ -56,7 +63,7 @@ def create_ravdess_csv_from_frames(path):
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "frame": frame}
     df = pd.DataFrame(data)
-    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_frames.csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_metadata_frames.csv", index=False)
 
 def create_ravdess_csv_from_frames_w_pixels(path):
     #  Retrieve size from path and convert into a tuple like (234, 234)
@@ -70,6 +77,15 @@ def create_ravdess_csv_from_frames_w_pixels(path):
     actor = []
     pixels_list = []
     for file in tqdm(os.listdir(FRAMES_FILES_DIR)):
+        # For example: 01-01-03-01-01-02-05_72.png:
+            # Modality  = 01 (01 = full-AV, 02 = video-only, 03 = audio-only)
+            # Vocal channel = 01 (01 = speech, 02 = song)
+            # Emotion = 03 (01 = neutral, 02 = calm, 03 = happy, 04 = sad, 05 = angry, 06 = fearful, 07 = disgust, 08 = surprised)
+            # Emotion intensity = 01 (01 = normal, 02 = strong). NOTE: There is no strong intensity for the 'neutral' emotion.
+            # Statement = 01 (01 = "Kids are talking by the door", 02 = "Dogs are sitting by the door").
+            # Repetition = 02 (01 = 1st repetition, 02 = 2nd repetition).
+            # Actor = 05 (01 to 24. Odd numbered actors are male, even numbered actors are female).
+            # Frame = 72
         file_names.append(file)
         file_info = file.split("_")[0].split("-")
         emotion.append(int(file_info[2])-1)
@@ -88,7 +104,7 @@ def create_ravdess_csv_from_frames_w_pixels(path):
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "pixels": pixels_list}
     df = pd.DataFrame(data)
-    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_frames_w_pixels.csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + "ravdess_metadata_frames_w_pixels.csv", index=False)
 
 if __name__ == "__main__":
     frames_path = 'ravdess_frames' # ravdess_frames

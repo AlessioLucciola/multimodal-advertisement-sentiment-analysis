@@ -1,3 +1,22 @@
+# Video models
+video_cnn_models_list = [
+                'resnet18', 
+                'resnet34', 
+                'resnet50', 
+                'resnet101', 
+                'densenet121', 
+                'custom-cnn',
+                ]
+                         
+video_vit_models_list = [
+                'vit-pretrained',
+                ]
+
+video_models_list = video_cnn_models_list + video_vit_models_list
+
+# -----------------------------
+
+# Mapping
 RAVDESS_emotion_mapping = {
     1: "neutral",
     2: "calm",
@@ -102,4 +121,21 @@ general_emotion_mapping = {
     5: "fearful",
     6: "disgust",
     7: "surprise"
+}
+
+mapping_to_positive_negative = {
+    0: 0, # neutral -> neutral
+    1: 0, # calm -> neutral
+    2: 1, # happy -> positive
+    3: 2, # sad -> negative
+    4: 2, # angry -> negative
+    5: 2, # fearful -> negative
+    6: 2, # disgust -> negative
+    7: 1 # surprise -> positive
+}
+
+merged_emotion_mapping = {
+    0: "neutral",
+    1: "positive",
+    2: "negative"
 }

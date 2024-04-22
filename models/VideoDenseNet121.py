@@ -1,8 +1,9 @@
-import torch.nn as nn
+from torch import nn
 from torchvision import models
+from torchvision.models import DenseNet121_Weights
 from config import DROPOUT_P
 import numpy as np
-from torchvision.models import DenseNet121_Weights
+
 
 class VideoDenseNet121(nn.Module):
     def __init__(self, hidden_layers, num_classes, dropout_p=DROPOUT_P):
