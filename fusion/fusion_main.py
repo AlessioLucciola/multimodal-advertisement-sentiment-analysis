@@ -20,23 +20,23 @@ def main(audio_model_path: str,
     # Audio processing
     audio_output = audio_main(model_path=audio_model_path, epoch=audio_model_epoch, audio_file=audio_frames, live_demo=live_demo)
     # Video processing
-    #video_frames = get_frames_duration(video_frames)   
-    #video_output = []
+    video_frames = get_frames_duration(video_frames)   
+    video_output = []
     # Note: The following code is a placeholder for the actual fusion logic (Replace the prediction logic here)
-    #for duration, _ in video_frames:
-    #    labels_num = NUM_CLASSES        
-    #    emotions = compute_softmax([random.random() for _ in range(labels_num)])
-    #    # In the real code, for each frame you should return the logits of each emotion
-    #    video_output.append({'frame_duration': duration, 'output': emotions})
+    for duration, _ in video_frames:
+        labels_num = NUM_CLASSES        
+        emotions = compute_softmax([random.random() for _ in range(labels_num)])
+        # In the real code, for each frame you should return the logits of each emotion
+        video_output.append({'frame_duration': duration, 'output': emotions})
     ###
 
-    #fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
-    #remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output) # Compute predictions for the remaining time windows only with video
+    fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
+    remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
 
-    #all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
-    #for f in all_frames:
-    #    print(f)
-    #return all_frames
+    all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
+    for f in all_frames:
+        print(f)
+    return all_frames
 
 def get_frames_duration(video_frames):
     start_time = datetime.timestamp(video_frames[0][1])
