@@ -1,6 +1,5 @@
 import torch.nn as nn
 from torchvision import models
-from enum import Enum
 import numpy as np
 from config import DROPOUT_P
 from torchvision.models import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, ResNet101_Weights

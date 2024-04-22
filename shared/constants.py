@@ -1,3 +1,22 @@
+# Video models
+video_cnn_models_list = [
+                'resnet18', 
+                'resnet34', 
+                'resnet50', 
+                'resnet101', 
+                'densenet121', 
+                'custom-cnn',
+                ]
+                         
+video_vit_models_list = [
+                'vit-pretrained',
+                ]
+
+video_models_list = video_cnn_models_list + video_vit_models_list
+
+# -----------------------------
+
+# Mapping
 RAVDESS_emotion_mapping = {
     1: "neutral",
     2: "calm",

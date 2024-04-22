@@ -12,8 +12,7 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import general_emotion_mapping
-from dataloaders.video_custom_dataloader import video_custom_dataloader
+from shared.constants import merged_emotion_mapping
 from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
@@ -122,18 +121,28 @@ def get_model_and_dataloader(model_path, device, type):
                                         )
         scaler = upload_scaler(model_path)
     elif type == "VideoNet":
+        hidden_size = HIDDEN_SIZE if configurations is None else configurations["hidden_size"]
+        batch_size = BATCH_SIZE if configurations is None else configurations["batch_size"]
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
-        model = select_model(model_path.split('_')[1], HIDDEN_SIZE, num_classes, dropout_p).to(device)
-        if not USE_VIDEO:
-            dataloader = video_custom_dataloader(csv_file=VIDEO_METADATA_CSV,
-                                                frames_dir=FRAMES_FILES_DIR,
-                                                batch_size=BATCH_SIZE,
-                                                seed=RANDOM_SEED,
-                                                limit=LIMIT,
-                                                balance_dataset=BALANCE_DATASET,
-                                                normalize=NORMALIZE,
-                                                )
+        use_positive_negative_labels = USE_POSITIVE_NEGATIVE_LABELS if configurations is None else configurations["use_positive_negative_labels"]
+        overlap_subjects_frames = OVERLAP_SUBJECTS_FRAMES if configurations is None else configurations["overlap_subjects_frames"]
+
+        model = select_model(model_path.split('_')[1], hidden_size, num_classes, dropout_p).to(device)
+        if not USE_VIDEO_FOR_TESTING:
+            dataloader = video_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
+                                   csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
+                                   batch_size=batch_size,
+                                   frames_dir=FRAMES_FILES_DIR,
+                                   seed=RANDOM_SEED,
+                                   limit=LIMIT,
+                                   overlap_subjects_frames=overlap_subjects_frames,
+                                   use_positive_negative_labels=use_positive_negative_labels,
+                                   preload_frames=PRELOAD_FRAMES,
+                                   apply_transformations=APPLY_TRANSFORMATIONS,
+                                   balance_dataset=BALANCE_DATASET,
+                                   normalize=NORMALIZE,
+                                   )
     else:
         raise ValueError(f"Unknown architecture {type}")
     
@@ -146,7 +155,14 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
-def video_test(model, cap, device):
+def video_test(model, num_classes, cap, device):
+    model.eval()
+    accuracy_metric = Accuracy(task="multiclass", num_classes=num_classes).to(device)
+    recall_metric = Recall(task="multiclass", num_classes=num_classes, average='macro').to(device)
+    precision_metric = Precision(task="multiclass", num_classes=num_classes, average='macro').to(device)
+    f1_metric = F1Score(task="multiclass", num_classes=num_classes, average='macro').to(device)
+    auroc_metric = AUROC(task="multiclass", num_classes=num_classes).to(device)
+
     val_transform = transforms.Compose([
         transforms.ToTensor()])
 
@@ -172,14 +188,16 @@ def video_test(model, cap, device):
   
             # Resize face
             face = cv2.resize(face, IMG_SIZE)
-
             img = Image.fromarray(face)
             img = val_transform(img).unsqueeze(0)
             img = img.to(device)
+
+            # Get prediction from model
             output = model(img)
             pred = torch.argmax(output, -1).detach()
-            emotion = general_emotion_mapping[pred.item()]
+            emotion = merged_emotion_mapping[pred.item()]
 
+            # Display the emotion
             cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
 
         
@@ -190,7 +208,6 @@ def video_test(model, cap, device):
     cap.release()
     cv2.destroyAllWindows()
 
-
 def main(model_path, epoch):
     set_seed(RANDOM_SEED)
     device = select_device()
@@ -199,14 +216,14 @@ def main(model_path, epoch):
     model = load_test_model(model, model_path, epoch, device)
 
     if type == "VideoNet":
-        if USE_VIDEO:
-            if LIVE_VIDEO:
+        if USE_VIDEO_FOR_TESTING:
+            if USE_LIVE_VIDEO_FOR_TESTING:
                 print("--Test-- Live video test")
                 cap = cv2.VideoCapture(0)
             else:
                 print("--Test-- Offline video test")
-                cap = cv2.VideoCapture(VIDEO_OFFLINE_FILE)
-            video_test(model, cap, device)
+                cap = cv2.VideoCapture(OFFLINE_VIDEO_FILE)
+            video_test(model, num_classes, cap, device)
             return
         
     print("--Test-- Test dataset")

@@ -57,7 +57,11 @@ test_folders = [
 ]
 
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
-models_name = [name.split("_")[0] for name in test_folders]
+for name in test_folders:
+    if name.split("_")[0] == "VideoNet":
+        models_name = [name.split("_")[0] + " " + name.split("_")[1] for name in test_folders]
+    else:
+        models_name = [name.split("_")[0] for name in test_folders] 
 
 # Read configurations.json file
 with open(os.path.join(os.path.dirname(__file__), '..', 'results', test_folders[0], 'configurations.json'), 'r') as file:

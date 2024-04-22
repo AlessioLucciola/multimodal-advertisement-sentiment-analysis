@@ -1,13 +1,15 @@
+import torch
 import torch.nn as nn
+import torchvision.models as models
 import timm
-import numpy as np
+
 from config import DROPOUT_P
 
 class VideoViTPretrained(nn.Module):
     def __init__(self, hidden_layers, num_classes, pretrained=True, dropout=DROPOUT_P):
-        super(VideoViTPretrained, self).__init__()
-        self.model = timm.create_model("vit_base_patch32_224", pretrained)
-        
+        super (VideoViTPretrained, self).__init__()
+        self.model = timm.create_model("vit_base_patch16_224", pretrained)
+
         for param in self.model.parameters():
             param.requires_grad = False
 
@@ -31,14 +33,10 @@ class VideoViTPretrained(nn.Module):
                     self.layers.append(nn.BatchNorm1d(hidden_layers[i]))
             self.layers.append(nn.Linear(hidden_layers[-1], num_classes, bias=False))
             self.layers.append(nn.BatchNorm1d(num_classes))
-
+        
         self.classifier = nn.Sequential(*self.layers)
         self.model.head = self.classifier
-
-        model_parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-        params = sum([np.prod(p.size()) for p in model_parameters])
-        print(f'Model has {params} trainable params.')
-
+    
     def forward(self, x):
         x = self.model(x)
         return x
