@@ -9,7 +9,7 @@ from config import AUDIO_SAMPLE_RATE
 def get_audio_stream():
     try:
         p = pyaudio.PyAudio()
-        stream = p.open(format=pyaudio.paFloat32, channels=1, rate=AUDIO_SAMPLE_RATE, input=True, frames_per_buffer=2500, input_device_index=2, output_device_index=3)
+        stream = p.open(format=pyaudio.paFloat32, channels=1, rate=AUDIO_SAMPLE_RATE, input=True, frames_per_buffer=2500, input_device_index=15, output_device_index=14) # Alessio: input_device_index=2, output_device_index=3 | Danilo: input_device_index=15, output_device_index=14
         return stream
     except (IOError, OSError) as e:
         st.error('Error initializing PyAudio. You might check if the microphone is connected.')
@@ -27,4 +27,10 @@ def get_audio_stream():
         return None
 
 def get_video_stream():
-    return imageio.v3.imiter('<video0>')
+    try :
+        return imageio.v3.get_reader('<video0>')
+    except Exception as e:
+        st.error('Error initializing the video stream.')
+        st.error(e)
+
+        return None

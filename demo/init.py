@@ -39,10 +39,10 @@ def stop_listening():
     st.session_state['run'] = False
     audio_stream_frames = b''.join(st.session_state['audio_stream_frames'])
     video_stream_frames = st.session_state['video_stream_frames']
-    st.session_state["processed_windows"] = fusion_main(audio_model_path="AudioNetCT_2024-04-18_11-09-07",
-                                                        video_model_path=None,
-                                                        audio_model_epoch=155,
-                                                        video_model_epoch=None,
+    st.session_state["processed_windows"] = fusion_main(audio_model_path="AudioNetCT_2024-04-22_17-34-38",
+                                                        video_model_path="VideoNet_vit-pretrained_2024-04-21_23-34-25",
+                                                        audio_model_epoch=450,
+                                                        video_model_epoch=25,
                                                         audio_frames=audio_stream_frames,
                                                         video_frames=video_stream_frames,
                                                         live_demo=True)
