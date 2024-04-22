@@ -34,7 +34,7 @@ class video_custom_dataset(Dataset):
 
         # Balance the dataset
         if self.balance_dataset and self.is_train_dataset:
-            self.apply_balance_dataset()
+            self.data = self.apply_balance_dataset(self.data)
 
         # Preload frames files
         if self.preload_frames_files:
@@ -97,26 +97,29 @@ class video_custom_dataset(Dataset):
         
         return train_tfms if self.is_train_dataset else val_tfms
     
-    def apply_balance_dataset(self):
+    def apply_balance_dataset(self, data):
         print("--Data Balance-- balance_data set to True. Training data will be balanced.")
-        print("--Data Balance-- Classes before balancing: ", self.data.emotion.value_counts().to_dict())
-        emotion_counts = Counter(self.data.emotion)
-        max_emotion, max_count = max(emotion_counts.items(), key=lambda x: x[1])
-        print(f"--Data Balance-- The most common class is {max_emotion} with {max_count} images.")
+        # Count images associated to each label
+        labels_counts = Counter(data['emotion'])
+        max_label, max_count = max(labels_counts.items(), key=lambda x: x[1])  # Majority class
+        print(f"--Data Balance-- The most common class is {max_label} with {max_count} frames files.")
+        
+        # Balance the dataset by oversampling the minority classes
+        for label in data['emotion'].unique():
+            label_indices = data[data['emotion'] == label].index
+            current_framess = len(label_indices)
 
-        for emotion in self.data.emotion.unique():
-            emotion_indices = self.data[self.data.emotion == emotion].index
-            current_images = len(emotion_indices)
+            if current_framess < max_count:
+                num_files_to_add = max_count - current_framess
+                print(f"--Data Balance (Oversampling)-- Adding {num_files_to_add} to {label} class..")
+                aug_indices = random.choices(label_indices.tolist(), k=num_files_to_add)
+                self.data = pd.concat([data, data.loc[aug_indices]])
+                # Apply data augmentation only to the augmented subset
+                data.loc[aug_indices, "augmented"] = True
+                label_indices = data[data["emotion"] == label].index
+        data.fillna({"augmented": False}, inplace=True)
 
-            if current_images < max_count:
-                num_images_to_add = max_count - current_images
-                print(f"--Data Balance (Oversampling)-- Adding {num_images_to_add} to {emotion} class..")
-                aug_indices = random.choices(emotion_indices.tolist(), k=num_images_to_add)
-                self.data = pd.concat([self.data, self.data.loc[aug_indices]])
-                self.data.loc[aug_indices, "balanced"] = True
-                emotion_indices = self.data[self.data["emotion"] == emotion].index
-        self.data = self.data.fillna({"balanced": False}).infer_objects(copy=False)
-        print("--Data Balance-- Classes after balancing: ", self.data.emotion.value_counts().to_dict())
+        return data
     
     def normalize_frame(self, frame):
         # Apply ImageNet normalization
