@@ -9,7 +9,7 @@ DEMO_DIR = "demo"
 RANDOM_SEED = 42
 USE_DML = False
 USE_MPS = False
-USE_WANDB = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -31,10 +31,10 @@ PATH_MODEL_TO_RESUME = ""
 RESUME_EPOCH = ""
 
 # Train configurations
-BATCH_SIZE = 32 # Max (for ViT): 512 | Max (for CNN): 32
-N_EPOCHS = 25
-LR = 1e-4
-REG = 1e-4
+BATCH_SIZE = 64 # Max (for ViT): 512 | Max (for CNN): 32
+N_EPOCHS = 500
+LR = 1e-3
+REG = 1e-3
 DROPOUT_P = 0.2
 
 # ----------------------------

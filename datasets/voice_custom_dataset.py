@@ -78,24 +78,24 @@ class RAVDESSCustomDataset(Dataset):
     def apply_balance_dataset(self, data):
         print("--Data Balance-- balance_data set to True. Training data will be balanced.")
         # Count images associated to each label
-        labels_counts = Counter(self.data['emotion'])
+        labels_counts = Counter(data['emotion'])
         max_label, max_count = max(labels_counts.items(), key=lambda x: x[1])  # Majority class
         print(f"--Data Balance-- The most common class is {max_label} with {max_count} audio files.")
         
         # Balance the dataset by oversampling the minority classes
-        for label in self.data['emotion'].unique():
-            label_indices = self.data[self.data['emotion'] == label].index
+        for label in data['emotion'].unique():
+            label_indices = data[data['emotion'] == label].index
             current_audios = len(label_indices)
 
             if current_audios < max_count:
                 num_files_to_add = max_count - current_audios
                 print(f"--Data Balance (Oversampling)-- Adding {num_files_to_add} to {label} class..")
                 aug_indices = random.choices(label_indices.tolist(), k=num_files_to_add)
-                self.data = pd.concat([self.data, self.data.loc[aug_indices]])
+                self.data = pd.concat([data, data.loc[aug_indices]])
                 # Apply data augmentation only to the augmented subset
-                self.data.loc[aug_indices, "augmented"] = True
-                label_indices = self.data[self.data["emotion"] == label].index
-        self.data.fillna({"augmented": False}, inplace=True)
+                data.loc[aug_indices, "augmented"] = True
+                label_indices = data[data["emotion"] == label].index
+        data.fillna({"augmented": False}, inplace=True)
 
         return data
     
