@@ -1,58 +1,57 @@
 from config import *
 from utils.utils import select_device, set_seed
-from shared.constants import RAVDESS_emotion_mapping, merged_emotion_mapping
+from shared.constants import general_emotion_mapping, merged_emotion_mapping
+import cv2  
+from torchvision import transforms
 import numpy as np
 import torch
 import json
 import sys
 import os
-import cv2  
-from torchvision import transforms
 from utils.video_utils import select_model
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def main(model_path, video_file, epoch, live_demo=False):
+def main(model_path, video_file, epoch, use_positive_negative_labels=True):
     set_seed(RANDOM_SEED)
     device = select_device()
-    type = model_path.split('_')[0]
+    type = model_path.split('_')[1]
     model, _ = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
-    features_list = preprocess_frames(video_file, live_demo)
+    features_list = preprocess_video_file(video_file)
     video_processed_windows = []
     for feature in features_list:
-        frame = feature['frame'].to(device)
+        waveform = feature['waveform'].to(device)
         start_time = feature['start_time']
         end_time = feature['end_time']
-        output = model(frame)
+        output = model(waveform)
         pred = torch.argmax(output, -1).detach()
-        emotion = merged_emotion_mapping[pred.item()] if USE_POSITIVE_NEGATIVE_LABELS else RAVDESS_emotion_mapping[pred.item()] 
-        print(f"Emotion detected from {start_time:.2f}s to {end_time:.2f}s: {emotion}")
-
+        emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
+        #print(f"Emotion detected from {longest_video_segment_start:.2f}s to {longest_video_segment_end:.2f}s: {emotion}")
         video_processed_windows.append({
             "start_time": start_time,
             "end_time": end_time,
             "emotion_label": pred.item(),
-            "emotion_string": emotion
+            "emotion_string": emotion,
+            "logits": torch.softmax(output, -1).cpu().detach().numpy()
         })
-
+    
+    for emotion in video_processed_windows:
+        print(f"Emotion detected from {emotion['start_time']:.2f}s to {emotion['end_time']:.2f}s: {emotion['emotion_string']}")
     return video_processed_windows
 
-def preprocess_frames(video_file, live_demo, desired_length_seconds=VIDEO_DURATION):
-    if live_demo:
-        pass
-    else:
-        frames = extract_frames_from_video_file(file=video_file, desired_length_seconds=desired_length_seconds)
-        transformations = transforms.Compose([
-            transforms.ToTensor()])
-        preprocessed_frames = []
-        for frame in frames:
-            frame['frame'] = transformations(frame['frame']).unsqueeze(0)
-            preprocessed_frames.append({
-                "frame": frame['frame'],
-                "start_time": frame['start_time'],
-                "end_time": frame['end_time']
-            })
+def preprocess_video_file(video_file, desired_length_seconds=VIDEO_DURATION):
+    frames = extract_frames_from_video_file(file=video_file, desired_length_seconds=desired_length_seconds)
+    transformations = transforms.Compose([
+        transforms.ToTensor()])
+    preprocessed_frames = []
+    for frame in frames:
+        frame['frame'] = transformations(frame['frame']).unsqueeze(0)
+        preprocessed_frames.append({
+            "frame": frame['frame'],
+            "start_time": frame['start_time'],
+            "end_time": frame['end_time']
+        })
             
     return preprocessed_frames
 
@@ -106,7 +105,6 @@ def extract_frames_from_video_file(file, desired_length_seconds):
     cap.release()
 
     return frames
-     
 
 def load_test_model(model, model_path, epoch, device):
     state_dict = torch.load(
@@ -128,16 +126,10 @@ def get_model_and_dataloader(model_path, device, type):
         print("--Model-- Old configurations NOT found. Using configurations in the config for test.")
 
     # Load model
+    hidden_size = HIDDEN_SIZE if configurations is None else configurations["hidden_size"]
     num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
     dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
-    hidden_size = HIDDEN_SIZE if configurations is None else configurations["hidden_size"]
-    model = select_model(model_path.split('_')[1], hidden_size, num_classes, dropout_p).to(device)
+    
+    model = select_model(type, hidden_size, num_classes, dropout_p).to(device)
 
     return model, num_classes
-
-if __name__ == "__main__":
-    epoch = TEST_EPOCH
-    model_path = os.path.join(PATH_MODEL_TO_TEST)
-    # Offline video file, it you want to test with a live video stream use the demo instead
-    video_file_path = os.path.join(VIDEO_DATASET_DIR, "test_video.mp4")
-    main(model_path=model_path, video_file=video_file_path, epoch=epoch)
