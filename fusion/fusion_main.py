@@ -47,8 +47,8 @@ def main(audio_model_path: str,
     remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
 
     all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
-    for f in all_frames:
-        print(f)
+    #for f in all_frames:
+    #    print(f)
     return all_frames
 
 def get_frames_duration(video_frames):
