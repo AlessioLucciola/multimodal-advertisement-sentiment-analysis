@@ -10,10 +10,11 @@ BALANCE_DATASET = False
 
 USE_DML = False
 USE_MPS = True
-USE_WANDB = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = False
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
+# EMOTION_NUM_CLASSES = 5  # Valence in [0,4]
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
 RESUME_EPOCH = 67
@@ -21,29 +22,29 @@ RESUME_EPOCH = 67
 
 # Train configurations
 
-LENGTH = 500
-STEP = 475
-WAVELET_STEP = 10
-BATCH_SIZE = 32 
-
+LENGTH = 400
+STEP = 400
+WAVELET_STEP = 2
+BATCH_SIZE = 32
 N_EPOCHS = 1000
-LR = 0.00001
+# LR = 0.00001
+LR = 1e-4
 REG = 0
-DROPOUT_P = 0
+DROPOUT_P = 0.6
 # EmotionNet Transformer config
-T_HEAD = 5
+T_HEAD = 4
 T_ENC_LAYERS = 6
-T_DIM_FFW = 256
+T_DIM_FFW = 1024
 T_KERN = 4
 T_STRIDE = 4
 T_MAXPOOL = 0
-MESSAGE = "Wavelet -> Slice"
+MESSAGE = "Wavelet -> Slice + STFT"
 
 # LOAD_DF = True
 # SAVE_DF = False
 
 LOAD_DF = False
-SAVE_DF = True
+SAVE_DF = False
 
 # TODO: put this in the dataset configuration (GREX dataset)
 AUGMENTATION_SIZE = 0

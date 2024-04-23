@@ -20,7 +20,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from datasets.GREX_dataset import GREXDataset
 from scipy.interpolate import CubicSpline
-from utils.ppg_utils import wavelet_transform
+from utils.ppg_utils import stft
 
 
 class GREXTransform:
@@ -34,84 +34,14 @@ class GREXTransform:
         noise = np.random.normal(loc=0.0, scale=sigma, size=data.shape)
         return data + noise
 
-    def scaling(self, data):
-        sigma_min, sigma_max = 0.01, 0.3
-        sigma = np.random.uniform(sigma_min, sigma_max)
-        noise = np.random.normal(loc=1.0, scale=sigma, size=data.shape)
-        return data * noise
-
-    def magnitude_warping(self, data):
-        sigma_min, sigma_max = 0.1, 0.3
-        knot_min, knot_max = 4, 6
-        sigma = np.random.uniform(sigma_min, sigma_max)
-        knot = np.random.randint(knot_min, knot_max)
-        seq_len = data.shape[0]
-        step = seq_len // knot
-        # Get random curve
-        control_points = np.concatenate(
-            (
-                np.zeros(1),
-                np.random.normal(loc=1.0, scale=sigma, size=(knot - 2)),
-                np.zeros(1),
-            )
-        )
-        locs = np.arange(0, seq_len, step)
-
-        # Apply cubic spline interpolation
-        cs = CubicSpline(locs, control_points)
-        return data * cs(np.arange(seq_len))
-
-    def time_shifting(self, data):
-        shift = np.random.randint(low=-LENGTH, high=LENGTH)
-        return np.roll(data, shift)
-
-    def apply(self, item, p=0.5):
-        self.transformations = {self.jitter, self.scaling, self.magnitude_warping}
-
-        # subset = [item for item in self.transformations if np.random.rand() < p]
-        for transform in self.transformations:
-            item = transform(item)
-        return item
-
-    def augment(self, n=5_000):
-        augmented_data = []
-        print(f"Original data: {len(augmented_data)}")
-        while len(augmented_data) < n:
-            # Randomly select an item from the dataframe
-            item = self.df.sample(1).iloc[0]
-            ppg, val, aro = item["ppg"], item["val"], item["aro"]
-            # Apply transformations and add to augmented_data
-            new_item = {"ppg": self.apply(ppg), "val": val, "aro": aro}
-            augmented_data.append(new_item)
-        print(f"Augmented data: {len(augmented_data)}")
-        df = pd.concat([self.df, pd.DataFrame(augmented_data)])
-        return df
-
     def apply_jitter(self):
         new_df = []
         for i, row in self.df.iterrows():
             ppg, val, aro = row["ppg"], row["val"], row["aro"]
             new_item = {"ppg": self.jitter(ppg), "val": val, "aro": aro}
-            print(f"type of jittered ppg is: {type(new_item['ppg'])}")
             new_df.append(new_item)
         return pd.DataFrame(new_df)
 
-    def balance(self):
-        for class_name in ["val", "aro"]:
-            class_counts = self.df[class_name].value_counts()
-            max_count = class_counts.max()
-            while not all(class_counts == max_count):
-                for cls in class_counts.index:
-                    cls_count = class_counts[cls]
-                    if cls_count < max_count:
-                        cls_df = self.df[self.df[class_name] == cls]
-                        n_samples = max_count - cls_count
-                        samples = cls_df.sample(n_samples, replace=True)
-                        # Apply transformations to the new samples
-                        samples["ppg"] = samples["ppg"].apply(self.apply)
-                        self.df = pd.concat([self.df, samples])
-                        class_counts = self.df[class_name].value_counts()
-        return self.df
 
 
 class GREXDataLoader(DataLoader):
@@ -145,8 +75,8 @@ class GREXDataLoader(DataLoader):
         self.labels = self.set_labels(self.valence, self.arousal)
 
         # TODO: just for debug because I'm lazy
-        self.valence = self.labels
-        self.arousal = self.labels
+        self.valence = self.labels.clone()
+        self.arousal = self.labels.clone()
 
         df = []
         for i in range(len(self.ppg)):
@@ -208,22 +138,21 @@ class GREXDataLoader(DataLoader):
             random_state=RANDOM_SEED,
         )
 
-        self.train_df = self.slice_data(self.train_df)
-        self.val_df = self.slice_data(self.val_df)
+        self.train_df = self.slice_data(self.train_df, is_train=True)
+        self.val_df = self.slice_data(self.val_df, is_train=True)
 
         if ADD_NOISE:
             self.train_df = GREXTransform(self.train_df).apply_jitter()
             # self.val_df = GREXTransform(self.val_df).apply_jitter()
-
-        if not LOAD_DF:
-            tqdm.pandas()
-            self.train_df["ppg_spatial_features"] = self.train_df["ppg"].progress_apply(
-                wavelet_transform
-            )
-            self.val_df["ppg_spatial_features"] = self.val_df["ppg"].progress_apply(
-                wavelet_transform
-            )
-            # self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
+        
+        tqdm.pandas()
+        self.train_df["ppg_spatial_features"] = self.train_df["ppg"].progress_apply(
+            stft               
+        )
+        self.val_df["ppg_spatial_features"] = self.val_df["ppg"].progress_apply(
+            stft               
+        )
+        # self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
             #    wavelet_transform)
 
         if SAVE_DF:
@@ -298,7 +227,7 @@ class GREXDataLoader(DataLoader):
         df_undersampled.reset_index(drop=True, inplace=True)
         return df_undersampled
 
-    def slice_data(self, df, length=LENGTH, step=STEP):
+    def slice_data(self, df, length=LENGTH, step=STEP, is_train: bool = False):
         """
         Taken a dataframe that contains data with columns "ppg", "val", "aro",
         this function outputs a new df where the data is sliced into segments of
@@ -334,6 +263,9 @@ class GREXDataLoader(DataLoader):
                 else:
                     new_row = {"ppg": segment, "val": val, "aro": aro}
                 new_df.append(new_row)
+                # MAJOR TODO: just for debug, remove this
+                # if is_train:
+                #     break
 
         new_df = pd.DataFrame(new_df)
 
@@ -341,11 +273,11 @@ class GREXDataLoader(DataLoader):
 
     def set_labels(self, valence: torch.Tensor, arousal: torch.Tensor):
         # bad mood: valence == 0,1; neutral: valence == 2, good: valence = 3,4
-        self.labels = torch.zeros_like(valence)
+        self.labels = torch.full_like(valence, -1)
         self.labels[(valence == 0) | (valence == 1)] = 0
         self.labels[valence == 2] = 1
         self.labels[(valence == 3) | (valence == 4)] = 2
-        print(f"Labels are {self.labels}")
+        print(f"Labels are {self.labels.tolist()}")
         return self.labels
 
     def get_train_dataloader(self):

@@ -25,7 +25,7 @@ from config import (
     WAVELET_STEP
 )
 from dataloaders.GREX_dataloader import GREXDataLoader
-from models.EmotionNetCT import EmotionNet
+from models.EmotionNetCL import EmotionNet
 from train.loops.train_loop_emotion_single import train_eval_loop
 from utils.utils import select_device, set_seed
 
@@ -57,17 +57,12 @@ def main():
 
     optimizer = [optimizer_aro, optimizer_val]
 
-    scheduler_val = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer=optimizer_val,
-        max_lr=LR,
-        epochs=N_EPOCHS,
-        steps_per_epoch=len(train_loader))
+    scheduler_val = None
 
-    scheduler_aro = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer=optimizer_aro,
-        max_lr=LR,
-        epochs=N_EPOCHS,
-        steps_per_epoch=len(train_loader))
+    scheduler_aro = torch.optim.lr_scheduler.StepLR(
+            optimizer=optimizer_aro,
+            step_size=20, 
+            gamma=0.1)
 
     # schedulers = [scheduler_aro, scheduler_val]
     schedulers = [None, None]

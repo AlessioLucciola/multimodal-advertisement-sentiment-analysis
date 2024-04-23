@@ -181,6 +181,8 @@ def train_eval_loop(device,
                 save_model(data_name, best_model, epoch=None, is_best=True)
 
         if scheduler is not None:
+            current_lr = optimizer.param_groups[0]['lr']
+            print(f'Current learning rate: {current_lr}')
             scheduler.step()
 
         print(
