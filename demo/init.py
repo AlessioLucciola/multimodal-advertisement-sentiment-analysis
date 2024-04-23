@@ -1,10 +1,12 @@
 from component_initializer import get_audio_stream, get_video_stream
 from datetime import datetime
+from ast import literal_eval
 import streamlit as st
-import imageio.v3
+import altair as alt
+import pandas as pd
+import numpy as np
 import sys
 import os
-import io
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import *
 from fusion.fusion_main import main as fusion_main
@@ -84,6 +86,35 @@ if (is_components_initialized):
     col2.button('Stop recording', on_click=stop_listening, key='stop_button')
 
     if "processed_windows" in st.session_state and st.session_state["processed_windows"] is not None:
+        print(st.session_state["processed_windows"])
+        print(type(st.session_state["processed_windows"]))
+
+        df = pd.DataFrame(st.session_state["processed_windows"])
+        chart = alt.Chart(df).mark_bar().encode(
+            y=alt.Y('window_type:N', title='Window Type'),
+            x=alt.X('start_time:Q', title='Time'),
+            x2='end_time:Q',
+            color=alt.Color('emotion_string:N', legend=None),
+            tooltip=['start_time', 'end_time', 'emotion_string']
+        ).properties(
+            width=600,
+            height=200
+        ).configure_axis(
+            labelFontSize=12,
+            titleFontSize=14
+        )
+
+        legend = chart.mark_rect().encode(
+            y=alt.Y('emotion_string:N', axis=alt.Axis(orient='right')),
+            color=alt.Color('emotion_string:N', scale=alt.Scale(scheme='category20'), legend=None),
+        ).properties(
+            title='Emotion'
+        )
+
+        # Render the chart using Streamlit
+        st.altair_chart(chart, use_container_width=True)
+        
+
         st.text("Processed audio windows:")
         st.write(st.session_state["processed_windows"])
 
