@@ -13,8 +13,8 @@ USE_MPS = True
 USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = False
-EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
-# EMOTION_NUM_CLASSES = 5  # Valence in [0,4]
+# EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
+EMOTION_NUM_CLASSES = 5  # Valence in [0,4]
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
 RESUME_EPOCH = 67
@@ -22,19 +22,19 @@ RESUME_EPOCH = 67
 
 # Train configurations
 
-LENGTH = 400
-STEP = 400
+LENGTH = 2000
+STEP = 2000
 WAVELET_STEP = 2
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 N_EPOCHS = 1000
 # LR = 0.00001
 LR = 1e-4
 REG = 0
-DROPOUT_P = 0.6
+DROPOUT_P = 0
 # EmotionNet Transformer config
 T_HEAD = 4
 T_ENC_LAYERS = 6
-T_DIM_FFW = 1024
+T_DIM_FFW = 512
 T_KERN = 4
 T_STRIDE = 4
 T_MAXPOOL = 0

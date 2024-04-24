@@ -10,6 +10,7 @@ from config import (
     WAVELET_STEP,
     ADD_NOISE,
 )
+import random
 import pickle
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -79,8 +80,11 @@ class GREXDataLoader(DataLoader):
         self.arousal = self.labels.clone()
 
         df = []
+        bad_count = 0
         for i in range(len(self.ppg)):
-            if (self.ppg[i] == 0.0).all():
+            # if ((0 <= self.ppg[i]) & (self.ppg[i] <= 1e-10)).all():
+            if (self.ppg[i] == 0).all():
+                bad_count += 1
                 continue
 
             # TODO: change "val" here to "label", and also in the train and dataset
@@ -88,12 +92,14 @@ class GREXDataLoader(DataLoader):
                 {
                     "ppg": self.ppg[i].numpy(),
                     "val": int(self.valence[i]),
+                    # "val": random.randint(0,4),
                     "aro": int(self.arousal[i]),
                     "quality_idx": i,
                 }
             )
 
         idx_to_keep = physio_trans_data_segments["PPG_quality_idx"]
+        print(f'Removed {bad_count} all-zero signals')
 
         df = pd.DataFrame(df)
         old_len = len(df)
@@ -103,7 +109,7 @@ class GREXDataLoader(DataLoader):
 
         self.data = df
 
-        # Apply standardization
+       # Apply standardization
         ppg_mean = np.stack(self.data["ppg"].to_numpy(), axis=0).mean()
         ppg_std = np.stack(self.data["ppg"].to_numpy(), axis=0).std()
         self.data["ppg"] = self.data["ppg"].apply(lambda x: (x - ppg_mean) / ppg_std)
@@ -141,6 +147,8 @@ class GREXDataLoader(DataLoader):
         self.train_df = self.slice_data(self.train_df, is_train=True)
         self.val_df = self.slice_data(self.val_df, is_train=True)
 
+
+
         if ADD_NOISE:
             self.train_df = GREXTransform(self.train_df).apply_jitter()
             # self.val_df = GREXTransform(self.val_df).apply_jitter()
@@ -154,6 +162,16 @@ class GREXDataLoader(DataLoader):
         )
         # self.test_df["ppg_spatial_features"] = self.test_df["ppg"].progress_apply(
             #    wavelet_transform)
+
+
+       # Apply standardization
+        ppg_mean = np.stack(self.train_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
+        ppg_std = np.stack(self.train_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
+        self.train_df["ppg_spatial_features"] = self.train_df["ppg_spatial_features"].apply(lambda x: (x - ppg_mean) / ppg_std)
+
+        ppg_mean = np.stack(self.val_df["ppg_spatial_features"].to_numpy(), axis=0).mean(axis=0)
+        ppg_std = np.stack(self.val_df["ppg_spatial_features"].to_numpy(), axis=0).std(axis=0)
+        self.val_df["ppg_spatial_features"] = self.val_df["ppg_spatial_features"].apply(lambda x: (x - ppg_mean) / ppg_std)
 
         if SAVE_DF:
             self.save_wavelets(
@@ -273,11 +291,12 @@ class GREXDataLoader(DataLoader):
 
     def set_labels(self, valence: torch.Tensor, arousal: torch.Tensor):
         # bad mood: valence == 0,1; neutral: valence == 2, good: valence = 3,4
-        self.labels = torch.full_like(valence, -1)
-        self.labels[(valence == 0) | (valence == 1)] = 0
-        self.labels[valence == 2] = 1
-        self.labels[(valence == 3) | (valence == 4)] = 2
-        print(f"Labels are {self.labels.tolist()}")
+        # self.labels = torch.full_like(valence, -1)
+        # self.labels[(valence == 0) ] = 0
+        # self.labels[(valence == 1) | (valence == 2)] = 1
+        # self.labels[(valence == 3) | (valence == 4)] = 2
+        # print(f"Labels are {self.labels.tolist()}")
+        self.labels = valence  
         return self.labels
 
     def get_train_dataloader(self):

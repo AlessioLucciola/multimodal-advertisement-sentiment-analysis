@@ -33,22 +33,21 @@ def wavelet_transform(x):
 
 def stft(x: np.ndarray):
     x_torch = torch.from_numpy(x)
-    # window = torch.hann_window(window_length=LENGTH-1)
-    # print(f"stft input shape is {x.shape}")
-    win_length = 200
+    win_length = 128
     window = torch.signal.windows.hamming(win_length)
     res = torch.stft(input=x_torch, 
-                     n_fft=400,
-                     hop_length=20, 
-                     return_complex=True, 
+                     n_fft=255,
+                     hop_length=64, 
+                     return_complex=True,
                      window=window, 
                      win_length=win_length)
-    # print(f"res part shape is {res.shape}")
-    res = torch.view_as_real(res)
-    # print(f"res view_as_real part shape is {res.shape}")
-    real = res[:, :, 0].squeeze()
+    real = res.real
+    magnitude = torch.abs(res)
+    phase = torch.atan2(res.imag, res.real)
+    out = torch.stack((real, magnitude, phase), dim=0)
+    # print(f"out shape: {out.shape}")
     # print(f"real part shape is {real.shape}")
-    return real
+    return out
 
 def onsets_and_hr(x):
     features = bvp.bvp(x, 100, show=False)

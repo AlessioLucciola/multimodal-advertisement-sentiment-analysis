@@ -26,27 +26,6 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-# class Block(nn.Module):
-#     def __init__(self, d_model, dropout):
-#         super(Block, self).__init__()
-#         self.attention = nn.MultiheadAttention(d_model, T_HEAD)
-#         self.ffn = nn.Sequential(
-#                     nn.Linear(d_model, 2 * d_model),
-#                     nn.LeakyReLU(),
-#                     nn.Linear(2 * d_model, d_model))
-#         self.drop1 = nn.Dropout(dropout)
-#         self.drop2 = nn.Dropout(dropout)
-#         self.ln1 = nn.LayerNorm(d_model)
-#         self.ln2 = nn.LayerNorm(d_model)
-
-#     def forward(self, hidden_state):
-#         attn, _ = self.attention(hidden_state, hidden_state, hidden_state, need_weights=False)
-#         attn = self.drop1(attn)
-#         out = self.ln1(hidden_state + attn)
-#         observed = self.ffn(out)
-#         observed = self.drop2(observed)
-#         return self.ln2(out + observed)
-
 class EmotionNet(nn.Module):
     def __init__(self, num_classes, dropout=DROPOUT_P):
         super().__init__()
@@ -54,11 +33,11 @@ class EmotionNet(nn.Module):
                 kernel_size=[1, T_KERN], stride=[1, T_STRIDE])
 
 
-        d_model = 256
+        d_model = 128
         print(f"d_model is: {d_model}")
         self.pos_encoder = PositionalEncoding(d_model, dropout)
         
-        t_dropout = 0.3
+        t_dropout = dropout // 2
         transformer_enc_layer = nn.TransformerEncoderLayer(
                 d_model=d_model,
                 nhead=T_HEAD,
@@ -68,9 +47,6 @@ class EmotionNet(nn.Module):
 
         self.transformer_encoder = nn.TransformerEncoder(
                 transformer_enc_layer, num_layers=T_ENC_LAYERS)
-
-        # self.transformer_encoder = Block(d_model=d_model, 
-        #                                  dropout=dropout)
         
         self.fc1_linear = nn.Sequential(nn.Linear(d_model, d_model),
 			nn.LeakyReLU(),
