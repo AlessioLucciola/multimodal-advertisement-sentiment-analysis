@@ -1,110 +1,48 @@
 from config import *
 from utils.utils import select_device, set_seed
-from shared.constants import general_emotion_mapping, merged_emotion_mapping
-import cv2  
-from torchvision import transforms
 import numpy as np
 import torch
 import json
 import sys
 import os
+from PIL import Image
+from datetime import datetime
 from utils.video_utils import select_model
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def main(model_path, video_file, epoch, use_positive_negative_labels=True):
+def main(model_path, video_frames, epoch):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[1]
     model, _ = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
-    features_list = preprocess_video_file(video_file)
-    video_processed_windows = []
-    for feature in features_list:
-        waveform = feature['waveform'].to(device)
-        start_time = feature['start_time']
-        end_time = feature['end_time']
-        output = model(waveform)
-        pred = torch.argmax(output, -1).detach()
-        emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
-        #print(f"Emotion detected from {longest_video_segment_start:.2f}s to {longest_video_segment_end:.2f}s: {emotion}")
-        video_processed_windows.append({
-            "start_time": start_time,
-            "end_time": end_time,
-            "emotion_label": pred.item(),
-            "emotion_string": emotion,
-            "logits": torch.softmax(output, -1).cpu().detach().numpy()
-        })
-    
-    for emotion in video_processed_windows:
-        print(f"Emotion detected from {emotion['start_time']:.2f}s to {emotion['end_time']:.2f}s: {emotion['emotion_string']}")
-    return video_processed_windows
 
-def preprocess_video_file(video_file, desired_length_seconds=VIDEO_DURATION):
-    frames = extract_frames_from_video_file(file=video_file, desired_length_seconds=desired_length_seconds)
-    transformations = transforms.Compose([
-        transforms.ToTensor()])
-    preprocessed_frames = []
-    for frame in frames:
-        frame['frame'] = transformations(frame['frame']).unsqueeze(0)
-        preprocessed_frames.append({
-            "frame": frame['frame'],
-            "start_time": frame['start_time'],
-            "end_time": frame['end_time']
-        })
-            
-    return preprocessed_frames
+    video_output = []
+    current_datetime = datetime.now()
+    current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+    video_path = os.path.join(DEMO_DIR, "video_files", str(current_datetime_str))
+    if not os.path.exists(video_path):
+        os.makedirs(video_path)
+    for duration, video_frame in video_frames:
+        # Trasform _io.BytesIO object to PIL Image object and then to tensor object to pass to the model
+        video_frame = Image.open(video_frame).convert('RGB')
+        # Transform to tensor
+        video_frame = video_frame.resize((224, 224))
+        video_frame = np.array(video_frame)
+        video_frame = torch.tensor(video_frame).permute(2, 0, 1).unsqueeze(0).float().to(device)
+        output = model(video_frame)
+        # Save the video frame to the disk
+        image_array = np.array(video_frame)
+        height, width, channels = image_array.shape
+        pixels = image_array.reshape((height * width, channels))
+        pixels = pixels.astype(np.uint8)
+        image = Image.fromarray(pixels.reshape((height, width, channels)))
+        image.save(os.path.join(video_path, f"{current_datetime_str}_{duration}.jpg"))
+        # In the real code, for each frame you should return the logits of each emotion
+        video_output.append({'frame_duration': duration, 'output': output})
 
-def extract_frames_from_video_file(file, desired_length_seconds):
-    cap = cv2.VideoCapture(file)
-    frame_rate = cap.get(cv2.CAP_PROP_FPS)
-    interval = int(frame_rate * desired_length_seconds)  # Extract a frame every 2 seconds
-
-    frame_count = 0
-    frames = []
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # Extract frames every interval
-        if frame_count % interval == 0:
-            face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
-
-            faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
-                    
-            if len(faces) == 0: # No face detected
-                faces = face_cascade.detectMultiScale(frame, scaleFactor=1.02, minNeighbors=9) # Try again with different parameters
-                if len(faces) == 0: # Still no face detected
-                    continue
-            if len(faces) > 1: # More than one face detected
-                # Choose the most prominent face
-                face = max(faces, key=lambda x: x[2] * x[3])
-                faces = [face]
-
-            # Detect faces
-            for (x, y, w, h) in faces:
-                # Extract face from the frame
-                face = frame[y:y+h, x:x+w]
-
-                # Resize face
-                face = cv2.resize(face, IMG_SIZE)
-
-                # Plot face
-                # cv2.imshow('frame', face)
-                # if cv2.waitKey(1) & 0xFF == ord('q'):
-                #     break
-
-                # Save frame
-                frames.append({
-                    "frame": face,
-                    "start_time": frame_count / frame_rate,
-                    "end_time": (frame_count + interval) / frame_rate
-                })
-        frame_count += 1
-    cap.release()
-
-    return frames
+    return video_output
 
 def load_test_model(model, model_path, epoch, device):
     state_dict = torch.load(

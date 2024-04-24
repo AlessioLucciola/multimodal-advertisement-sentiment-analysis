@@ -53,11 +53,11 @@ while st.session_state['run']:
     try:
         # Audio stream reading
         data = audio_stream.read(12000)
-        st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
-        
+        st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames        
         # Video stream reading
         current_time = datetime.now()
         video_frame = next(video_stream)
+        print(video_frame)
         st.session_state['video_stream_frames'].append(tuple((video_frame, current_time)))  # Append data to video stream frames
     except Exception as e:
         st.error('Error recording the audio')
