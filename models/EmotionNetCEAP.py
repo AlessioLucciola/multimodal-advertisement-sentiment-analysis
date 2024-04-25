@@ -10,7 +10,8 @@ class Encoder(nn.Module):
     self.dropout = nn.Dropout(p=DROPOUT_P)
 
   def forward(self, x):
-    x = x.unsqueeze(-1)
+    if x.ndim < 3:
+        x = x.unsqueeze(-1)
     lstm_out, (hidden, cell) = self.lstm(x)
     hidden = self.dropout(hidden)
     return hidden, cell  
@@ -19,7 +20,8 @@ class Decoder(nn.Module):
   def __init__(self, input_size, hidden_size):
     super(Decoder, self).__init__()
     self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True)
-    self.fc = nn.Linear(hidden_size, 1)
+    num_classes = 3
+    self.fc = nn.Linear(hidden_size, num_classes)
     self.dropout = nn.Dropout(p=DROPOUT_P)
 
   def forward(self, x, hidden, cell):

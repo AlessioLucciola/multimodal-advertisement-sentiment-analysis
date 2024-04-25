@@ -1,38 +1,39 @@
-
 from config import (
-    AUGMENTATION_SIZE,
-    BALANCE_DATASET,
     DATA_DIR,
     LENGTH,
-    LOAD_DF,
     RANDOM_SEED,
-    SAVE_DF,
     STEP,
-    WAVELET_STEP,
-    ADD_NOISE,
 )
-import pickle
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from typing import List
 import os
 import torch
-import pandas as pd
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from datasets.CEAP_dataset import CEAPDataset
 import json
-from typing import Literal
-from enum import Enum
 
 
 class CEAPDataLoader(DataLoader):
     def __init__(self, batch_size):
         self.batch_size = batch_size
-        _type = "Frame"
-        self.data_path = os.path.join(DATA_DIR, "CEAP", "5_PhysioData", _type)
-        self.annotation_path = os.path.join(DATA_DIR, "CEAP", "3_AnnotationData", _type)
+        data_type = "Frame"
+        annotation_type = "Frame"
+        self.data_path = os.path.join(DATA_DIR, "CEAP", "5_PhysioData", data_type)
+        self.annotation_path = os.path.join(DATA_DIR, "CEAP", "3_AnnotationData", annotation_type)
         print("Loading data...")
-        self.data = self.load_data(_type=_type)
+        self.data = self.load_data(data_type=data_type, 
+                                   annotation_type=annotation_type)
+        print("Discretizing labels...")
+        self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
+
+        print(self.data)
+
+        # ppg_mean = np.stack(self.data["ppg"].to_numpy(), axis=0).mean()
+        # ppg_std = np.stack(self.data["ppg"].to_numpy(), axis=0).std()
+        # self.data["ppg"] = self.data["ppg"].apply(lambda x: (x - ppg_mean) / ppg_std)
 
         # self.data.to_csv("ceap_data.csv")
         
@@ -44,6 +45,12 @@ class CEAPDataLoader(DataLoader):
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
         self.test_df = self.slice_data(self.test_df)
+
+
+        # tqdm.pandas()
+        # self.train_df["ppg"] = self.train_df["ppg"].progress_apply(stft)
+        # self.val_df["ppg"] = self.val_df["ppg"].progress_apply(stft)
+
         
         print("Finished!")
 
@@ -52,8 +59,7 @@ class CEAPDataLoader(DataLoader):
         print(f"Test_df length: {len(self.test_df)}")
 
 
-
-    def load_data(self, _type: str) -> pd.DataFrame:
+    def load_data(self, data_type: str, annotation_type: str) -> pd.DataFrame:
         data_df = []  
         annotation_df = []
         # Take data
@@ -63,12 +69,12 @@ class CEAPDataLoader(DataLoader):
                 continue
             with open(os.path.join(self.data_path, file), "r") as f:
                 parsed_json = json.load(f)
-            participant_id = parsed_json[f"Physio_{_type}Data"][0]["ParticipantID"].replace("P", "")
-            video_list = parsed_json[f"Physio_{_type}Data"][0][f"Video_Physio_{_type}Data"]
+            participant_id = parsed_json[f"Physio_{data_type}Data"][0]["ParticipantID"].replace("P", "")
+            video_list = parsed_json[f"Physio_{data_type}Data"][0][f"Video_Physio_{data_type}Data"]
             for video_info in video_list:
                 # NOTE: the PPG can have a length of 1800 or 1500
                 video_id = video_info["VideoID"]
-                ppg_list = [item["BVP"] for item in video_info[f"BVP_{_type}Data"]]
+                ppg_list = [item["BVP"] for item in video_info[f"BVP_{data_type}Data"]]
                 #TODO: see how to also put the labels here, without modifying the df later
                 df_item  = {"participant_id": participant_id, 
                             "video_id": video_id, 
@@ -81,8 +87,8 @@ class CEAPDataLoader(DataLoader):
                 continue
             with open(os.path.join(self.annotation_path, file), "r") as f:
                 parsed_json = json.load(f)
-            participant_id = parsed_json[f"ContinuousAnnotation_{_type}Data"][0]["ParticipantID"]
-            video_list = parsed_json[f"ContinuousAnnotation_{_type}Data"][0][f"Video_Annotation_{_type}Data"]
+            participant_id = parsed_json[f"ContinuousAnnotation_{annotation_type}Data"][0]["ParticipantID"]
+            video_list = parsed_json[f"ContinuousAnnotation_{annotation_type}Data"][0][f"Video_Annotation_{annotation_type}Data"]
             for video_info in video_list:
                 # NOTE: the PPG can have a length of 1800 or 1500
                 video_id = video_info["VideoID"]
@@ -110,6 +116,17 @@ class CEAPDataLoader(DataLoader):
 
         df = pd.DataFrame(df)
         return df
+    
+    def discretize_labels(self, valence: torch.Tensor) -> List[float]:
+        # bad mood: 1 <= v <= 3
+        # neutral mood: 4 <= v <= 6
+        # good mood: 7 <= v <= 9
+        self.labels = torch.full_like(valence, -1)
+        self.labels[(valence >= 1) & (valence <= 4) ] = 0 
+        self.labels[(valence > 4) & (valence <= 6) ] = 1
+        self.labels[(valence > 6) & (valence <= 9) ] = 2
+
+        return self.labels.tolist()
 
     
     def slice_data(self, df, length=LENGTH, step=STEP) -> pd.DataFrame:

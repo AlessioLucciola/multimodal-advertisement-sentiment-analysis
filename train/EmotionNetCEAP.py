@@ -54,7 +54,7 @@ def main():
 
     scheduler = None
 
-    criterion = torch.nn.MSELoss()
+    criterion = torch.nn.CrossEntropyLoss()
 
     config = {
         "architecture": "EmotionNet - CNN + LSTM",

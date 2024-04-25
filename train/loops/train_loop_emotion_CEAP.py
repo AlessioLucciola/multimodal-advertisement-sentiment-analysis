@@ -1,5 +1,6 @@
 from config import BATCH_SIZE, SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, LENGTH
-from utils.utils import save_results, save_model, save_configurations
+from utils.utils import save_results, save_configurations
+from torchmetrics import Accuracy, Recall, Precision, F1Score
 from datetime import datetime
 from tqdm import tqdm
 import torch
@@ -55,8 +56,17 @@ def train_eval_loop(device,
                 name=data_name
             )
 
-    for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
+    accuracy_metric = Accuracy(
+        task="multiclass", num_classes=config['num_classes']).to(device)
+    recall_metric = Recall(
+        task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
 
+    val_accuracy_metric = Accuracy(
+        task="multiclass", num_classes=config['num_classes']).to(device)
+    val_recall_metric = Recall(
+        task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
+
+    for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
         model.train()
         losses = []
 
@@ -78,13 +88,19 @@ def train_eval_loop(device,
 
             # Stack predictions and calculate loss
             predictions = torch.stack(outputs, 1)
-            loss = criterion(predictions.view(-1, LENGTH), target)
+            loss = criterion(predictions.view(-1, 3, LENGTH), target)
             losses.append(loss.item()) 
 
             loss.backward()
             optimizer.step()
+        
+            # Calculate accuracy and recall
+            with torch.no_grad():
+                preds = predictions.argmax(dim=-1)
+                accuracy_metric.update(preds, target)
+                recall_metric.update(preds, target)
 
-        print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f}")
+        print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(accuracy_metric.compute() * 100):.4f} | Recall: {(recall_metric.compute() * 100):.4f}")
     
         model.eval()
         losses = []
@@ -100,20 +116,25 @@ def train_eval_loop(device,
 
                 # Pass through encoder
                 hidden, cell = model.encoder(src)
+                
 
                 # Decoder inference without teacher forcing
                 outputs = []
-                for i in range(target.shape[1]):  # Iterate over sequence length
-                    curr_src = src[:, i:i+1].view(-1, 1, 1)
-                    # print(f"Curr src shape: {curr_src.shape}")
+                for i in range(src.shape[1]):  # Iterate over sequence length
+                    curr_src = src[:, i:i+1].reshape(-1, 1, 1)
                     output, hidden, cell = model.decoder(curr_src, hidden, cell)  # Use only current input
                     outputs.append(output)
 
                 # Stack predictions and calculate loss
                 predictions.append(torch.stack(outputs, 1).squeeze(1))  # Squeeze for regression
                 targets.append(target)
-                loss = criterion(torch.stack(outputs, 1).view(-1, LENGTH), target)
+                loss = criterion(torch.stack(outputs, 1).view(-1, 3, LENGTH), target)
                 losses.append(loss.item())
 
-        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f}")
+                preds = torch.stack(outputs, 1).argmax(dim=-1)
+                val_accuracy_metric.update(preds, target)
+                val_recall_metric.update(preds, target)
+
+        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f}")
+        print("-" * 50)
 
