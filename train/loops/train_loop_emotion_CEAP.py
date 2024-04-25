@@ -54,11 +54,8 @@ def train_eval_loop(device,
                 resume=resume,
                 name=data_name
             )
-    best_model = None
-    best_accuracy = None
 
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
-        tr_cumulative_loss = 0
 
         model.train()
         losses = []
@@ -73,28 +70,21 @@ def train_eval_loop(device,
             
             hidden, cell = model.encoder(src)
 
-            # print(f"Train Loop | Encoder hidden shape: {hidden.shape}")
-            # print(f"Train Loop | Encoder cell shape: {cell.shape}")
-            
             outputs = []
             for i in range(target.shape[1]):  # Iterate over sequence length
               curr_target = target[:, i].view(-1, 1, 1)
               output, hidden, cell = model.decoder(curr_target, hidden, cell)
               outputs.append(output)
 
-            # print(f"Train Loop | Decoder outputs: {outputs}")
-
             # Stack predictions and calculate loss
             predictions = torch.stack(outputs, 1)
-            # print(f"Predictions shape: {predictions.shape}")
-            # print(f"Target shape: {target.shape}")
             loss = criterion(predictions.view(-1, LENGTH), target)
             losses.append(loss.item()) 
 
             loss.backward()
             optimizer.step()
 
-        print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean()}")
+        print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f}")
     
         model.eval()
         losses = []
@@ -111,9 +101,6 @@ def train_eval_loop(device,
                 # Pass through encoder
                 hidden, cell = model.encoder(src)
 
-                # print(f"Hidden shape: {hidden.shape}
-                # print(f"Cell shape: {hidden.shape}")
-
                 # Decoder inference without teacher forcing
                 outputs = []
                 for i in range(target.shape[1]):  # Iterate over sequence length
@@ -128,5 +115,5 @@ def train_eval_loop(device,
                 loss = criterion(torch.stack(outputs, 1).view(-1, LENGTH), target)
                 losses.append(loss.item())
 
-        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(losses).mean()}")
+        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f}")
 

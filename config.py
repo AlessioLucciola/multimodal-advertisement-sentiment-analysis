@@ -22,15 +22,19 @@ RESUME_EPOCH = 67
 
 # Train configurations
 
-LENGTH = 200
-STEP = 200
+LENGTH = 300
+STEP = 250
 WAVELET_STEP = 2
 BATCH_SIZE = 128
 N_EPOCHS = 1000
 # LR = 0.00001
-LR = 1e-4
-REG = 0
-DROPOUT_P = 0
+LR = 1e-3
+REG = 0.1
+DROPOUT_P = 0.5
+#---
+LSTM_ENC_HIDDEN = 8
+LSTM_DEC_HIDDEN = 8
+#---
 # EmotionNet Transformer config
 T_HEAD = 4
 T_ENC_LAYERS = 6
