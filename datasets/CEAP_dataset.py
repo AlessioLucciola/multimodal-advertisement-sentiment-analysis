@@ -13,11 +13,9 @@ class CEAPDataset(Dataset):
 
     def __getitem__(self, index):
         ppg = torch.tensor(self.data["ppg"].iloc[index])
-        spatial_features = self.data["ppg_spatial_features"].iloc[index]
-        valence = torch.tensor(self.data["val"].iloc[index])
-        arousal = torch.tensor(self.data["aro"].iloc[index])
+        # spatial_features = self.data["ppg_spatial_features"].iloc[index]
+        valence = torch.tensor(self.data["valence"].iloc[index])
 
         return {"ppg": ppg,
-                "ppg_spatial_features": spatial_features,
-                "valence": valence,
-                "arousal": arousal}
+                # "ppg_spatial_features": spatial_features,
+                "valence": valence}
