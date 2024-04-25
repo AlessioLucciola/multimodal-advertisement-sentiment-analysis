@@ -31,16 +31,21 @@ class CEAPDataLoader(DataLoader):
         _type = "Frame"
         self.data_path = os.path.join(DATA_DIR, "CEAP", "5_PhysioData", _type)
         self.annotation_path = os.path.join(DATA_DIR, "CEAP", "3_AnnotationData", _type)
+        print("Loading data...")
         self.data = self.load_data(_type=_type)
 
         # self.data.to_csv("ceap_data.csv")
-
+        
+        print("Splitting data...")
         self.train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED)
         self.val_df, self.test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
 
+        print("Slicing data...")
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
         self.test_df = self.slice_data(self.test_df)
+        
+        print("Finished!")
 
         print(f"Train_df length: {len(self.train_df)}")
         print(f"Val_df length: {len(self.val_df)}")
