@@ -3,6 +3,7 @@ from config import (
     LENGTH,
     RANDOM_SEED,
     STEP,
+    WT
 )
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -14,7 +15,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from datasets.CEAP_dataset import CEAPDataset
 import json
-
+from utils.ppg_utils import wavelet_transform
 
 class CEAPDataLoader(DataLoader):
     def __init__(self, batch_size):
@@ -45,13 +46,15 @@ class CEAPDataLoader(DataLoader):
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
         self.test_df = self.slice_data(self.test_df)
-
-
-        # tqdm.pandas()
-        # self.train_df["ppg"] = self.train_df["ppg"].progress_apply(stft)
-        # self.val_df["ppg"] = self.val_df["ppg"].progress_apply(stft)
-
         
+        if WT:
+            print(f"Performing wavelet transform...")
+            tqdm.pandas()
+            self.train_df["ppg"] = self.train_df["ppg"].progress_apply(wavelet_transform)
+            self.val_df["ppg"] = self.val_df["ppg"].progress_apply(wavelet_transform)
+        else:
+            print("Skipped wavelet transform")
+
         print("Finished!")
 
         print(f"Train_df length: {len(self.train_df)}")

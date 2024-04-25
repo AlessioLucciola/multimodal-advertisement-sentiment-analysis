@@ -1,4 +1,4 @@
-from config import BATCH_SIZE, SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, LENGTH
+from config import BATCH_SIZE, SAVE_MODELS, SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, LENGTH, WAVELET_STEP, WT
 from utils.utils import save_results, save_configurations
 from torchmetrics import Accuracy, Recall, Precision, F1Score
 from datetime import datetime
@@ -82,13 +82,17 @@ def train_eval_loop(device,
 
             outputs = []
             for i in range(target.shape[1]):  # Iterate over sequence length
-              curr_target = target[:, i].view(-1, 1, 1)
-              output, hidden, cell = model.decoder(curr_target, hidden, cell)
-              outputs.append(output)
+                if WT: 
+                    curr_target = target[:, i].view(-1, 1, 1).repeat(1, 1, LENGTH // WAVELET_STEP)
+                else:
+                    curr_target = target[:, i].view(-1, 1, 1).repeat(1, 1, 1)
+                output, hidden, cell = model.decoder(curr_target, hidden, cell)
+                outputs.append(output)
 
             # Stack predictions and calculate loss
-            predictions = torch.stack(outputs, 1)
-            loss = criterion(predictions.view(-1, 3, LENGTH), target)
+            predictions = torch.stack(outputs, 1).view(-1, 3, LENGTH)
+            # print(f'predictions shape is: {predictions.shape}')
+            loss = criterion(predictions, target)
             losses.append(loss.item()) 
 
             loss.backward()
@@ -96,7 +100,7 @@ def train_eval_loop(device,
         
             # Calculate accuracy and recall
             with torch.no_grad():
-                preds = predictions.argmax(dim=-1)
+                preds = predictions.argmax(dim=1)
                 accuracy_metric.update(preds, target)
                 recall_metric.update(preds, target)
 
@@ -104,8 +108,6 @@ def train_eval_loop(device,
     
         model.eval()
         losses = []
-        predictions = []
-        targets = []
 
         with torch.no_grad():  # Disable gradient calculation for efficiency
             for val_i, val_batch in enumerate(tqdm(val_loader, desc="Validation", leave=False)):
@@ -116,22 +118,23 @@ def train_eval_loop(device,
 
                 # Pass through encoder
                 hidden, cell = model.encoder(src)
-                
 
                 # Decoder inference without teacher forcing
                 outputs = []
-                for i in range(src.shape[1]):  # Iterate over sequence length
-                    curr_src = src[:, i:i+1].reshape(-1, 1, 1)
+                for i in range(LENGTH):  # Iterate over sequence length
+                    if WT:
+                        curr_src = src[:, i:i+1, :].reshape(-1, 1, LENGTH // WAVELET_STEP)
+                    else:
+                        curr_src = src[:, i:i+1].reshape(-1, 1, 1)
                     output, hidden, cell = model.decoder(curr_src, hidden, cell)  # Use only current input
                     outputs.append(output)
 
                 # Stack predictions and calculate loss
-                predictions.append(torch.stack(outputs, 1).squeeze(1))  # Squeeze for regression
-                targets.append(target)
-                loss = criterion(torch.stack(outputs, 1).view(-1, 3, LENGTH), target)
+                preds = torch.stack(outputs, 1).view(-1, 3, LENGTH)
+                loss = criterion(preds, target)
                 losses.append(loss.item())
 
-                preds = torch.stack(outputs, 1).argmax(dim=-1)
+                preds = preds.argmax(dim=1)
                 val_accuracy_metric.update(preds, target)
                 val_recall_metric.update(preds, target)
 

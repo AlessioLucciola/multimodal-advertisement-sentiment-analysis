@@ -23,12 +23,11 @@ def statistical_features(x: torch.Tensor) -> torch.Tensor:
 
 
 def wavelet_transform(x):
-    # return np.zeros((2000 // scale_step,  2000))  # TODO: for debug
-    # sr = 100 # sample rate in Hz
+    # return np.zeros((LENGTH // WAVELET_STEP,  LENGTH)).T
     scales = np.arange(1, len(x) + 1, WAVELET_STEP)
-    coef, freqs = pywt.cwt(x, scales, "morl")
+    coef, _ = pywt.cwt(x, scales, "morl")
     # print(f"coef shape is {coef.shape}")
-    return coef
+    return coef.T
 
 
 def stft(x: np.ndarray):

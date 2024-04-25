@@ -21,18 +21,20 @@ RESUME_EPOCH = 67
 
 # Train configurations
 
-LENGTH = 100
-STEP = 100
-WAVELET_STEP = 2
+LENGTH = 200
+STEP = 200
+
+WT = False #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
+WAVELET_STEP = 10
 BATCH_SIZE = 64
 N_EPOCHS = 1000
 # LR = 0.00001
-LR = 1e-4
-REG = 0.1
-DROPOUT_P = 0.5
+LR = 1e-3
+REG = 0
+DROPOUT_P = 0.8
 #--
-LSTM_ENC_HIDDEN = 128
-LSTM_DEC_HIDDEN = 128
+LSTM_ENC_HIDDEN = 32
+LSTM_DEC_HIDDEN = 32
 #---
 # EmotionNet Transformer config
 T_HEAD = 4

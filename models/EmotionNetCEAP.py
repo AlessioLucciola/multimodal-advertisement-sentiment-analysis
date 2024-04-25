@@ -1,4 +1,4 @@
-from config import DROPOUT_P, LENGTH, LSTM_DEC_HIDDEN,LSTM_ENC_HIDDEN
+from config import DROPOUT_P, LENGTH, LSTM_DEC_HIDDEN,LSTM_ENC_HIDDEN, WAVELET_STEP, WT
 import torch.nn as nn
 import torch
 
@@ -12,7 +12,7 @@ class Encoder(nn.Module):
   def forward(self, x):
     if x.ndim < 3:
         x = x.unsqueeze(-1)
-    lstm_out, (hidden, cell) = self.lstm(x)
+    _, (hidden, cell) = self.lstm(x)
     hidden = self.dropout(hidden)
     return hidden, cell  
 
@@ -33,10 +33,11 @@ class Decoder(nn.Module):
 class EmotionNet(nn.Module):
   def __init__(self, dropout=DROPOUT_P):
     super(EmotionNet, self).__init__()
-    self.encoder = Encoder(input_size=1, hidden_size=LSTM_ENC_HIDDEN)
-    self.decoder = Decoder(input_size=1, hidden_size=LSTM_DEC_HIDDEN)
+    self.encoder = Encoder(input_size=LENGTH // WAVELET_STEP if WT else 1, hidden_size=LSTM_ENC_HIDDEN)
+    self.decoder = Decoder(input_size=LENGTH // WAVELET_STEP if WT else 1, hidden_size=LSTM_DEC_HIDDEN)
 
   def forward(self, src, target):
+    raise NotImplementedError("Don't call the forward on the EmotionNet directly!")
     hidden, cell = self.encoder(src)
     # Pass through decoder with encoder hidden and cell state
     outputs = []
