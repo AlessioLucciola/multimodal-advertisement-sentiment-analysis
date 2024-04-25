@@ -11,7 +11,7 @@ from utils.video_utils import select_model
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def main(model_path, video_frames, epoch):
+def main(model_path, video_frames, epoch, live_demo):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[1]
@@ -24,6 +24,7 @@ def main(model_path, video_frames, epoch):
     video_path = os.path.join(DEMO_DIR, "video_files", str(current_datetime_str))
     if not os.path.exists(video_path):
         os.makedirs(video_path)
+    video_frames = get_frames_duration(video_frames, live_demo) 
     for duration, video_frame in video_frames:
         # Trasform _io.BytesIO object to PIL Image object and then to tensor object to pass to the model
         video_frame = Image.open(video_frame).convert('RGB')
@@ -43,6 +44,14 @@ def main(model_path, video_frames, epoch):
         video_output.append({'frame_duration': duration, 'output': output})
 
     return video_output
+
+def get_frames_duration(video_frames, live_demo):
+    if live_demo:
+        start_time = datetime.timestamp(video_frames[0][1])
+        frame_duration = [(datetime.timestamp(frame[1]) - start_time, frame[0]) for frame in video_frames]
+    else:
+        frame_duration = [(frame[1], frame[0]) for frame in video_frames]
+    return frame_duration
 
 def load_test_model(model, model_path, epoch, device):
     state_dict = torch.load(
