@@ -95,87 +95,38 @@ def train_eval_loop(device,
             optimizer.step()
 
         print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean()}")
-             
-        
-
-        # tr_cumulative_loss /= tr_step
-        # print(f"Loss: {tr_cumulative_loss}")
-        # if config["use_wandb"]:
-        #     wandb.log({"Training Loss": tr_cumulative_loss.item()})
-
-        
-        
-        # TODO: implement this
-        continue
+    
         model.eval()
-        with torch.no_grad():
-            epoch_val_preds = torch.tensor([]).to(device)
-            epoch_val_labels = torch.tensor([]).to(device)
-            for _, val_batch in enumerate(val_loader):
-                val_data, val_labels = val_batch["ppg"], val_batch["valence"]
+        losses = []
+        predictions = []
+        targets = []
 
-                val_data = val_data.float().to(device)
-                val_labels = val_labels.to(device)
+        with torch.no_grad():  # Disable gradient calculation for efficiency
+            for val_i, val_batch in enumerate(tqdm(val_loader, desc="Validation", leave=False)):
+                src, target = val_batch["ppg"], val_batch["valence"]
 
-                val_outputs = model(val_data)
-        
-                val_preds = torch.argmax(val_outputs, -1).detach()
+                src = src.float().to(device)
+                target = target.to(device)
 
-                epoch_val_preds = torch.cat((epoch_val_preds, val_preds), 0)
-                epoch_val_labels = torch.cat((epoch_val_labels, val_labels), 0)
+                # Pass through encoder
+                hidden, cell = model.encoder(src)
 
-                val_epoch_loss = criterion(val_outputs, val_labels)
+                # print(f"Hidden shape: {hidden.shape}
+                # print(f"Cell shape: {hidden.shape}")
 
-                val_cumulative_loss += val_epoch_loss
-                val_step += 1
+                # Decoder inference without teacher forcing
+                outputs = []
+                for i in range(target.shape[1]):  # Iterate over sequence length
+                    curr_src = src[:, i:i+1].view(-1, 1, 1)
+                    # print(f"Curr src shape: {curr_src.shape}")
+                    output, hidden, cell = model.decoder(curr_src, hidden, cell)  # Use only current input
+                    outputs.append(output)
 
-            val_accuracy = accuracy_metric(
-                epoch_val_preds, epoch_val_labels) * 100
-            val_recall = recall_metric(
-                epoch_val_preds, epoch_val_labels) * 100
+                # Stack predictions and calculate loss
+                predictions.append(torch.stack(outputs, 1).squeeze(1))  # Squeeze for regression
+                targets.append(target)
+                loss = criterion(torch.stack(outputs, 1).view(-1, LENGTH), target)
+                losses.append(loss.item())
 
-            val_cumulative_loss /= val_step
-            if config["use_wandb"]:
-                wandb.log(
-                    {"Validation Loss": val_cumulative_loss.item()})
-                wandb.log({"Validation Accuracy":
-                           val_accuracy.item()})
-                wandb.log({"Validation Recall": val_recall.item()})
+        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(losses).mean()}")
 
-            if best_accuracy is None or val_accuracy < best_accuracy:
-                best_accuracy = val_accuracy
-                best_model = copy.deepcopy(model)
-
-            current_results = {
-                'epoch': epoch+1,
-                'training_loss': tr_cumulative_loss.item(),
-                'training_accuracy': tr_accuracy.item(),
-                'training_recall': tr_recall.item(),
-                # 'training_precision': tr_precision.item(),
-                # 'training_f1': tr_f1.item(),
-                # 'training_auroc': tr_auroc.item(),
-                'validation_loss': val_cumulative_loss.item(),
-                'validation_accuracy': val_accuracy.item(),
-                'validation_recall': val_recall.item(),
-                # 'validation_precision': val_precision.item(),
-                # 'validation_f1': val_f1.item(),
-                # 'validation_auroc': val_auroc.item()
-            }
-            if SAVE_RESULTS:
-                save_results(data_name, current_results)
-            if SAVE_MODELS:
-                save_model(data_name, model, epoch)
-            if epoch == config["epochs"]-1 and SAVE_MODELS:
-                save_model(data_name, best_model, epoch=None, is_best=True)
-
-        if scheduler is not None:
-            current_lr = optimizer.param_groups[0]['lr']
-            print(f'Current learning rate: {current_lr}')
-            scheduler.step()
-
-        print(
-            f"Training -> Epoch[{epoch+1}/{config['epochs']}], Loss: {tr_cumulative_loss:.4f}), Accuracy: {tr_accuracy: .4f} % , Recall: {tr_recall: .4f} %")
-
-        print(
-            f"Validation -> Epoch[{epoch+1}/{config['epochs']}], Loss: {val_cumulative_loss:.4f}), Accuracy: {val_accuracy: .4f} % , Recall: {val_recall: .4f} %")
-        print("-"*50)

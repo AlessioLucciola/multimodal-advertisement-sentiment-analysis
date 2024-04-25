@@ -28,7 +28,7 @@ WAVELET_STEP = 2
 BATCH_SIZE = 128
 N_EPOCHS = 1000
 # LR = 0.00001
-LR = 1e-3
+LR = 1e-4
 REG = 0
 DROPOUT_P = 0
 # EmotionNet Transformer config
