@@ -1,13 +1,9 @@
 import pywt
 import torch
 import numpy as np
-from pyteap.signals.bvp import get_bvp_features
 import pandas as pd
-from scipy.signal import resample
-from scipy.signal.windows import gaussian
-from scipy.signal import ShortTimeFFT
 from biosppy.signals import bvp
-from config import WAVELET_STEP, LENGTH
+from config import WAVELET_STEP
 
 
 

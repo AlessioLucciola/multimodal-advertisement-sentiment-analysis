@@ -75,10 +75,8 @@ class CEAPDataLoader(DataLoader):
             participant_id = parsed_json[f"Physio_{data_type}Data"][0]["ParticipantID"].replace("P", "")
             video_list = parsed_json[f"Physio_{data_type}Data"][0][f"Video_Physio_{data_type}Data"]
             for video_info in video_list:
-                # NOTE: the PPG can have a length of 1800 or 1500
                 video_id = video_info["VideoID"]
                 ppg_list = [item["BVP"] for item in video_info[f"BVP_{data_type}Data"]]
-                #TODO: see how to also put the labels here, without modifying the df later
                 df_item  = {"participant_id": participant_id, 
                             "video_id": video_id, 
                             "ppg": ppg_list}
@@ -93,10 +91,8 @@ class CEAPDataLoader(DataLoader):
             participant_id = parsed_json[f"ContinuousAnnotation_{annotation_type}Data"][0]["ParticipantID"]
             video_list = parsed_json[f"ContinuousAnnotation_{annotation_type}Data"][0][f"Video_Annotation_{annotation_type}Data"]
             for video_info in video_list:
-                # NOTE: the PPG can have a length of 1800 or 1500
                 video_id = video_info["VideoID"]
                 valence_list = [item["Valence"] for item in video_info[f"TimeStamp_Valence_Arousal"]]
-                #TODO: see how to also put the labels here, without modifying the df later
                 df_item  = {"participant_id": participant_id, 
                             "video_id": video_id, 
                             "valence": valence_list}
@@ -121,14 +117,10 @@ class CEAPDataLoader(DataLoader):
         return df
     
     def discretize_labels(self, valence: torch.Tensor) -> List[float]:
-        # bad mood: 1 <= v <= 3
-        # neutral mood: 4 <= v <= 6
-        # good mood: 7 <= v <= 9
         self.labels = torch.full_like(valence, -1)
         self.labels[(valence >= 1) & (valence <= 4) ] = 0 
         self.labels[(valence > 4) & (valence <= 6) ] = 1
         self.labels[(valence > 6) & (valence <= 9) ] = 2
-
         return self.labels.tolist()
 
     
@@ -139,8 +131,8 @@ class CEAPDataLoader(DataLoader):
         for _, row in df.iterrows():
             pid, vid, ppg, labels = row["participant_id"], row["video_id"], row["ppg"], row["valence"]
             for i in range(0, len(ppg) - length + 1, step):
-                ppg_segment = ppg[i : i + length]
-                label_segment = labels[i: i+length]
+                ppg_segment = ppg[i:i+length]
+                label_segment = labels[i:i+length]
                 new_row = {
                         "participant_id": pid,
                         "video_id": vid,
