@@ -31,7 +31,7 @@ N_EPOCHS = 1000
 # LR = 0.00001
 LR = 1e-3
 REG = 0
-DROPOUT_P = 0.5
+DROPOUT_P = 0
 #--
 LSTM_HIDDEN = 128
 #---

@@ -67,7 +67,7 @@ def train_eval_loop(device,
     val_recall_metric = Recall(
         task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
     
-    teacher_forcing_ratio = 0.5
+    teacher_forcing_ratio = 0
     clip = 1.0
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
         model.train()
