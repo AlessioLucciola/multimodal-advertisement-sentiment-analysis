@@ -163,13 +163,19 @@ def video_test(model, num_classes, cap, device):
     f1_metric = F1Score(task="multiclass", num_classes=num_classes, average='macro').to(device)
     auroc_metric = AUROC(task="multiclass", num_classes=num_classes).to(device)
 
+    # Define the transformation
     val_transform = transforms.Compose([
         transforms.ToTensor()])
+    
+    # Load the face cascade
+    face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
 
     while True:
         ret, frame = cap.read()
-        face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
+        if not ret:
+            break
 
+        # Detect faces
         faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
                     
         if len(faces) == 0: # No face detected

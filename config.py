@@ -89,6 +89,3 @@ NORMALIZE = True # Normalize the images if True, use the original images if Fals
 USE_VIDEO_FOR_TESTING = True # Use test video or live video if True, use test dataset if False
 USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
 OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video.mp4") # Offline video file
-
-# Fusion configurations
-VIDEO_DURATION = 2

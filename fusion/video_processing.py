@@ -8,6 +8,8 @@ import os
 from PIL import Image
 from datetime import datetime
 from utils.video_utils import select_model
+import cv2
+from torchvision import transforms
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -17,41 +19,80 @@ def main(model_path, video_frames, epoch, live_demo):
     type = model_path.split('_')[1]
     model, _ = get_model_and_dataloader(model_path, device, type)
     model = load_test_model(model, model_path, epoch, device)
-
     video_output = []
     current_datetime = datetime.now()
     current_datetime_str = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
     video_path = os.path.join(DEMO_DIR, "video_files", str(current_datetime_str))
     if not os.path.exists(video_path):
         os.makedirs(video_path)
-    video_frames = get_frames_duration(video_frames, live_demo) 
-    for duration, video_frame in video_frames:
-        # Trasform _io.BytesIO object to PIL Image object and then to tensor object to pass to the model
-        video_frame = Image.open(video_frame).convert('RGB')
-        # Transform to tensor
-        video_frame = video_frame.resize((224, 224))
-        video_frame = np.array(video_frame)
-        video_frame = torch.tensor(video_frame).permute(2, 0, 1).unsqueeze(0).float().to(device)
-        output = model(video_frame)
-        # Save the video frame to the disk
-        image_array = np.array(video_frame)
-        height, width, channels = image_array.shape
-        pixels = image_array.reshape((height * width, channels))
-        pixels = pixels.astype(np.uint8)
-        image = Image.fromarray(pixels.reshape((height, width, channels)))
-        image.save(os.path.join(video_path, f"{current_datetime_str}_{duration}.jpg"))
-        # In the real code, for each frame you should return the logits of each emotion
-        video_output.append({'frame_duration': duration, 'output': output})
+    
+    if live_demo:
+        pass # TODO: Implement live video processing :(
+    else: # Offline video file
+        # Open the video file
+        cap = cv2.VideoCapture(video_frames)
+        # Extract frame every 1 seconds
+        frame_interval = 1  
+
+        # Define the transformation
+        val_transform = transforms.Compose([
+            transforms.ToTensor()])
+        # Load the face cascade
+        face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
+
+        # Variable to keep track of extracted frames
+        frames_extracted = 0
+
+        # Read the video file
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # Extract frames every `frame_interval` seconds
+            if cap.get(cv2.CAP_PROP_POS_FRAMES) % (cap.get(cv2.CAP_PROP_FPS) * frame_interval) == 0:
+                # Compute frame duration (float in seconds)
+                frame_duration = cap.get(cv2.CAP_PROP_POS_FRAMES) / cap.get(cv2.CAP_PROP_FPS)
+
+                # Detect face in the frame  
+                faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
+
+                if len(faces) == 0: # No face detected
+                    faces = face_cascade.detectMultiScale(frame, scaleFactor=1.02, minNeighbors=9) # Try again with different parameters
+                if len(faces) == 0: # Still no face detected
+                    continue
+                if len(faces) > 1: # More than one face detected
+                    # Choose the most prominent face
+                    face = max(faces, key=lambda x: x[2] * x[3])
+                    faces = [face]
+
+                # Crop the face
+                for (x, y, w, h) in faces:
+                    cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
+                    # Extract face from the frame
+                    face = frame[y:y+h, x:x+w]
+
+                    # Save the frame to the disk
+                    cv2.imwrite(os.path.join(video_path, f"{current_datetime_str}_{frames_extracted}_{frame_duration}.jpg"), face)
+        
+                    # Resize face
+                    face = cv2.resize(face, IMG_SIZE)
+                    img = Image.fromarray(face)
+                    img = val_transform(img).unsqueeze(0)
+                    img = img.to(device)
+
+                    # Get prediction from model
+                    output = model(img).cpu().detach().numpy()
+
+                    # Return frame duration (float in seconds) and output (numpy array)
+                    video_output.append({'frame_duration': frame_duration, 'output': output})
+        
+                frames_extracted += 1
+
+        cap.release()
+        cv2.destroyAllWindows()
 
     return video_output
-
-def get_frames_duration(video_frames, live_demo):
-    if live_demo:
-        start_time = datetime.timestamp(video_frames[0][1])
-        frame_duration = [(datetime.timestamp(frame[1]) - start_time, frame[0]) for frame in video_frames]
-    else:
-        frame_duration = [(frame[1], frame[0]) for frame in video_frames]
-    return frame_duration
 
 def load_test_model(model, model_path, epoch, device):
     state_dict = torch.load(

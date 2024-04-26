@@ -1,11 +1,11 @@
 from shared.constants import general_emotion_mapping, merged_emotion_mapping
 from fusion.audio_processing import main as audio_main
 from fusion.video_processing import main as video_main
-from config import DEMO_DIR, NUM_CLASSES
 from datetime import datetime
 from PIL import Image
 import numpy as np
 import random
+from moviepy.editor import VideoFileClip
 import os
 
 def main(audio_model_path: str,
@@ -18,18 +18,46 @@ def main(audio_model_path: str,
          use_positive_negative_labels = True
          ):
     pass
+
+    if not live_demo: # Extract audio from the offline video file
+        extract_audio_from_video(video_frames, audio_frames)
+
     # Audio processing
     audio_output = audio_main(model_path=audio_model_path, epoch=audio_model_epoch, audio_file=audio_frames, live_demo=live_demo)
     # Video processing
     video_output = video_main(model_path=video_model_path, video_frames=video_frames, epoch=video_model_epoch, live_demo=live_demo)
+    video_output = get_frames_duration(video_output, live_demo)
     
     fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
     remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
 
     all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
-    #for f in all_frames:
-    #    print(f)
+
+    for f in all_frames:
+       print(f)
+
     return all_frames
+
+def extract_audio_from_video(video_frames, audio_frames):
+    # Load the video file
+    video_clip = VideoFileClip(video_frames)
+    
+    # Extract the audio
+    audio_clip = video_clip.audio
+
+    # Save the audio to a file
+    audio_clip.write_audiofile(audio_frames)
+
+    # Close the video file
+    video_clip.close()
+
+def get_frames_duration(video_frames, live_demo):
+    if live_demo:
+        start_time = datetime.timestamp(video_frames[0][1])
+        frame_duration = [(datetime.timestamp(frame[1]) - start_time, frame[0]) for frame in video_frames]
+    else:
+        frame_duration = video_frames
+    return frame_duration
 
 def compute_fused_predictions(audio_output, video_output, use_positive_negative_labels):
     # Compute the average of logits for each video frame within the corresponding audio window
@@ -45,7 +73,7 @@ def compute_fused_predictions(audio_output, video_output, use_positive_negative_
         for video_frame in video_output:
             frame_duration = video_frame['frame_duration']
             if window_start <= frame_duration <= window_end:
-                video_logits_sum += video_frame['output'] # Sum the logits of the video frame
+                video_logits_sum += video_frame['output'][0] # Sum the logits of the video frame
                 video_frame_count += 1
         video_logits_avg = video_logits_sum / video_frame_count
         
