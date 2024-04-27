@@ -1,4 +1,4 @@
-from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, LENGTH, WAVELET_STEP, WT
+from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, LENGTH, WAVELET_STEP, WT, BATCH_SIZE
 from utils.utils import save_results, save_configurations
 from torchmetrics import Accuracy, Recall
 from datetime import datetime
@@ -79,7 +79,7 @@ def train_eval_loop(device,
             src = src.float().to(device)
             target = target.float().to(device)
 
-            src = src.permute(1,0)
+            src = src.permute(1,0,2)
             target = target.permute(1,0)
 
             optimizer.zero_grad()
@@ -97,7 +97,7 @@ def train_eval_loop(device,
             # print(f"trg shape: {trg.shape}, output shape: {output.shape}")
             loss = criterion(output, trg)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
             losses.append(loss.item())
 
@@ -107,8 +107,13 @@ def train_eval_loop(device,
                 accuracy_metric.update(preds, trg)
                 recall_metric.update(preds, trg)
 
+        if config["use_wandb"]:
+            wandb.log(
+                    {"Training Loss": torch.tensor(losses).mean()})
+            wandb.log({"Training Accuracy": accuracy_metric.compute() * 100})
+            wandb.log({"Training Recall": recall_metric.compute() * 100})
         print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(accuracy_metric.compute() * 100):.4f} | Recall: {(recall_metric.compute() * 100):.4f}")
-         
+        
         model.eval()
         losses = []
         with torch.no_grad():  # Disable gradient calculation for efficiency
@@ -118,7 +123,7 @@ def train_eval_loop(device,
                 src = src.float().to(device)
                 target = target.float().to(device)
 
-                src = src.permute(1,0)
+                src = src.permute(1,0,2)
                 target = target.permute(1,0)
 
                 output = model(src, target, 0)  # turn off teacher forcing
@@ -135,5 +140,12 @@ def train_eval_loop(device,
                 val_accuracy_metric.update(preds, trg)
                 val_recall_metric.update(preds, trg)
 
+        if config["use_wandb"]:
+            wandb.log(
+                    {"Validation Loss": torch.tensor(losses).mean()})
+            wandb.log({"Validation Accuracy": val_accuracy_metric.compute() * 100})
+            wandb.log({"Validation Recall": val_recall_metric.compute() * 100})
+
         print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f}")
         print("-" * 50)
+

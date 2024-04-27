@@ -12,7 +12,7 @@ USE_DML = False
 USE_MPS = True
 USE_WANDB = False
 SAVE_RESULTS = True
-SAVE_MODELS = False
+SAVE_MODELS = True
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
 RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "AudioNetCL_2024-03-28_17-13-18"
@@ -21,19 +21,20 @@ RESUME_EPOCH = 67
 
 # Train configurations
 
-LENGTH = 800
-STEP = 800
+LENGTH = 100 #800 seemed to work
+STEP = 100
 
-WT = False #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
+WT = True #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
 WAVELET_STEP = 10
-BATCH_SIZE = 64
+BATCH_SIZE = 256
 N_EPOCHS = 1000
 # LR = 0.00001
 LR = 1e-3
 REG = 0
 DROPOUT_P = 0
 #--
-LSTM_HIDDEN = 128
+LSTM_HIDDEN = 512 
+LSTM_LAYERS = 2
 #---
 # EmotionNet Transformer config
 T_HEAD = 4

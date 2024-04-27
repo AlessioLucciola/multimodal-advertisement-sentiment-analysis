@@ -1,3 +1,4 @@
+from config import WT, BATCH_SIZE
 import torch.nn as nn
 import torch
 from utils.utils import select_device
@@ -14,8 +15,9 @@ class Encoder(nn.Module):
 
     def forward(self, src):
         # src = [src length, batch size]
-        src = src.unsqueeze(-1)
-        embedded = self.dropout(src)
+        if not WT:  
+            src = src.unsqueeze(-1)
+        embedded = src
         # embedded = [src length, batch size, embedding dim]
         outputs, (hidden, cell) = self.rnn(embedded)
         # outputs = [src length, batch size, hidden dim * n directions]
@@ -33,6 +35,7 @@ class Decoder(nn.Module):
         self.rnn = nn.LSTM(embedding_dim, hidden_dim, n_layers, dropout=dropout)
         self.fc_out = nn.Linear(hidden_dim, output_dim)
         self.dropout = nn.Dropout(dropout)
+        self.embedding_dim = embedding_dim
 
     def forward(self, input, hidden, cell):
         # input = [batch size]
@@ -41,9 +44,9 @@ class Decoder(nn.Module):
         # n directions in the decoder will both always be 1, therefore:
         # hidden = [n layers, batch size, hidden dim]
         # context = [n layers, batch size, hidden dim]
-        input = input.view(1, -1, 1)
         # input = [1, batch size] #OK
-        embedded = self.dropout(input)
+        #TODO: I don't know about this repeat
+        embedded = input.view(1, -1, 1).repeat(1, 1, self.embedding_dim)
         output, (hidden, cell) = self.rnn(embedded, (hidden, cell))
         # output = [seq length, batch size, hidden dim * n directions]
         # hidden = [n layers * n directions, batch size, hidden dim]
@@ -90,17 +93,13 @@ class EmotionNet(nn.Module):
             # insert input token embedding, previous hidden and previous cell states
             # receive output tensor (predictions) and new hidden and cell states
             output, hidden, cell = self.decoder(input, hidden, cell)
-            # output = [batch size, output dim]
+            # output = [batch size, output dim] #OK
             # hidden = [n layers, batch size, hidden dim]
             # cell = [n layers, batch size, hidden dim]
             # place predictions in a tensor holding predictions for each token
             outputs[t] = output
             # decide if we are going to use teacher forcing or not
-            teacher_force = random.random() < teacher_forcing_ratio
             # get the highest predicted token from our predictions
-            top1 = output.argmax(1).float()
-            # if teacher forcing, use actual next token as next input
-            # if not, use predicted token
-            input = trg[t] if teacher_force else top1
+            input = output.argmax(1).float()
             # input = [batch size]
         return outputs

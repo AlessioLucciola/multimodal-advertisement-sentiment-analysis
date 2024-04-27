@@ -15,16 +15,12 @@ from config import (
     REG,
     RESUME_TRAINING,
     STEP,
-    T_DIM_FFW,
-    T_ENC_LAYERS,
-    T_HEAD,
-    T_KERN,
-    T_MAXPOOL,
-    T_STRIDE,
     USE_WANDB,
     WAVELET_STEP,
     LSTM_HIDDEN,
-    DROPOUT_P
+    DROPOUT_P,
+    LSTM_LAYERS,
+    WT
 )
 from dataloaders.CEAP_dataloader import CEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
@@ -41,12 +37,12 @@ def main():
     train_loader = loader.get_train_dataloader()
     val_loader = loader.get_val_dataloader()
 
-    input_dim = 1
+    input_dim = LENGTH // WAVELET_STEP if WT else 1
     output_dim = 3
-    encoder_embedding_dim = 1
-    decoder_embedding_dim = 1
+    encoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
+    decoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
     hidden_dim = LSTM_HIDDEN
-    n_layers = 2
+    n_layers = LSTM_LAYERS
     encoder_dropout = DROPOUT_P
     decoder_dropout = DROPOUT_P
 
@@ -91,7 +87,7 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
 
     config = {
-        "architecture": "EmotionNet - CNN + LSTM",
+        "architecture": "EmotionNet - LSTM Seq2Seq",
         "scope": "EmotionNet",
         "learning_rate": LR,
         "epochs": N_EPOCHS,
@@ -99,7 +95,7 @@ def main():
         "batch_size": BATCH_SIZE,
         "num_classes": EMOTION_NUM_CLASSES,
         "dataset": "GREX",
-        "optimizer": "AdamW",
+        "optimizer": "Adam",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
         "balance_dataset": BALANCE_DATASET,
@@ -111,12 +107,9 @@ def main():
         "add_noise": ADD_NOISE,
         "message": MESSAGE,
         "wavelet_step": WAVELET_STEP,
-        "transformer_config": {
-            "num_heads": T_HEAD,
-            "num_encoder_layers": T_ENC_LAYERS,
-            "num_dims_ffw": T_DIM_FFW,
-            "kernel, stride": (T_KERN, T_STRIDE),
-            "maxpool": T_MAXPOOL
+        "lstm_config": {
+            "num_hidden": LSTM_HIDDEN,
+            "num_layers": LSTM_LAYERS,
             }
 
     }
