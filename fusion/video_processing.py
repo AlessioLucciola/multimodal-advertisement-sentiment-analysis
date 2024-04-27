@@ -10,10 +10,11 @@ from datetime import datetime
 from utils.video_utils import select_model
 import cv2
 from torchvision import transforms
+from shared.constants import general_emotion_mapping, merged_emotion_mapping
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def main(model_path, video_frames, epoch, live_demo):
+def main(model_path, video_frames, epoch, use_positive_negative_labels=True, live_demo=False):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[1]
@@ -31,8 +32,6 @@ def main(model_path, video_frames, epoch, live_demo):
     else: # Offline video file
         # Open the video file
         cap = cv2.VideoCapture(video_frames)
-        # Extract frame every 1 seconds
-        frame_interval = 1  
 
         # Define the transformation
         val_transform = transforms.Compose([
@@ -49,11 +48,10 @@ def main(model_path, video_frames, epoch, live_demo):
             if not ret:
                 break
 
-            # Extract frames every `frame_interval` seconds
-            if cap.get(cv2.CAP_PROP_POS_FRAMES) % (cap.get(cv2.CAP_PROP_FPS) * frame_interval) == 0:
-                # Compute frame duration (float in seconds)
-                frame_duration = cap.get(cv2.CAP_PROP_POS_FRAMES) / cap.get(cv2.CAP_PROP_FPS)
+            # Compute frame duration (float in seconds)
+            frame_duration = cap.get(cv2.CAP_PROP_POS_FRAMES) / cap.get(cv2.CAP_PROP_FPS)
 
+            if int(frame_duration) % 2 == 0:
                 # Detect face in the frame  
                 faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
 
@@ -68,12 +66,11 @@ def main(model_path, video_frames, epoch, live_demo):
 
                 # Crop the face
                 for (x, y, w, h) in faces:
-                    cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
                     # Extract face from the frame
                     face = frame[y:y+h, x:x+w]
 
                     # Save the frame to the disk
-                    cv2.imwrite(os.path.join(video_path, f"{current_datetime_str}_{frames_extracted}_{frame_duration}.jpg"), face)
+                    cv2.imwrite(os.path.join(video_path, f"{current_datetime_str}_{frames_extracted}.jpg"), face)
         
                     # Resize face
                     face = cv2.resize(face, IMG_SIZE)
@@ -82,15 +79,26 @@ def main(model_path, video_frames, epoch, live_demo):
                     img = img.to(device)
 
                     # Get prediction from model
-                    output = model(img).cpu().detach().numpy()
+                    output = model(img)
+
+                    pred = torch.argmax(output, -1).detach()
+                    emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
 
                     # Return frame duration (float in seconds) and output (numpy array)
-                    video_output.append({'frame_duration': frame_duration, 'output': output})
+                    video_output.append({
+                        'frame_duration': frame_duration, 
+                        'emotion_label': pred.item(),
+                        'emotion_string': emotion,
+                        'logits': torch.softmax(output, -1).cpu().detach().numpy()
+                        })
         
                 frames_extracted += 1
 
         cap.release()
         cv2.destroyAllWindows()
+
+    for emotion in video_output:
+        print(f"Emotion detected at {emotion['frame_duration']:.2f}s: {emotion['emotion_string']}")
 
     return video_output
 

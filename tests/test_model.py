@@ -188,7 +188,6 @@ def video_test(model, num_classes, cap, device):
             faces = [face]
 
         for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
             # Extract face from the frame
             face = frame[y:y+h, x:x+w]
   
@@ -203,7 +202,8 @@ def video_test(model, num_classes, cap, device):
             pred = torch.argmax(output, -1).detach()
             emotion = merged_emotion_mapping[pred.item()]
 
-            # Display the emotion
+            # Display rectagnle with emotion
+            cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
             cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
 
         

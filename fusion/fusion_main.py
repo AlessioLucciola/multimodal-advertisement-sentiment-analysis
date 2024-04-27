@@ -73,7 +73,7 @@ def compute_fused_predictions(audio_output, video_output, use_positive_negative_
         for video_frame in video_output:
             frame_duration = video_frame['frame_duration']
             if window_start <= frame_duration <= window_end:
-                video_logits_sum += video_frame['output'][0] # Sum the logits of the video frame
+                video_logits_sum += video_frame['logits'][0] # Sum the logits of the video frame
                 video_frame_count += 1
         video_logits_avg = video_logits_sum / video_frame_count
         
@@ -130,7 +130,7 @@ def compute_remaining_video_predictions(fused_emotion_list, video_output, use_po
 
     # Compute the predictions for the remaining video frames, remove the index and add the window type
     for frame in remaining_video_frames:
-        pred = np.argmax(frame['output'], -1)
+        pred = np.argmax(frame['logits'], -1)
         frame['emotion_label'] = pred.item() # Get the emotion label
         frame['emotion_string'] = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()] # Get the emotion string
         del frame['index'] # Remove the index
