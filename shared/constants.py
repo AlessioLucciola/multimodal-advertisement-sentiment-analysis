@@ -85,3 +85,6 @@ FER_emotion_mapping = {
     5: 'Surprise',
     6: 'Neutral'
 }
+
+CEAP_MEAN = -0.05
+CEAP_STD = 40.14

@@ -25,7 +25,7 @@ STEP = 100
 
 WT = True #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
 WAVELET_STEP = 10
-BATCH_SIZE = 256
+BATCH_SIZE = 256 
 N_EPOCHS = 1000
 # LR = 0.00001
 LR = 1e-3

@@ -103,6 +103,10 @@ def load_test_model(model, model_path, epoch, device):
     return model
 
 
+def test_from_video():
+    #TODO: implement this
+    pass
+
 def main(model_path, epoch):
     set_seed(RANDOM_SEED)
     device = select_device()

@@ -5,9 +5,10 @@ from config import (
     STEP,
     WT
 )
+from shared.constants import CEAP_MEAN, CEAP_STD
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from typing import List
+from typing import List, Tuple
 import os
 import torch
 import numpy as np
@@ -18,26 +19,28 @@ import json
 from utils.ppg_utils import wavelet_transform
 
 class CEAPDataLoader(DataLoader):
-    def __init__(self, batch_size):
+    def __init__(self, 
+                 batch_size: int,
+                 normalize: bool = False):
         self.batch_size = batch_size
-        data_type = "Frame"
-        annotation_type = "Frame"
-        self.data_path = os.path.join(DATA_DIR, "CEAP", "5_PhysioData", data_type)
-        self.annotation_path = os.path.join(DATA_DIR, "CEAP", "3_AnnotationData", annotation_type)
         print("Loading data...")
+        data_type = "Frame"
         self.data = self.load_data(data_type=data_type, 
-                                   annotation_type=annotation_type)
+                                   annotation_type=data_type,
+                                   data_path=os.path.join(DATA_DIR, "CEAP", "5_PhysioData", data_type),
+                                   annotation_path=os.path.join(DATA_DIR, "CEAP", "3_AnnotationData", data_type))
+        
+
         print("Discretizing labels...")
         self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
 
-        print(self.data)
+        # mean, std = self.get_stats() 
+        # print(f"Stats of raw data are: \n Mean: {mean} \n Std: {std}")
 
-        # ppg_mean = np.stack(self.data["ppg"].to_numpy(), axis=0).mean()
-        # ppg_std = np.stack(self.data["ppg"].to_numpy(), axis=0).std()
-        # self.data["ppg"] = self.data["ppg"].apply(lambda x: (x - ppg_mean) / ppg_std)
+        if normalize:
+            self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) // CEAP_STD
 
-        # self.data.to_csv("ceap_data.csv")
-        
+
         print("Splitting data...")
         self.train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED)
         self.val_df, self.test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
@@ -63,15 +66,20 @@ class CEAPDataLoader(DataLoader):
         print(f"Test_df length: {len(self.test_df)}")
 
 
-    def load_data(self, data_type: str, annotation_type: str) -> pd.DataFrame:
+    def load_data(self,
+                  data_type: str, 
+                  annotation_type: str,
+                  data_path: str,
+                  annotation_path: str,
+                  load_labels: bool = True) -> pd.DataFrame:
         data_df = []  
         annotation_df = []
         # Take data
-        for file in os.listdir(self.data_path):
+        for file in os.listdir(data_path):
             df_item = {}
             if not file.endswith("json"):
                 continue
-            with open(os.path.join(self.data_path, file), "r") as f:
+            with open(os.path.join(data_path, file), "r") as f:
                 parsed_json = json.load(f)
             participant_id = parsed_json[f"Physio_{data_type}Data"][0]["ParticipantID"].replace("P", "")
             video_list = parsed_json[f"Physio_{data_type}Data"][0][f"Video_Physio_{data_type}Data"]
@@ -82,12 +90,16 @@ class CEAPDataLoader(DataLoader):
                             "video_id": video_id, 
                             "ppg": ppg_list}
                 data_df.append(df_item)
+
+        if not load_labels:
+            return pd.DataFrame(data_df)
+
         # Take annotations (they are sampled at 10Hz)
-        for file in os.listdir(self.annotation_path):
+        for file in os.listdir(annotation_path):
             df_item = {}
             if not file.endswith("json"):
                 continue
-            with open(os.path.join(self.annotation_path, file), "r") as f:
+            with open(os.path.join(annotation_path, file), "r") as f:
                 parsed_json = json.load(f)
             participant_id = parsed_json[f"ContinuousAnnotation_{annotation_type}Data"][0]["ParticipantID"]
             video_list = parsed_json[f"ContinuousAnnotation_{annotation_type}Data"][0][f"Video_Annotation_{annotation_type}Data"]
@@ -143,6 +155,19 @@ class CEAPDataLoader(DataLoader):
         new_df = pd.DataFrame(new_df)
         return new_df
 
+    def get_stats(self) -> Tuple[float, float]:
+        data_type = "Raw"
+        raw_data = self.load_data(data_type=data_type, 
+                                  annotation_type=data_type,
+                                  data_path=os.path.join(DATA_DIR, "CEAP", "5_PhysioData", data_type),
+                                  annotation_path=os.path.join(DATA_DIR, "CEAP", "3_AnnotationData", data_type),
+                                  load_labels=False)
+        
+
+        ppg_mean = np.stack(raw_data["ppg"].to_numpy(), axis=0).mean()
+        ppg_std = np.stack(raw_data["ppg"].to_numpy(), axis=0).std()
+        return ppg_mean, ppg_std
+
     def get_train_dataloader(self):
         dataset = CEAPDataset(self.train_df)
         return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
@@ -165,5 +190,5 @@ if __name__ == "__main__":
 
     for i, data in enumerate(train_loader):
         print(f"Data size is {len(data)}")
-        print(f"data is GREXDataLoader {data}")
+        # print(f"data is GREXDataLoader {data}")
         break
