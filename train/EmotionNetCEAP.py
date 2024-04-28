@@ -1,27 +1,5 @@
 import torch
-from config import (
-    ADD_NOISE,
-    AUGMENTATION_SIZE,
-    BALANCE_DATASET,
-    BATCH_SIZE,
-    DROPOUT_P,
-    EMOTION_NUM_CLASSES,
-    LENGTH,
-    LIMIT,
-    LR,
-    MESSAGE,
-    N_EPOCHS,
-    RANDOM_SEED,
-    REG,
-    RESUME_TRAINING,
-    STEP,
-    USE_WANDB,
-    WAVELET_STEP,
-    LSTM_HIDDEN,
-    DROPOUT_P,
-    LSTM_LAYERS,
-    WT
-)
+from config import *
 from dataloaders.CEAP_dataloader import CEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
 from train.loops.train_loop_emotion_CEAP import train_eval_loop

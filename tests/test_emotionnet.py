@@ -90,7 +90,7 @@ def get_model_and_dataloader(model_path, device):
 
     model = EmotionNet(encoder, decoder).to(device)
 
-    dataloader = CEAPDataLoader(batch_size=BATCH_SIZE)
+    dataloader = CEAPDataLoader(batch_size=32)
 
     return model, dataloader, num_classes
 

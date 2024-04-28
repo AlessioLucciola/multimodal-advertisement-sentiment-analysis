@@ -20,7 +20,6 @@ RESUME_EPOCH = 67
 # ----------------------------
 
 # Train configurations
-
 LENGTH = 100 #800 seemed to work
 STEP = 100
 
@@ -35,25 +34,9 @@ DROPOUT_P = 0
 #--
 LSTM_HIDDEN = 512 
 LSTM_LAYERS = 2
-#---
-# EmotionNet Transformer config
-T_HEAD = 4
-T_ENC_LAYERS = 6
-T_DIM_FFW = 512
-T_KERN = 4
-T_STRIDE = 4
-T_MAXPOOL = 0
-MESSAGE = "Wavelet -> Slice + STFT"
-
-# LOAD_DF = True
-# SAVE_DF = False
 
 LOAD_DF = False
 SAVE_DF = False
-
-# TODO: put this in the dataset configuration (GREX dataset)
-AUGMENTATION_SIZE = 0
-ADD_NOISE = False
 
 # ----------------------------
 
