@@ -76,14 +76,11 @@ def main():
         "length": LENGTH,
         "step": STEP,
         "dropout_p": DROPOUT_P,
-        "agumented_data": AUGMENTATION_SIZE,
-        "add_noise": ADD_NOISE,
-        "message": MESSAGE,
         "wavelet_step": WAVELET_STEP,
         "lstm_config": {
             "num_hidden": LSTM_HIDDEN,
             "num_layers": LSTM_LAYERS,
-            }
+        }
 
     }
 

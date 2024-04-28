@@ -67,7 +67,7 @@ def train_eval_loop(device,
     val_recall_metric = Recall(
         task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
     
-    best_accuracy = 0
+    best_accuracy = 0.7
     best_model = None
 
     teacher_forcing_ratio = 0

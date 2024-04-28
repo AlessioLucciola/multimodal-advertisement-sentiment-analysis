@@ -13,7 +13,7 @@ import os
 import torch
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from datasets.CEAP_dataset import CEAPDataset
 import json
 from utils.ppg_utils import wavelet_transform
@@ -34,16 +34,14 @@ class CEAPDataLoader(DataLoader):
         print("Discretizing labels...")
         self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
 
-        # mean, std = self.get_stats() 
-        # print(f"Stats of raw data are: \n Mean: {mean} \n Std: {std}")
+        mean, std = self.get_stats() 
+        print(f"Stats of raw data are: \n Mean: {mean} \n Std: {std}")
 
         if normalize:
             self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) // CEAP_STD
 
-
         print("Splitting data...")
-        self.train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED)
-        self.val_df, self.test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
+        self.train_df, self.val_df, self.test_df = self.split_data()
 
         print("Slicing data...")
         self.train_df = self.slice_data(self.train_df)
@@ -136,7 +134,52 @@ class CEAPDataLoader(DataLoader):
         self.labels[(valence > 6) & (valence <= 9) ] = 2
         return self.labels.tolist()
 
-    
+    def split_data(self):
+        # train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED)
+        # val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
+        # return train_df, val_df, test_df
+        df = self.data
+
+        train_ratio = 0.6
+        val_ratio = 0.2
+        test_ratio = 0.2
+        if train_ratio + val_ratio + test_ratio != 1:
+            raise ValueError("Ratios must sum to 1. Please adjust the values.")
+
+        pid_groups = df['participant_id'].tolist()
+        X = df['ppg'].tolist()
+        Y = df['valence'].tolist()
+        sss = GroupShuffleSplit(n_splits=1, test_size=val_ratio + test_ratio, random_state=RANDOM_SEED)
+
+        # Split the dataframe based on pid groups
+        for train_index, test_index in sss.split(X, Y, pid_groups):  # Splitting based on labels maintains class balance
+            train_df = df.iloc[train_index]
+            remaining = df.iloc[test_index]
+
+            # Further split remaining data into validation and test sets (optional)
+            sss_inner = GroupShuffleSplit(n_splits=1, test_size=test_ratio / (val_ratio + test_ratio), random_state=RANDOM_SEED)
+            X_remaining, Y_remaining = remaining["ppg"].tolist(), remaining["valence"].tolist()    
+            pid_groups_remaining = remaining['participant_id'].tolist()
+            val_index, test_index = next(sss_inner.split(X_remaining, Y_remaining, pid_groups_remaining))
+            val_df = remaining.iloc[val_index]
+            test_df = remaining.iloc[test_index]
+
+        train_pids = set(train_df["participant_id"].unique())
+        val_pids = set(val_df["participant_id"].unique())
+        test_pids = set(test_df["participant_id"].unique())
+        
+        # print("train pids ", train_pids)
+        # print("val pids ", val_pids)
+        # print("test pids ",test_pids )
+
+        assert len(train_pids & val_pids) == 0
+        assert len(train_pids & test_pids) == 0
+        assert len(val_pids & test_pids) == 0
+         
+        return train_df, val_df, test_df
+
+        
+
     def slice_data(self, df, length=LENGTH, step=STEP) -> pd.DataFrame:
         if length > 1500:
             raise ValueError(f"Length cannot be greater than original length of 1500")
