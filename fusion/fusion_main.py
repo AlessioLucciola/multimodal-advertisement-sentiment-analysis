@@ -5,8 +5,8 @@ from datetime import datetime
 from PIL import Image
 import numpy as np
 import random
-from moviepy.editor import VideoFileClip
 import os
+from utils.audio_utils import extract_audio_from_video
 
 def main(audio_model_path: str,
          audio_model_epoch: int,
@@ -37,19 +37,6 @@ def main(audio_model_path: str,
        print(f)
 
     return all_frames
-
-def extract_audio_from_video(video_frames, audio_frames):
-    # Load the video file
-    video_clip = VideoFileClip(video_frames)
-    
-    # Extract the audio
-    audio_clip = video_clip.audio
-
-    # Save the audio to a file
-    audio_clip.write_audiofile(audio_frames)
-
-    # Close the video file
-    video_clip.close()
 
 def get_frames_duration(video_frames, live_demo):
     if live_demo:
@@ -160,7 +147,7 @@ if __name__ == "__main__":
 
     video_model_epoch = 25
     video_model_path = os.path.join("VideoNet_vit-pretrained_2024-04-21_23-34-25")
-    video_file_path = os.path.join("data", "VIDEO", "test_video.mp4")
+    video_file_path = os.path.join("data", "VIDEO", "test_video_real.mp4")
     # video_file = [("<_io.BytesIO object at 0x000001BACE8C5D50>", datetime(2024, 4, 15, 17, 24, 42, 143608)),
     #               ("<_io.BytesIO object at 0x000001BA97A8C400>", datetime(2024, 4, 15, 17, 24, 42, 413783)),
     #               ("<_io.BytesIO object at 0x000001BA97A8C400>", datetime(2024, 4, 15, 17, 24, 42, 553515)),

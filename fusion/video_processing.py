@@ -28,9 +28,9 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
         os.makedirs(video_path)
     
     if live_demo:
-        pass # TODO: Implement live video processing :(
-    else: # Offline video file
-        # Open the video file
+        pass # TODO: Implement live video processing
+    else: 
+        # Offline video file
         cap = cv2.VideoCapture(video_frames)
 
         # Define the transformation
