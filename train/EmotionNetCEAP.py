@@ -68,19 +68,14 @@ def main():
         for name, param in m.named_parameters():
             nn.init.uniform_(param.data, -0.08, 0.08)
 
-
     model.apply(init_weights)
-    # if RESUME_TRAINING:
-    #     model.load_state_dict(torch.load(
-        #         f"{PATH_TO_SAVE_RESULTS}/{PATH_MODEL_TO_RESUME}/models/mi_project_{RESUME_EPOCH}.pt"))
+    if RESUME_TRAINING:
+        model.load_state_dict(torch.load(
+                f"{PATH_TO_SAVE_RESULTS}/{PATH_MODEL_TO_RESUME}/models/mi_project_{RESUME_EPOCH}.pt"))
+
     optimizer = torch.optim.Adam(model.parameters(),
                                  lr=LR,
                                  weight_decay=REG)
-
-    # scheduler = torch.optim.lr_scheduler.StepLR(
-    #         optimizer=optimizer,
-    #         step_size=20, 
-    #         gamma=0.1)
 
     scheduler = None
 
@@ -123,7 +118,6 @@ def main():
                     scheduler=scheduler,
                     criterion=criterion,
                     resume=RESUME_TRAINING)
-
 
 if __name__ == "__main__":
     main()

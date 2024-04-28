@@ -10,7 +10,7 @@ BALANCE_DATASET = False
 
 USE_DML = False
 USE_MPS = True
-USE_WANDB = False
+USE_WANDB = True
 SAVE_RESULTS = True
 SAVE_MODELS = True
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood

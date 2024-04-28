@@ -1,5 +1,5 @@
-from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, LENGTH, WAVELET_STEP, WT, BATCH_SIZE
-from utils.utils import save_results, save_configurations
+from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, SAVE_MODELS 
+from utils.utils import save_results, save_configurations, save_model
 from torchmetrics import Accuracy, Recall
 from datetime import datetime
 from tqdm import tqdm
@@ -67,6 +67,9 @@ def train_eval_loop(device,
     val_recall_metric = Recall(
         task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
     
+    best_accuracy = 0
+    best_model = None
+
     teacher_forcing_ratio = 0
     clip = 1.0
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
@@ -115,7 +118,7 @@ def train_eval_loop(device,
         print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(accuracy_metric.compute() * 100):.4f} | Recall: {(recall_metric.compute() * 100):.4f}")
         
         model.eval()
-        losses = []
+        val_losses = []
         with torch.no_grad():  # Disable gradient calculation for efficiency
             for val_batch in tqdm(val_loader, desc="Validation", leave=False):
                 src, target = val_batch["ppg"], val_batch["valence"]
@@ -134,7 +137,7 @@ def train_eval_loop(device,
                 trg = target[1:].reshape(-1)
                 # trg = [(trg length - 1) * batch size]
                 loss = criterion(output, trg)
-                losses.append(loss.item())
+                val_losses.append(loss.item())
 
                 preds = output.argmax(dim=1)
                 val_accuracy_metric.update(preds, trg)
@@ -142,10 +145,29 @@ def train_eval_loop(device,
 
         if config["use_wandb"]:
             wandb.log(
-                    {"Validation Loss": torch.tensor(losses).mean()})
+                    {"Validation Loss": torch.tensor(val_losses).mean()})
             wandb.log({"Validation Accuracy": val_accuracy_metric.compute() * 100})
             wandb.log({"Validation Recall": val_recall_metric.compute() * 100})
 
-        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f}")
+        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(val_losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f}")
         print("-" * 50)
-
+    
+        if val_accuracy_metric.compute() > best_accuracy:
+            print(f"Best model saved (accuracy: {val_accuracy_metric.compute()}, previous: {best_accuracy}")
+            best_accuracy = val_accuracy_metric.compute()
+            best_model = copy.deepcopy(model)
+        current_results = {
+            'epoch': epoch+1,
+            'training_loss': torch.tensor(losses).mean().item(),
+            'training_accuracy': accuracy_metric.compute().item(),
+            'training_recall': recall_metric.compute().item(),
+            'validation_loss': torch.tensor(val_losses).mean().item(),
+            'validation_accuracy': val_accuracy_metric.compute().item(),
+            'validation_recall': val_recall_metric.compute().item(),
+        }
+        if SAVE_RESULTS:
+            save_results(data_name, current_results)
+        if SAVE_MODELS:
+            save_model(data_name, model, epoch)
+        if epoch == config["epochs"]-1 and SAVE_MODELS:
+            save_model(data_name, best_model, epoch=None, is_best=True)

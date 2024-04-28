@@ -52,6 +52,7 @@ class CEAPDataLoader(DataLoader):
             tqdm.pandas()
             self.train_df["ppg"] = self.train_df["ppg"].progress_apply(wavelet_transform)
             self.val_df["ppg"] = self.val_df["ppg"].progress_apply(wavelet_transform)
+            self.test_df["ppg"] = self.test_df["ppg"].progress_apply(wavelet_transform)
         else:
             print("Skipped wavelet transform")
 
