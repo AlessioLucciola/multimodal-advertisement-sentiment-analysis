@@ -141,8 +141,8 @@ class ProcessMasks():
         saves numpy array of heart rates as hrs
         saves numpy array of power spectrum as fft_spec
         """
-        np.save('packages/rPGG/results/hrs', np.array(self.hrs))
-        np.save('packages/rPGG/results/fft_spec', np.array(self.pulse.fft_spec))
+        np.save('packages/rPPG/results/hrs', np.array(self.hrs))
+        np.save('packages/rPPG/results/fft_spec', np.array(self.pulse.fft_spec))
 
     def savePlot(self, path):
         if self.save_results == False:
@@ -167,7 +167,7 @@ class ProcessMasks():
         # ax3.plot(gt_HR[8:])
 
         plt.tight_layout() 
-        plt.savefig(f'packages/rPGG/results/results.png')
+        plt.savefig(f'packages/rPPG/results/results.png')
         plt.close()
 
             

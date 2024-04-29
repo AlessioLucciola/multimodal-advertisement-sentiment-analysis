@@ -70,8 +70,6 @@ def train_eval_loop(device,
     best_accuracy = 0.7
     best_model = None
 
-    teacher_forcing_ratio = 0
-    clip = 1.0
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
         model.train()
         losses = []
@@ -86,7 +84,8 @@ def train_eval_loop(device,
             target = target.permute(1,0)
 
             optimizer.zero_grad()
-            output = model(src, target, teacher_forcing_ratio)
+            #TODO: remove teacher_forcing_ratio option from the model
+            output = model(src, target, 0)
             # output = [trg length, batch size, trg vocab size]
             output_dim = output.shape[-1]
             # print(f"output[1:] shape: {output[1:].shape}")

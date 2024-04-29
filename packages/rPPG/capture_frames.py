@@ -28,7 +28,6 @@ class CaptureFrames():
         self.capture_frames(source)
   
     def capture_frames(self, source):
-        
         img_transform = transforms.Compose([
             transforms.Resize((256,256)),
             transforms.ToTensor(),
