@@ -2,7 +2,7 @@ from utils.utils import save_results, set_seed, select_device, upload_scaler
 from config import *
 from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
-from dataloaders.video_custom_dataloader import video_custom_dataloader
+from dataloaders.ravdess_custom_dataloader import ravdess_custom_dataloader
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from tqdm import tqdm
@@ -130,7 +130,7 @@ def get_model_and_dataloader(model_path, device, type):
 
         model = select_model(model_path.split('_')[1], hidden_size, num_classes, dropout_p).to(device)
         if not USE_VIDEO_FOR_TESTING:
-            dataloader = video_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
+            dataloader = ravdess_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
                                    csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
                                    batch_size=batch_size,
                                    frames_dir=FRAMES_FILES_DIR,

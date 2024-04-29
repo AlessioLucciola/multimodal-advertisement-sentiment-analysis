@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torchvision import models
 import numpy as np
-from config import DROPOUT_P
+from config import DROPOUT_P, VIDEO_DATASET_NAME
 from torchvision.models import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, ResNet101_Weights
 
 def VideoResNetX(model_name, hidden_size, num_classes, dropout_p=DROPOUT_P):
@@ -18,10 +18,18 @@ def VideoResNetX(model_name, hidden_size, num_classes, dropout_p=DROPOUT_P):
     
     return model
 
+def if_dataset_name_is_fer(model):
+    if VIDEO_DATASET_NAME == "fer":
+        model.features.conv0 = nn.Conv2d(
+            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+    return model
+
 class ResNet18(nn.Module):
     def __init__(self, hidden_layers, num_classes, dropout_p=DROPOUT_P):
         super(ResNet18, self).__init__()
         self.model = models.resnet18(weights=ResNet18_Weights.DEFAULT)
+
+        self.model = if_dataset_name_is_fer(self.model)
 
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
@@ -75,6 +83,8 @@ class ResNet34(nn.Module):
         super(ResNet34, self).__init__()
         self.model = models.resnet34(weights=ResNet34_Weights.DEFAULT)
 
+        self.model = if_dataset_name_is_fer(self.model)
+
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
         # In features: 512
@@ -127,6 +137,8 @@ class ResNet50(nn.Module):
         super(ResNet50, self).__init__()
         self.model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
 
+        self.model = if_dataset_name_is_fer(self.model)
+
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
         # In features: 512
@@ -178,6 +190,8 @@ class ResNet101(nn.Module):
     def __init__(self, hidden_layers, num_classes, dropout_p=DROPOUT_P):
         super(ResNet101, self).__init__()
         self.model = models.resnet101(weights=ResNet101_Weights.DEFAULT)
+
+        self.model = if_dataset_name_is_fer(self.model)
 
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()

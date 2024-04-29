@@ -8,7 +8,7 @@ import torch
 from tqdm import tqdm
 import wandb
 
-from dataloaders.video_custom_dataloader import video_custom_dataloader
+from dataloaders.ravdess_custom_dataloader import ravdess_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from config import NORMALIZE, RANDOM_SEED, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, METADATA_CSV, REG, VIDEO_NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, BALANCE_DATASET, DATASET_NAME, USE_DEFAULT_SPLIT, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE
 from utils.utils import set_seed, select_device
@@ -174,7 +174,7 @@ def get_model(**kwargs):
 
 
 def build_dataloaders(**args):
-    fer_dataloader = video_custom_dataloader(csv_file=METADATA_CSV,
+    fer_dataloader = ravdess_custom_dataloader(csv_file=METADATA_CSV,
                                    batch_size=args["batch_size"],
                                    seed=RANDOM_SEED,
                                    limit=args["limit"],

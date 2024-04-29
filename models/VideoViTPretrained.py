@@ -1,9 +1,8 @@
-import torch
 import torch.nn as nn
-import torchvision.models as models
 import timm
+from torchvision import transforms
 
-from config import DROPOUT_P
+from config import DROPOUT_P, VIDEO_DATASET_NAME
 
 class VideoViTPretrained(nn.Module):
     def __init__(self, hidden_layers, num_classes, pretrained=True, dropout=DROPOUT_P):
@@ -36,7 +35,14 @@ class VideoViTPretrained(nn.Module):
         
         self.classifier = nn.Sequential(*self.layers)
         self.model.head = self.classifier
+
+        if VIDEO_DATASET_NAME == "fer":
+            self.resize = transforms.Resize((224, 224))  # Resize input to 224x224
     
     def forward(self, x):
+        if VIDEO_DATASET_NAME == "fer":
+            x = self.resize(x)  # Resize input to match model's expected size
+            x = x.repeat(1, 1, 1, 1)  # Repeat the single channel input to have 1 channels
         x = self.model(x)
+
         return x
