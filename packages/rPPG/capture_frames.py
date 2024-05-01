@@ -90,6 +90,7 @@ class CaptureFrames():
 
     
     def terminate(self, camera):
+        print(f"Capture frames terminated")
         self.pipe.send(None)
         cv2.destroyAllWindows()
         camera.release()

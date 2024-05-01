@@ -14,11 +14,13 @@ class SignalAccumulator:
         while True:
             data = self.pipe.recv()
             if data is None:
+                print("signal accumulator terminated")
                 break
             bvp = data[0]
             print(f"Received data with length {len(bvp)}")
             for item in bvp:
                 queue.put(item)
+
 
 
 

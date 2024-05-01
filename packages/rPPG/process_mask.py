@@ -129,7 +129,7 @@ class ProcessMasks():
             self.batch_mean.append(m)
 
     def terminate(self):
-        
+        print("process mask terminated")
         if self.plot_pipe is not None:
             self.plot_pipe.send(None)
         self.savePlot(self.source)
