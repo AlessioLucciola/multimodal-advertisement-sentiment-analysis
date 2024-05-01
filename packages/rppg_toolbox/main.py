@@ -11,7 +11,7 @@ from dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.utils.data import DataLoader
 
-RANDOM_SEED = 100
+RANDOM_SEED =  42
 torch.manual_seed(RANDOM_SEED)
 torch.cuda.manual_seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)

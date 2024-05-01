@@ -7,7 +7,7 @@ import os
 import json
 from dataloaders.CEAP_dataloader import CEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
-
+from packages.rppg_toolbox.main import test as rppg_test
 
 def test_loop(model, test_loader, device, model_path, criterion, num_classes):
     model.eval()
@@ -106,6 +106,11 @@ def load_test_model(model, model_path, epoch, device):
 def test_from_video():
     #TODO: implement this
     pass
+
+
+def get_rppg():
+    pass
+
 
 def main(model_path, epoch):
     set_seed(RANDOM_SEED)
