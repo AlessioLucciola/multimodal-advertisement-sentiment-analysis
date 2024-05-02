@@ -9,7 +9,6 @@ multiple_faces = []
 def prepare_all_videos(filenames, paths, output_path, resolution, skip=1):
     # Create output directory
     resolution_name = f'_{resolution[0]}x{resolution[1]}'
-    output_path = FRAMES_FILES_DIR
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
@@ -59,10 +58,10 @@ def save_frames(filename, input_path, output_path, resolution, skip):
 
                 for (x, y, w, h) in faces: # Save face
                     face = frame[y:y + h, x:x + w] # Crop face
+
+                face = black_background(face) # Remove white background
                 
                 face = cv2.resize(face, resolution) # Resize face
-
-                # face = face[5:-5, 5:-5] # Remove black border
 
                 cv2.imwrite(output_path + f'/{filename}_{count}' + '.png', face) # Save face
             count += 1
@@ -70,8 +69,15 @@ def save_frames(filename, input_path, output_path, resolution, skip):
         cap.release()
     return
 
+def black_background(face):
+    gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY) # background from white to black
+    ret, thresh = cv2.threshold(gray, 220, 255, cv2.THRESH_BINARY)
+    face[thresh == 255] = 0
+
+    return face
+
 if __name__ == "__main__":
-    output_path = 'ravdess_frames'
+    output_path = FRAMES_FILES_DIR+'_witouth_background'
     resolution = (224, 224)
 
     filenames = []

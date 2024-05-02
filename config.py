@@ -66,17 +66,17 @@ LSTM_NUM_LAYERS = 2
 
 # VIDEO 
 # Dataset configurations
-VIDEO_DATASET_NAME = "fer" # Datasets: ravdess | fer
+VIDEO_DATASET_NAME = "ravdess" # Datasets: ravdess | fer
 VIDEO_DATASET_DIR = os.path.join(DATA_DIR, "VIDEO")   
-VIDEO_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME, "_video_files")
-FRAMES_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME, VIDEO_DATASET_NAME + "_frames_files")
+VIDEO_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME, VIDEO_DATASET_NAME + "_video_files")
+FRAMES_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME, VIDEO_DATASET_NAME + "_frames_files_black_background") # _frames_files| _frames_files_black_background
 VIDEO_METADATA_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME, VIDEO_DATASET_NAME + "_metadata_original.csv") 
 VIDEO_METADATA_FRAMES_CSV = os.path.join(VIDEO_DATASET_DIR, VIDEO_DATASET_NAME, VIDEO_DATASET_NAME + "_metadata_frames.csv") 
 
 # Models configurations
-MODEL_NAME = 'resnet101' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
+MODEL_NAME = 'vit-pretrained' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
-IMG_SIZE = (48, 48) # (224, 224) for RAVDESS | (48, 48) for FER
+IMG_SIZE = (224, 224) # (224, 224) for ravdess | (48, 48) for fer
 NUM_WORKERS = os.cpu_count() # Number of workers for dataloader, set to 0 if you want to run the code in a single process
 
 # Train / Validation configurations
@@ -84,8 +84,8 @@ PRELOAD_FRAMES = True # Preload frames if True, load frames on the fly if False
 APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original dataset if False
 NORMALIZE = True # Normalize the images if True, use the original images if False
 
-# Train / Validation configurations (only RAVDESS dataset)
-OVERLAP_SUBJECTS_FRAMES = True # Overlap the frames of the subjects between train, validation and test if True, False otherwise
+# Train / Validation configurations (only ravdess dataset)
+OVERLAP_SUBJECTS_FRAMES = False # Overlap the frames of the subjects between train, validation and test if True, False otherwise
 
 # Test configurations
 USE_VIDEO_FOR_TESTING = True # Use test video or live video if True, use test dataset if False
