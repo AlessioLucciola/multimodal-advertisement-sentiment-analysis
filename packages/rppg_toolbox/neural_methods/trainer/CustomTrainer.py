@@ -33,20 +33,31 @@ class CustomTrainer(BaseTrainer):
         """ Model evaluation on the validation dataset."""
         raise NotImplementedError("Custom trainer doesn't impelement a validation loop")
     
-    def test_from_frames(self, frames: torch.Tensor | np.ndarray) -> List[int]:
+    def test_from_frames(self, frames: torch.Tensor | np.ndarray) -> torch.Tensor:
         """
         Performs a test loop given an array of frames that model a video as input
         """
+        self.model.load_state_dict(torch.load(self.config.INFERENCE.MODEL_PATH, map_location=torch.device(self.config.DEVICE)))
+        self.model = self.model.to(self.config.DEVICE)
+        self.model.eval()
         if isinstance(frames, np.ndarray):
             frames = torch.from_numpy(frames)
-        predictions = self.test_step(frames)
+        frames = frames.to(self.device)
+        
+        predictions = []
+        for chunk in frames:
+            print(f"chunk shape: {chunk.shape}")
+            chunk = chunk.unsqueeze(0)
+            predictions.extend(self.test_step(chunk))
+        predictions = torch.cat(predictions, dim=-1)
+        print(f"predictions are: {predictions} with shape: {predictions.shape}")
         return predictions
     
     def test_step(self, frames: torch.Tensor) -> List[int]:
         predictions = []
         N, D, C, H, W = frames.shape
         frames = frames.view(N * D, C, H, W)
-        pred_ppg_test = self.model(frames).cpu()
+        pred_ppg_test = self.model(frames)
 
         for idx in range(N):
             predictions.append(pred_ppg_test[idx * self.chunk_len:(idx + 1) * self.chunk_len])
@@ -58,14 +69,7 @@ class CustomTrainer(BaseTrainer):
             raise ValueError("No data for test")
 
         print("===Testing===")
-        predictions = dict()
-        if self.config.TOOLBOX_MODE != "only_test":
-            raise ValueError("Custom trainer only supports 'only_test' as a TOOLBOX_MODE")
-        if not os.path.exists(self.config.INFERENCE.MODEL_PATH):
-            raise ValueError(f"Inference model path error! Please check INFERENCE.MODEL_PATH in your yaml. \n self.config is: {self.config.INFERENCE}")
         self.model.load_state_dict(torch.load(self.config.INFERENCE.MODEL_PATH, map_location=torch.device(self.config.DEVICE)))
-        print("Testing uses pretrained model!")
-
         self.model = self.model.to(self.config.DEVICE)
         self.model.eval()
         print("Running model evaluation on the testing dataset!")

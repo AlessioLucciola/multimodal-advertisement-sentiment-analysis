@@ -17,13 +17,26 @@ def read_video(video_file):
     VidObj = cv2.VideoCapture(video_file)
     VidObj.set(cv2.CAP_PROP_POS_MSEC, 0)
     success, frame = VidObj.read()
-    frames = list()
+    frames = None
+    # TODO: if you want to use this, you need to match the sample rate after or something
+    frames_step = 1
+    i = 0
+    max_frames = 1000
     while success:
+        i += 1
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
-        frame = np.asarray(frame)
-        frames.append(frame)
+        if frames is None:
+            frames = np.expand_dims(np.empty_like(frame), 0)
+            frames = np.repeat(frames, max_frames, axis=0)
+            print(f"Frames initialization array shape: {frames.shape}")
+        frames[i] = frame
         success, frame = VidObj.read()
-    return np.asarray(frames)
+        if i == max_frames-1:
+            break
+    print(f"read video completed!")
+    return frames
+
+
 
 def read_png_frames(video_file):
     """Reads a video file, returns frames(T, H, W, 3) """

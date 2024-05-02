@@ -9,6 +9,8 @@ from packages.rppg_toolbox.dataset.data_loader.CustomLoader import CustomLoader
 from packages.rppg_toolbox.neural_methods.trainer.CustomTrainer import CustomTrainer
 from packages.rppg_toolbox.dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
 from packages.rppg_toolbox.neural_methods.trainer.BaseTrainer import BaseTrainer
+from packages.rppg_toolbox.utils import preprocess
+from packages.rppg_toolbox.tools.motion_analysis.convert_dataset_to_mp4 import read_video
 
 from torch.utils.data import DataLoader
 
@@ -84,6 +86,31 @@ def run():
     )
     test(config, data_loader_dict)
 
+def run_single():
+    # parse arguments.
+    parser = argparse.ArgumentParser()
+    parser = add_args(parser)
+    parser = BaseTrainer.add_trainer_args(parser)
+    parser = InferenceOnlyBaseLoader.add_data_loader_args(parser)
+    args = parser.parse_args()
+
+    # configurations.
+    config = get_config(args)
+    print('Configuration:')
+    print(config, end='\n\n')
+    if config.MODEL.NAME == 'CUSTOM':
+        model_trainer = CustomTrainer(config)
+    else:
+        raise ValueError('Your Model is Not Supported  Yet!')
+    
+    vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/video.mp4"
+    raw_frames = read_video(vid_path)
+    frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
+    print(f"preprocessed frames shape: {frames.shape}")
+    frames = preprocess.parse_frames(frames, data_format="NDCHW")
+    print(f"parsed frames shape: {frames.shape}")
+    model_trainer.test_from_frames(frames)
+
 if __name__ == "__main__":
-    run()
+    run_single()
 
