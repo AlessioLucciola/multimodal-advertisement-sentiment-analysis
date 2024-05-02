@@ -141,7 +141,7 @@ _C.INFERENCE.EVALUATION_METHOD = 'FFT'
 _C.INFERENCE.EVALUATION_WINDOW = CN()
 _C.INFERENCE.EVALUATION_WINDOW.USE_SMALLER_WINDOW = False
 _C.INFERENCE.EVALUATION_WINDOW.WINDOW_SIZE = 10
-_C.INFERENCE.MODEL_PATH = './final_model_release/PURE_DeepPhys.pth'
+_C.INFERENCE.MODEL_PATH = 'packages/rppg_toolbox/final_model_release/PURE_DeepPhys.pth'
 
 # -----------------------------------------------------------------------------
 # Device settings

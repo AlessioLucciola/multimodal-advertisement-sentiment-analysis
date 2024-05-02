@@ -56,7 +56,7 @@ class BlandAltman():
             raise ValueError('TOOLBOX_MODE only supports train_and_test, only_test, or unsupervised_method!')
         
         # Make the save path, if needed
-        if not os.path.exists(self.save_path):
+        if not os.path.exists(os.path.join(config.BASE_PATH, self.save_path)):
             os.makedirs(self.save_path, exist_ok=True)
 
     def print_stats(self,round_amount = 5):

@@ -2,6 +2,8 @@
 """Trainer for DeepPhys."""
 import os
 import torch
+import numpy as np
+from typing import Optional, Dict, List
 from packages.rppg_toolbox.neural_methods.model.DeepPhys import DeepPhys
 from packages.rppg_toolbox.neural_methods.trainer.BaseTrainer import BaseTrainer
 from tqdm import tqdm
@@ -9,7 +11,7 @@ from tqdm import tqdm
 
 class CustomTrainer(BaseTrainer):
 
-    def __init__(self, config, data_loader):
+    def __init__(self, config):
         """Inits parameters from args and the writer for TensorboardX."""
         super().__init__()
         self.device = torch.device(config.DEVICE)
@@ -30,6 +32,25 @@ class CustomTrainer(BaseTrainer):
     def valid(self, data_loader):
         """ Model evaluation on the validation dataset."""
         raise NotImplementedError("Custom trainer doesn't impelement a validation loop")
+    
+    def test_from_frames(self, frames: torch.Tensor | np.ndarray) -> List[int]:
+        """
+        Performs a test loop given an array of frames that model a video as input
+        """
+        if isinstance(frames, np.ndarray):
+            frames = torch.from_numpy(frames)
+        predictions = self.test_step(frames)
+        return predictions
+    
+    def test_step(self, frames: torch.Tensor) -> List[int]:
+        predictions = []
+        N, D, C, H, W = frames.shape
+        frames = frames.view(N * D, C, H, W)
+        pred_ppg_test = self.model(frames).cpu()
+
+        for idx in range(N):
+            predictions.append(pred_ppg_test[idx * self.chunk_len:(idx + 1) * self.chunk_len])
+        return predictions
 
     def test(self, data_loader):
         """ Model evaluation on the testing dataset."""
@@ -38,11 +59,10 @@ class CustomTrainer(BaseTrainer):
 
         print("===Testing===")
         predictions = dict()
-        labels = dict()
         if self.config.TOOLBOX_MODE != "only_test":
             raise ValueError("Custom trainer only supports 'only_test' as a TOOLBOX_MODE")
         if not os.path.exists(self.config.INFERENCE.MODEL_PATH):
-            raise ValueError("Inference model path error! Please check INFERENCE.MODEL_PATH in your yaml.")
+            raise ValueError(f"Inference model path error! Please check INFERENCE.MODEL_PATH in your yaml. \n self.config is: {self.config.INFERENCE}")
         self.model.load_state_dict(torch.load(self.config.INFERENCE.MODEL_PATH, map_location=torch.device(self.config.DEVICE)))
         print("Testing uses pretrained model!")
 
@@ -50,28 +70,13 @@ class CustomTrainer(BaseTrainer):
         self.model.eval()
         print("Running model evaluation on the testing dataset!")
         with torch.no_grad():
+            predictions = []
             for _, test_batch in enumerate(tqdm(data_loader["test"], ncols=80)):
-                batch_size = test_batch[0].shape[0]
                 data_test = test_batch[0].to(self.config.DEVICE) 
-                N, D, C, H, W = data_test.shape
-                data_test = data_test.view(N * D, C, H, W)
-                pred_ppg_test = self.model(data_test)
+                predictions.extend(self.test_step(frames=data_test))
 
-                if self.config.TEST.OUTPUT_SAVE_DIR:
-                    pred_ppg_test = pred_ppg_test.cpu()
-
-                for idx in range(batch_size):
-                    subj_index = test_batch[1][idx]
-                    sort_index = int(test_batch[2][idx])
-                    if subj_index not in predictions.keys():
-                        predictions[subj_index] = dict()
-                        labels[subj_index] = dict()
-                    predictions[subj_index][sort_index] = pred_ppg_test[idx * self.chunk_len:(idx + 1) * self.chunk_len]
-        
-        print('')
-        for key, value in predictions.items():
-            for key_1, value_1 in value.items():
-                print(f"predictions of key {key_1} have shape: {value_1.shape}")
+        predictions = torch.cat(predictions, dim=-1)
+        print(f"predictions are: {predictions} with shape: {predictions.shape}")
 
     def save_model(self, index):
         """Inits parameters from args and the writer for TensorboardX."""
