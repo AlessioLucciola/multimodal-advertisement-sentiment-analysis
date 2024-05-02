@@ -11,7 +11,7 @@ class VideoDenseNet121(nn.Module):
 
         if VIDEO_DATASET_NAME == "fer":
             self.model.features.conv0 = nn.Conv2d(
-                1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+                3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)  # Change the number of input channels from 1 to 3
 
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()

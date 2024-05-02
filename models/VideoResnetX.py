@@ -20,8 +20,8 @@ def VideoResNetX(model_name, hidden_size, num_classes, dropout_p=DROPOUT_P):
 
 def if_dataset_name_is_fer(model):
     if VIDEO_DATASET_NAME == "fer":
-        model.features.conv0 = nn.Conv2d(
-            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        model.conv1 = nn.Conv2d(
+            3, 64, kernel_size=7, stride=2, padding=3, bias=False)  # Change the number of input channels from 1 to 3
     return model
 
 class ResNet18(nn.Module):
