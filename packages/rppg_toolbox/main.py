@@ -4,11 +4,11 @@ import random
 
 import numpy as np
 import torch
-from config import get_config
-from dataset import data_loader
-from neural_methods import trainer
-from dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
-from neural_methods.trainer.BaseTrainer import BaseTrainer
+from packages.rppg_toolbox.config import get_config
+from packages.rppg_toolbox.dataset import data_loader
+from packages.rppg_toolbox.neural_methods import trainer
+from packages.rppg_toolbox.dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
+from packages.rppg_toolbox.neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.utils.data import DataLoader
 
 RANDOM_SEED =  42
@@ -48,9 +48,7 @@ def test(config, data_loader_dict):
         raise ValueError('Your Model is Not Supported  Yet!')
     model_trainer.test(data_loader_dict)
 
-
-
-if __name__ == "__main__":
+def run():
     # parse arguments.
     parser = argparse.ArgumentParser()
     parser = add_args(parser)
@@ -89,5 +87,8 @@ if __name__ == "__main__":
             data_loader_dict['test'] = None
     else:
         raise ValueError("Only 'only_test' supported for this smaller version of the toolbox")
-
     test(config, data_loader_dict)
+
+if __name__ == "__main__":
+    run()
+

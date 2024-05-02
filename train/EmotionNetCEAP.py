@@ -67,7 +67,7 @@ def main():
         "reg": REG,
         "batch_size": BATCH_SIZE,
         "num_classes": EMOTION_NUM_CLASSES,
-        "dataset": "GREX",
+        "dataset": "CEAP",
         "optimizer": "Adam",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,

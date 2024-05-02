@@ -5,17 +5,10 @@ Extend the class to support specific datasets.
 Dataset already supported: UBFC-rPPG, PURE, SCAMPS, BP4D+, and UBFC-PHYS.
 
 """
-import csv
 import glob
 import os
-import re
 from math import ceil
-from scipy import signal
-from scipy import sparse
-from unsupervised_methods.methods import POS_WANG
-from unsupervised_methods import utils
-import math
-from multiprocessing import Pool, Process, Value, Array, Manager
+from multiprocessing import Process, Manager
 
 import cv2
 import numpy as np

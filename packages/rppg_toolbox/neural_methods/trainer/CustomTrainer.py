@@ -2,8 +2,8 @@
 """Trainer for DeepPhys."""
 import os
 import torch
-from neural_methods.model.DeepPhys import DeepPhys
-from neural_methods.trainer.BaseTrainer import BaseTrainer
+from packages.rppg_toolbox.neural_methods.model.DeepPhys import DeepPhys
+from packages.rppg_toolbox.neural_methods.trainer.BaseTrainer import BaseTrainer
 from tqdm import tqdm
 
 

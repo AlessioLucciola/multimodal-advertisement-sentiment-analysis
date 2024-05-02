@@ -10,7 +10,7 @@ import re
 
 import cv2
 import numpy as np
-from dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
+from packages.rppg_toolbox.dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
 
 
 class CustomLoader(InferenceOnlyBaseLoader):

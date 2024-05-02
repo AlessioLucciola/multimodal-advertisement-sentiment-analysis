@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import torch
-from evaluation.post_process import *
+from packages.rppg_toolbox.evaluation.post_process import *
 from tqdm import tqdm
-from evaluation.BlandAltmanPy import BlandAltman
+from packages.rppg_toolbox.evaluation.BlandAltmanPy import BlandAltman
 
 def read_label(dataset):
     """Read manually corrected labels."""

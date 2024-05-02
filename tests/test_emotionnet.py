@@ -125,8 +125,8 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "EmotionNet - LSTM Seq2Seq_2024-04-28_18-08-42"
+    model_path = "EmotionNet - LSTM Seq2Seq_2024-05-01_13-11-39"
     # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "121"
+    epoch = "204"
 
     main(model_path, epoch)

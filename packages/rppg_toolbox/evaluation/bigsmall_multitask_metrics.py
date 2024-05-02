@@ -2,11 +2,11 @@ import numpy as np
 import scipy
 import scipy.io
 from scipy.signal import butter
-from sklearn.metrics import f1_score, precision_recall_fscore_support
-from evaluation.metrics import calculate_metrics, _reform_data_from_dict
-from evaluation.post_process import _detrend, _next_power_of_2, _calculate_SNR
+from sklearn.metrics import precision_recall_fscore_support
+from packages.rppg_toolbox.evaluation.metrics import calculate_metrics, _reform_data_from_dict
+from packages.rppg_toolbox.evaluation.post_process import _detrend, _next_power_of_2, _calculate_SNR
 from tqdm import tqdm
-from evaluation.BlandAltmanPy import BlandAltman
+from packages.rppg_toolbox.evaluation.BlandAltmanPy import BlandAltman
 
 # PPG Metrics
 def calculate_bvp_metrics(predictions, labels, config):

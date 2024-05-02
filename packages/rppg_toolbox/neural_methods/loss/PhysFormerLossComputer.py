@@ -4,10 +4,8 @@
 '''
 import math
 import torch
-from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
-import pdb
 import torch.nn as nn
 
 def normal_sampling(mean, label_k, std):
