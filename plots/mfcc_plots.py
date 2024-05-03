@@ -9,10 +9,12 @@ def create_plot_mfcc(audio_path, audio_duration, audio_offset, sample_rate, n_mf
     print(len(mfccs))
     print(mfccs.shape)
     plt.figure(figsize=(10, 4))
-    librosa.display.specshow(mfccs, x_axis='time')
-    plt.colorbar()
+    librosa.display.specshow(mfccs, x_axis='time', cmap='viridis', sr=sr, hop_length=512)
+    plt.colorbar(format='%+2.0f dB')
+    plt.yticks(range(0, n_mfcc, 10))
     plt.title('MFCC sample')
-    plt.tight_layout()
+    plt.xlabel('Time')
+    plt.ylabel('MFCC Coefficient')
     plt.show()
 
 if __name__ == '__main__':
