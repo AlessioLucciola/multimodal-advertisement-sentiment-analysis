@@ -31,6 +31,6 @@ Inside the `data` folder, there should be these elements:
     - `RAVDESS_frames_files_black_background`: A folder containing the extracted frames from the video files with black background (downloadable from Google Drive);
     - `RAVDESS_metadata_original.csv`: A file containing the (self-generated) metadata of the video files (downloadable from Google Drive);
     - `RAVDESS_metadata_frames.csv`: A file containing the (self-generated) metadata of the frames (downloadable from Google Drive);
-    - `[OPTIONAL] ravdess_video_files`: A folder containing the original ravdess video files (downloadable from Google Drive);
+    - `[OPTIONAL] RAVDESS_video_files`: A folder containing the original ravdess video files (downloadable from Google Drive);
 
 All the files required for the audio and video model are zipped in the "AUDIO" and "VIDEO" folders in Google Drive.

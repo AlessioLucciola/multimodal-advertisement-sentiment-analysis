@@ -157,11 +157,6 @@ def load_test_model(model, model_path, epoch, device):
 
 def video_test(model, num_classes, cap, device):
     model.eval()
-    accuracy_metric = Accuracy(task="multiclass", num_classes=num_classes).to(device)
-    recall_metric = Recall(task="multiclass", num_classes=num_classes, average='macro').to(device)
-    precision_metric = Precision(task="multiclass", num_classes=num_classes, average='macro').to(device)
-    f1_metric = F1Score(task="multiclass", num_classes=num_classes, average='macro').to(device)
-    auroc_metric = AUROC(task="multiclass", num_classes=num_classes).to(device)
 
     # Define the transformation
     val_transform = transforms.Compose([

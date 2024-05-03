@@ -145,7 +145,7 @@ if __name__ == "__main__":
     audio_model_path = os.path.join("AudioNetCT_2024-04-22_17-34-38")
     audio_file_path = os.path.join("data", "AUDIO", "test_audio_real.wav")
 
-    video_model_epoch = 25
+    video_model_epoch = "best"
     video_model_path = os.path.join("VideoNet_vit-pretrained_2024-04-21_23-34-25")
     video_file_path = os.path.join("data", "VIDEO", "test_video_real.mp4")
     # video_file = [("<_io.BytesIO object at 0x000001BACE8C5D50>", datetime(2024, 4, 15, 17, 24, 42, 143608)),

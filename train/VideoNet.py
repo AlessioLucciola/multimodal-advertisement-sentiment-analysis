@@ -82,7 +82,7 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
     
     config = {
-        "architecture": MODEL_NAME,
+        "architecture": "VideoNet_" + MODEL_NAME,
         "scope": "VideoNet",
         "learning_rate": LR,
         "epochs": N_EPOCHS,

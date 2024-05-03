@@ -43,7 +43,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                         print(f"No face detected in {filename}")
                         no_face.append(filename)
                         # Save list on disk
-                        with open(VIDEO_DATASET_DIR + '/RAVDESS/TOREMOVE_no_face.txt', 'w') as f:
+                        with open(VIDEO_DATASET_DIR + '/TOREMOVE_no_face.txt', 'w') as f:
                             for item in no_face:
                                 f.write("%s\n" % item)
 
@@ -52,7 +52,7 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                     print(f"More than one face detected in {filename}")
                     multiple_faces.append(filename)
                     # Save list on disk
-                    with open(VIDEO_DATASET_DIR + '/RAVDESS/TOREMOVE_multiple_faces.txt', 'w') as f:
+                    with open(VIDEO_DATASET_DIR + '/TOREMOVE_multiple_faces.txt', 'w') as f:
                         for item in multiple_faces:
                             f.write("%s\n" % item)
 
