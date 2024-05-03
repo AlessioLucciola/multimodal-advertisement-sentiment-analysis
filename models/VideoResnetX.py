@@ -1,7 +1,7 @@
 import torch.nn as nn
 from torchvision import models
 import numpy as np
-from config import DROPOUT_P, VIDEO_DATASET_NAME
+from config import DROPOUT_P, DATASET_NAME
 from torchvision.models import ResNet18_Weights, ResNet34_Weights, ResNet50_Weights, ResNet101_Weights
 
 def VideoResNetX(model_name, hidden_size, num_classes, dropout_p=DROPOUT_P):
@@ -19,7 +19,7 @@ def VideoResNetX(model_name, hidden_size, num_classes, dropout_p=DROPOUT_P):
     return model
 
 def if_dataset_name_is_fer(model):
-    if VIDEO_DATASET_NAME == "fer":
+    if DATASET_NAME == "FER":
         model.conv1 = nn.Conv2d(
             3, 64, kernel_size=7, stride=2, padding=3, bias=False)  # Change the number of input channels from 1 to 3
     return model

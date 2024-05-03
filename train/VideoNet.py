@@ -1,5 +1,5 @@
 import torch
-from config import USE_POSITIVE_NEGATIVE_LABELS, OVERLAP_SUBJECTS_FRAMES, PRELOAD_FRAMES, VIDEO_METADATA_FRAMES_CSV, FRAMES_FILES_DIR, VIDEO_DATASET_NAME, DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
+from config import USE_POSITIVE_NEGATIVE_LABELS, OVERLAP_SUBJECTS_FRAMES, PRELOAD_FRAMES, VIDEO_METADATA_FRAMES_CSV, FRAMES_FILES_DIR, DATASET_NAME, DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
 from dataloaders.ravdess_custom_dataloader import ravdess_custom_dataloader
 from dataloaders.fer_custom_dataloader import fer_custom_dataloader
 from train.loops.train_loop import train_eval_loop
@@ -12,7 +12,7 @@ def main():
     device = select_device()
 
     # Create custom dataloader
-    if VIDEO_DATASET_NAME == "ravdess":
+    if DATASET_NAME == "RAVDESS":
         custom_dataloader = ravdess_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
                                     csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
                                     batch_size=BATCH_SIZE,
@@ -27,7 +27,7 @@ def main():
                                     normalize=NORMALIZE,
             
                                 )
-    elif VIDEO_DATASET_NAME == "fer":
+    elif DATASET_NAME == "FER":
         custom_dataloader = fer_custom_dataloader(csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
                                     batch_size=BATCH_SIZE,
                                     frames_dir=FRAMES_FILES_DIR,
@@ -40,7 +40,7 @@ def main():
                                     normalize=NORMALIZE,
                                     )
     else:
-        raise ValueError("VIDEO_DATASET_NAME must be 'ravdess' or 'fer'")
+        raise ValueError("DATASET_NAME must be 'RAVDESS' or 'FER'")
     
     # Get train and validation dataloaders
     train_loader = custom_dataloader.get_train_dataloader()
@@ -82,7 +82,7 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
     
     config = {
-        "architecture": "VideoNet_" + MODEL_NAME,
+        "architecture": MODEL_NAME,
         "scope": "VideoNet",
         "learning_rate": LR,
         "epochs": N_EPOCHS,
@@ -91,8 +91,9 @@ def main():
         "hidden_size": HIDDEN_SIZE,
         "num_classes": NUM_CLASSES,
         "dataset": DATASET_NAME,
-        "video_dataset": VIDEO_DATASET_NAME,
+        "video_frames_files_dir": FRAMES_FILES_DIR,
         "video_metadata_csv": VIDEO_METADATA_CSV,
+        "video_metadata_frames_csv": VIDEO_METADATA_FRAMES_CSV,
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,
