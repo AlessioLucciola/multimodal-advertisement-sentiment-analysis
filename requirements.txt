@@ -54,4 +54,4 @@ urllib3==2.2.1
 streamlit
 pyaudio
 noisereduce
-streamlit-camera-input-live
+imageio

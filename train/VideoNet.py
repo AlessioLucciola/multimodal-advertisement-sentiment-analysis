@@ -1,6 +1,7 @@
 import torch
-from config import USE_POSITIVE_NEGATIVE_LABELS, OVERLAP_SUBJECTS_FRAMES, PRELOAD_FRAMES, VIDEO_METADATA_FRAMES_CSV, FRAMES_FILES_DIR, VIDEO_DATASET_NAME, DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
-from dataloaders.video_custom_dataloader import video_custom_dataloader
+from config import USE_POSITIVE_NEGATIVE_LABELS, OVERLAP_SUBJECTS_FRAMES, PRELOAD_FRAMES, VIDEO_METADATA_FRAMES_CSV, FRAMES_FILES_DIR, DATASET_NAME, DATASET_NAME, RANDOM_SEED, USE_WANDB, LIMIT, MODEL_NAME, BATCH_SIZE, LR, N_EPOCHS, VIDEO_METADATA_CSV, REG, NUM_CLASSES, DROPOUT_P, RESUME_TRAINING, PATH_TO_SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, BALANCE_DATASET, APPLY_TRANSFORMATIONS, DF_SPLITTING, HIDDEN_SIZE, NORMALIZE, IMG_SIZE
+from dataloaders.ravdess_custom_dataloader import ravdess_custom_dataloader
+from dataloaders.fer_custom_dataloader import fer_custom_dataloader
 from train.loops.train_loop import train_eval_loop
 from utils.utils import set_seed, select_device
 from utils.video_utils import select_model
@@ -11,19 +12,35 @@ def main():
     device = select_device()
 
     # Create custom dataloader
-    custom_dataloader = video_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
-                                   csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
-                                   batch_size=BATCH_SIZE,
-                                   frames_dir=FRAMES_FILES_DIR,
-                                   seed=RANDOM_SEED,
-                                   limit=LIMIT,
-                                   overlap_subjects_frames=OVERLAP_SUBJECTS_FRAMES,
-                                   use_positive_negative_labels=USE_POSITIVE_NEGATIVE_LABELS,
-                                   preload_frames=PRELOAD_FRAMES,
-                                   apply_transformations=APPLY_TRANSFORMATIONS,
-                                   balance_dataset=BALANCE_DATASET,
-                                   normalize=NORMALIZE,
-                                   )
+    if DATASET_NAME == "RAVDESS":
+        custom_dataloader = ravdess_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
+                                    csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
+                                    batch_size=BATCH_SIZE,
+                                    frames_dir=FRAMES_FILES_DIR,
+                                    seed=RANDOM_SEED,
+                                    limit=LIMIT,
+                                    overlap_subjects_frames=OVERLAP_SUBJECTS_FRAMES,
+                                    use_positive_negative_labels=USE_POSITIVE_NEGATIVE_LABELS,
+                                    preload_frames=PRELOAD_FRAMES,
+                                    apply_transformations=APPLY_TRANSFORMATIONS,
+                                    balance_dataset=BALANCE_DATASET,
+                                    normalize=NORMALIZE,
+            
+                                )
+    elif DATASET_NAME == "FER":
+        custom_dataloader = fer_custom_dataloader(csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
+                                    batch_size=BATCH_SIZE,
+                                    frames_dir=FRAMES_FILES_DIR,
+                                    seed=RANDOM_SEED,
+                                    limit=LIMIT,
+                                    use_positive_negative_labels=USE_POSITIVE_NEGATIVE_LABELS,
+                                    preload_frames=PRELOAD_FRAMES,
+                                    apply_transformations=APPLY_TRANSFORMATIONS,
+                                    balance_dataset=BALANCE_DATASET,
+                                    normalize=NORMALIZE,
+                                    )
+    else:
+        raise ValueError("DATASET_NAME must be 'RAVDESS' or 'FER'")
     
     # Get train and validation dataloaders
     train_loader = custom_dataloader.get_train_dataloader()
@@ -74,8 +91,9 @@ def main():
         "hidden_size": HIDDEN_SIZE,
         "num_classes": NUM_CLASSES,
         "dataset": DATASET_NAME,
-        "video_dataset": VIDEO_DATASET_NAME,
+        "video_frames_files_dir": FRAMES_FILES_DIR,
         "video_metadata_csv": VIDEO_METADATA_CSV,
+        "video_metadata_frames_csv": VIDEO_METADATA_FRAMES_CSV,
         "optimizer": "AdamW",
         "resumed": RESUME_TRAINING,
         "use_wandb": USE_WANDB,

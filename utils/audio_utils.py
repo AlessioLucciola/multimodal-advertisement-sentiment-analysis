@@ -5,6 +5,8 @@ import soundfile as sf
 import numpy as np
 import librosa
 import os
+from moviepy.editor import VideoFileClip
+
 
 def extract_waveform_from_audio_file(file, desired_length_seconds, offset, desired_sample_rate):
     #waveform, _ = librosa.load(path=file, duration=desired_length_seconds, offset=trim_seconds, sr=desired_sample_rate)
@@ -224,3 +226,16 @@ def extract_speech_segment_from_waveform(waveform, speech_segments, start_time, 
     # Clip the repeated segment to match the length of the segment we are replacing
     clipped_repeated_segment = repeated_segment[:end_index - start_index]
     return clipped_repeated_segment, longest_segment_start+start_time, longest_segment_end+start_time, longest_segment_length
+
+def extract_audio_from_video(video_file, audio_path):
+    # Load the video file
+    video_clip = VideoFileClip(video_file)
+    
+    # Extract the audio
+    audio_clip = video_clip.audio
+
+    # Save the audio to a file
+    audio_clip.write_audiofile(audio_path)
+
+    # Close the video file
+    video_clip.close()

@@ -2,7 +2,7 @@ from utils.utils import save_results, set_seed, select_device, upload_scaler
 from config import *
 from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
-from dataloaders.video_custom_dataloader import video_custom_dataloader
+from dataloaders.ravdess_custom_dataloader import ravdess_custom_dataloader
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from tqdm import tqdm
@@ -130,7 +130,7 @@ def get_model_and_dataloader(model_path, device, type):
 
         model = select_model(model_path.split('_')[1], hidden_size, num_classes, dropout_p).to(device)
         if not USE_VIDEO_FOR_TESTING:
-            dataloader = video_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
+            dataloader = ravdess_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
                                    csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
                                    batch_size=batch_size,
                                    frames_dir=FRAMES_FILES_DIR,
@@ -157,19 +157,20 @@ def load_test_model(model, model_path, epoch, device):
 
 def video_test(model, num_classes, cap, device):
     model.eval()
-    accuracy_metric = Accuracy(task="multiclass", num_classes=num_classes).to(device)
-    recall_metric = Recall(task="multiclass", num_classes=num_classes, average='macro').to(device)
-    precision_metric = Precision(task="multiclass", num_classes=num_classes, average='macro').to(device)
-    f1_metric = F1Score(task="multiclass", num_classes=num_classes, average='macro').to(device)
-    auroc_metric = AUROC(task="multiclass", num_classes=num_classes).to(device)
 
+    # Define the transformation
     val_transform = transforms.Compose([
         transforms.ToTensor()])
+    
+    # Load the face cascade
+    face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
 
     while True:
         ret, frame = cap.read()
-        face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
+        if not ret:
+            break
 
+        # Detect faces
         faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
                     
         if len(faces) == 0: # No face detected
@@ -182,7 +183,6 @@ def video_test(model, num_classes, cap, device):
             faces = [face]
 
         for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
             # Extract face from the frame
             face = frame[y:y+h, x:x+w]
   
@@ -197,7 +197,8 @@ def video_test(model, num_classes, cap, device):
             pred = torch.argmax(output, -1).detach()
             emotion = merged_emotion_mapping[pred.item()]
 
-            # Display the emotion
+            # Display rectagnle with emotion
+            cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
             cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
 
         

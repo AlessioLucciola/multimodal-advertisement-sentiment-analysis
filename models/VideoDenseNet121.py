@@ -1,14 +1,17 @@
 from torch import nn
 from torchvision import models
 from torchvision.models import DenseNet121_Weights
-from config import DROPOUT_P
+from config import DROPOUT_P, DATASET_NAME
 import numpy as np
-
 
 class VideoDenseNet121(nn.Module):
     def __init__(self, hidden_layers, num_classes, dropout_p=DROPOUT_P):
         super(VideoDenseNet121, self).__init__()
         self.model = models.densenet121(weights=DenseNet121_Weights.DEFAULT)
+
+        if DATASET_NAME == "FER":
+            self.model.features.conv0 = nn.Conv2d(
+                3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)  # Change the number of input channels from 1 to 3
 
         self.dropout = nn.Dropout(p=dropout_p)
         self.relu = nn.ReLU()
