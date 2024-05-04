@@ -1,10 +1,13 @@
 *.wav
+*.jpg
 __pycache__
 results
 **/data/*
 !**/data/README.md
 !**/data/.gitkeep
 plots
+data
+plots.results
 checkpoints
 wandb
 TEMP

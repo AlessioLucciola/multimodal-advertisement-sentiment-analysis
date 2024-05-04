@@ -1,3 +1,26 @@
+# PPG constants
+CEAP_MEAN = -0.05
+CEAP_STD = 40.14
+
+# Video models
+video_cnn_models_list = [
+                'resnet18', 
+                'resnet34', 
+                'resnet50', 
+                'resnet101', 
+                'densenet121', 
+                'custom-cnn',
+                ]
+                         
+video_vit_models_list = [
+                'vit-pretrained',
+                ]
+
+video_models_list = video_cnn_models_list + video_vit_models_list
+
+# -----------------------------
+
+# Mapping
 RAVDESS_emotion_mapping = {
     1: "neutral",
     2: "calm",
@@ -7,6 +30,11 @@ RAVDESS_emotion_mapping = {
     6: "fearful",
     7: "disgust",
     8: "surprise"
+}
+
+RAVDESS_emotion_intensity_mapping = {
+    0: "normal",
+    1: "strong"
 }
 
 CREMA_emotion_mapping = {
@@ -76,7 +104,7 @@ final_emotion_mapping = {
     "surprise": 7
 }
 
-FER_emotion_mapping = {
+fer_emotion_mapping = {
     0: 'Angry',
     1: 'Disgust',
     2: 'Fear',
@@ -86,5 +114,32 @@ FER_emotion_mapping = {
     6: 'Neutral'
 }
 
-CEAP_MEAN = -0.05
-CEAP_STD = 40.14
+# -----------------------------
+
+general_emotion_mapping = {
+    0: "neutral",
+    1: "calm",
+    2: "happy",
+    3: "sad",
+    4: "angry",
+    5: "fearful",
+    6: "disgust",
+    7: "surprise"
+}
+
+mapping_to_positive_negative = {
+    0: 0, # neutral -> neutral
+    1: 0, # calm -> neutral
+    2: 1, # happy -> positive
+    3: 2, # sad -> negative
+    4: 2, # angry -> negative
+    5: 2, # fearful -> negative
+    6: 2, # disgust -> negative
+    7: 1 # surprise -> positive
+}
+
+merged_emotion_mapping = {
+    0: "neutral",
+    1: "positive",
+    2: "negative"
+}
