@@ -1,4 +1,4 @@
-from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, SAVE_MODELS 
+from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, SAVE_MODELS train_loo
 from utils.utils import save_results, save_configurations, save_model
 from torchmetrics import Accuracy, Recall
 from datetime import datetime

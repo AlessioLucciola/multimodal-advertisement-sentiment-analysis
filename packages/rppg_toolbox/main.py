@@ -86,7 +86,7 @@ def run():
     )
     test(config, data_loader_dict)
 
-def run_single():
+def run_single(vid_path: str | None = None) -> torch.Tensor:
     # parse arguments.
     parser = argparse.ArgumentParser()
     parser = add_args(parser)
@@ -96,21 +96,21 @@ def run_single():
 
     # configurations.
     config = get_config(args)
+
     print('Configuration:')
     print(config, end='\n\n')
-    if config.MODEL.NAME == 'CUSTOM':
-        model_trainer = CustomTrainer(config)
-    else:
-        raise ValueError('Your Model is Not Supported  Yet!')
-    
-    vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/video.mp4"
+    model_trainer = CustomTrainer(config)
+    if vid_path is None: 
+        vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/video.mp4"
     raw_frames = read_video(vid_path)
     frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
     print(f"preprocessed frames shape: {frames.shape}")
     frames = preprocess.parse_frames(frames, data_format="NDCHW")
     print(f"parsed frames shape: {frames.shape}")
-    model_trainer.test_from_frames(frames)
+    output = model_trainer.test_from_frames(frames)
+    return output
 
 if __name__ == "__main__":
-    run_single()
+    # run_single()
+    run()
 

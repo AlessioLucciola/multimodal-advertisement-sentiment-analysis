@@ -20,7 +20,7 @@ TEST:
       TASK_LIST: ['T1', 'T2', 'T3']
     FS: 60 # NOTE: I think this is useless
     DATASET: CUSTOM
-    DO_PREPROCESS: False # if first time, should be true
+    DO_PREPROCESS: True # if first time, should be true
     DATA_FORMAT: NDCHW
     DATA_PATH: "/Users/dov/Desktop/wip-projects/rPPG-Toolbox/data/InferenceVideos/RawData"                     # Raw dataset path, need to be updated
     CACHED_PATH: "/Users/dov/Desktop/wip-projects/rPPG-Toolbox/data/InferenceVideos/PreprocessedData"    # Processed dataset save path, need to be updated
@@ -28,8 +28,7 @@ TEST:
     BEGIN: 0.0
     END: 1.0
     PREPROCESS:
-      DATA_TYPE: [ 'DiffNormalized','Standardized' ]
-      LABEL_TYPE: "Raw"
+      DATA_TYPE: ["Standardized", "DiffNormalized"]
       DO_CHUNK: True
       # - Chunk 100, final length 100
       # - Chunk 175, final length 170 
@@ -44,9 +43,9 @@ TEST:
         USE_LARGE_FACE_BOX: False
         LARGE_BOX_COEF: 1.5
         DETECTION:
-          DO_DYNAMIC_DETECTION: False
+          DO_DYNAMIC_DETECTION: True #performs detection each DYNAMIC_DETECTION_FREQUENCY frames
           DYNAMIC_DETECTION_FREQUENCY : 35
-          USE_MEDIAN_FACE_BOX: False    # This should be used ONLY if dynamic detection is used
+          USE_MEDIAN_FACE_BOX: True    # This should be used ONLY if dynamic detection is used
       RESIZE:
         H: 72
         W: 72

@@ -70,7 +70,7 @@ def preprocess_frames(frames: np.ndarray, config_preprocess):
     data = list()  # Video data
     for data_type in config_preprocess.DATA_TYPE:
         f_c = frames.copy()
-        if data_type != "Raw":
+        if data_type == "Raw":
             data.append(f_c)
         elif data_type == "DiffNormalized":
             data.append(diff_normalize_data(f_c))
@@ -79,9 +79,6 @@ def preprocess_frames(frames: np.ndarray, config_preprocess):
         else:
             raise ValueError("Unsupported data type!")
     data = np.concatenate(data, axis=-1)  # concatenate all channels
-    if config_preprocess.LABEL_TYPE != "Raw":
-        raise NotImplementedError(
-            "InferenceOnlyBaseLoader doesn't support labels, please set LABEL_TYPE to 'RAW'")
 
     if config_preprocess.DO_CHUNK:  # chunk data into snippets
         frames_clips = chunk(

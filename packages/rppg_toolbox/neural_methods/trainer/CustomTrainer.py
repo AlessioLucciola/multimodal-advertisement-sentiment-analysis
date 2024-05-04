@@ -49,7 +49,7 @@ class CustomTrainer(BaseTrainer):
             print(f"chunk shape: {chunk.shape}")
             chunk = chunk.unsqueeze(0)
             predictions.extend(self.test_step(chunk))
-        predictions = torch.cat(predictions, dim=-1)
+        predictions = torch.cat(predictions, dim=-1).T
         print(f"predictions are: {predictions} with shape: {predictions.shape}")
         return predictions
     

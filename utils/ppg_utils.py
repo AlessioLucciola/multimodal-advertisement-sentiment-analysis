@@ -18,7 +18,9 @@ def statistical_features(x: torch.Tensor) -> torch.Tensor:
     return torch.cat((mean, std, skewness, kurtosis, onsets, hr), dim=0)
 
 
-def wavelet_transform(x):
+def wavelet_transform(x: torch.Tensor | np.ndarray):
+    if isinstance(x, torch.Tensor):
+        x = x.detach().numpy()
     # return np.zeros((LENGTH // WAVELET_STEP,  LENGTH)).T
     scales = np.arange(1, len(x) + 1, WAVELET_STEP)
     coef, _ = pywt.cwt(x, scales, "morl")

@@ -7,7 +7,9 @@ import os
 import json
 from dataloaders.CEAP_dataloader import CEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
-from packages.rppg_toolbox.main import test as rppg_test
+from packages.rppg_toolbox.main import run_single
+from utils.ppg_utils import wavelet_transform
+from shared.constants import CEAP_MEAN, CEAP_STD
 
 def test_loop(model, test_loader, device, model_path, criterion, num_classes):
     model.eval()
@@ -104,8 +106,53 @@ def load_test_model(model, model_path, epoch, device):
 
 
 def test_from_video():
-    #TODO: implement this
-    pass
+    print("Extracting ppg")
+    ppgs = run_single()
+
+    input_dim = LENGTH // WAVELET_STEP if WT else 1
+    output_dim = 3
+    encoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
+    decoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
+    hidden_dim = LSTM_HIDDEN
+    n_layers = LSTM_LAYERS
+    encoder_dropout = DROPOUT_P
+    decoder_dropout = DROPOUT_P
+
+    encoder = Encoder(
+        input_dim,
+        encoder_embedding_dim,
+        hidden_dim,
+        n_layers,
+        encoder_dropout,
+    )
+
+    decoder = Decoder(
+        output_dim,
+        decoder_embedding_dim,
+        hidden_dim,
+        n_layers,
+        decoder_dropout,
+    )
+    device = select_device()
+    model = EmotionNet(encoder, decoder).to(device)
+    model.eval()
+    preds = torch.tensor([]).to(device)
+    for ppg in tqdm(ppgs, desc="Inference..."):
+        ppg = wavelet_transform(ppg.squeeze())
+        ppg = torch.from_numpy(ppg).unsqueeze(1).to(device)
+        print(f"ppg shape is: {ppg.shape}")
+        trg = torch.zeros((100, 1)).to(device)
+        preds = torch.cat((preds, model(src=ppg, trg=trg, teacher_forcing_ratio=0)), dim=0)
+    preds = (preds - CEAP_MEAN) / CEAP_STD
+    print(f"standardized preds are: {preds}")
+    print(f"preds shape: {preds.shape}")
+    preds = torch.softmax(preds, dim=-1)
+    print(f"preds shape after softmax: {preds.shape}")
+    avg = preds.mean(dim=0)
+    print(f"avg emotion is  {avg}")
+    emot = avg.argmax(dim=0)
+    print(f"avg emotion argmax is  {emot}")
+    return preds
 
 
 def get_rppg():
@@ -124,9 +171,10 @@ def main(model_path, epoch):
 
 
 if __name__ == "__main__":
-    # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = "EmotionNet - LSTM Seq2Seq_2024-05-01_13-11-39"
-    # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = "204"
+    # # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
+    # model_path = "EmotionNet - LSTM Seq2Seq_2024-05-01_13-11-39"
+    # # Specify the epoch number (e.g. 2) or "best" to get best model
+    # epoch = "204"
 
-    main(model_path, epoch)
+    # main(model_path, epoch)
+    test_from_video()
