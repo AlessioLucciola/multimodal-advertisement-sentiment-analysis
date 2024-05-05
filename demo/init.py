@@ -1,10 +1,10 @@
+from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH
 from component_initializer import get_audio_stream, get_video_stream
+from st_pages import Page, show_pages
 from datetime import datetime
-from ast import literal_eval
 import streamlit as st
 import altair as alt
 import pandas as pd
-import numpy as np
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -20,15 +20,19 @@ if 'run' not in st.session_state:
     st.session_state['video_stream_frames'] = []
     st.session_state['processed_windows'] = None
 
+# Pages definition
+show_pages(
+    [
+        Page("demo/init.py", "Online demo", "📹"),
+        Page("demo/offline_demo.py", "Offline demo", "💡"),
+    ]
+)
+
 # Initialize required components
 audio_stream = get_audio_stream()
-with st.sidebar:
-    st.title('Settings')
-    audio_stream = get_audio_stream()
-    if audio_stream is not None:
-        is_components_initialized = True
-    
-    video_stream = get_video_stream()
+video_stream = get_video_stream()
+if audio_stream is not None and video_stream is not None:
+    is_components_initialized = True
     
 # Functions
 def start_listening():
@@ -41,10 +45,10 @@ def stop_listening():
     st.session_state['run'] = False
     audio_stream_frames = b''.join(st.session_state['audio_stream_frames'])
     video_stream_frames = st.session_state['video_stream_frames']
-    st.session_state["processed_windows"] = fusion_main(audio_model_path="AudioNetCT_2024-04-22_17-34-38",
-                                                        video_model_path="VideoNet_vit-pretrained_2024-04-21_23-34-25",
-                                                        audio_model_epoch=450,
-                                                        video_model_epoch=25,
+    st.session_state["processed_windows"] = fusion_main(audio_model_path=AUDIO_MODEL_PATH,
+                                                        video_model_path=VIDEO_MODEL_PATH,
+                                                        audio_model_epoch=AUDIO_MODEL_EPOCH,
+                                                        video_model_epoch=VIDEO_MODEL_EPOCH,
                                                         audio_frames=audio_stream_frames,
                                                         video_frames=video_stream_frames,
                                                         live_demo=True)
@@ -53,11 +57,11 @@ while st.session_state['run']:
     try:
         # Audio stream reading
         data = audio_stream.read(12000)
-        st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames        
+        st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
+        
         # Video stream reading
         current_time = datetime.now()
         video_frame = next(video_stream)
-        print(video_frame)
         st.session_state['video_stream_frames'].append(tuple((video_frame, current_time)))  # Append data to video stream frames
     except Exception as e:
         st.error('Error recording the audio')
@@ -114,7 +118,6 @@ if (is_components_initialized):
         # Render the chart using Streamlit
         st.altair_chart(chart, use_container_width=True)
         
-
-        st.text("Processed audio windows:")
+        st.text("Processed windows debug:")
         st.write(st.session_state["processed_windows"])
 
