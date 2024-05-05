@@ -4,7 +4,6 @@ __pycache__
 results
 !**/data/README.md
 **/data/*
-plots
 data
 plots.results
 checkpoints
