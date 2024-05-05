@@ -32,7 +32,7 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
     for i, metric in enumerate(metrics):
         _, ax = plt.subplots(figsize=(6, 6))
         # Generate random colors for each bar
-        ax.bar(range(len(data)), values[i], color=colors, width=0.3)
+        ax.bar(range(len(data)), values[i], color=colors, width=0.9)
         ax.set_xticks(range(len(data)))
         ax.set_xticklabels([f"{models_name[j]}" for j in range(len(data))], fontsize=14)
         ax.set_ylabel(f"{metric[1]} (%)" if metric[0] != "test_loss" else metric[1], fontsize=14)
@@ -52,10 +52,7 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
 
 
 # ---CONFIGURATIONS---#
-test_folders = [
-    PATH_MODEL_TO_TEST,
-]
-
+test_folders = PATH_MODEL_TO_TEST
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
 for name in test_folders:
     if name.split("_")[0] == "VideoNet":

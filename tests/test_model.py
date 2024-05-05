@@ -99,7 +99,8 @@ def get_model_and_dataloader(model_path, device, type):
                                         limit=LIMIT,
                                         balance_dataset=BALANCE_DATASET,
                                         preload_audio_files=PRELOAD_AUDIO_FILES,
-                                        scale_audio_files=SCALE_AUDIO_FILES
+                                        scale_audio_files=SCALE_AUDIO_FILES,
+                                        use_positive_negative_labels=USE_POSITIVE_NEGATIVE_LABELS
                                         )
         scaler = upload_scaler(model_path)
     elif type == "AudioNetCL":
@@ -117,7 +118,8 @@ def get_model_and_dataloader(model_path, device, type):
                                         limit=LIMIT,
                                         balance_dataset=BALANCE_DATASET,
                                         preload_audio_files=PRELOAD_AUDIO_FILES,
-                                        scale_audio_files=SCALE_AUDIO_FILES
+                                        scale_audio_files=SCALE_AUDIO_FILES,
+                                        use_positive_negative_labels=USE_POSITIVE_NEGATIVE_LABELS
                                         )
         scaler = upload_scaler(model_path)
     elif type == "VideoNet":
@@ -234,8 +236,9 @@ def main(model_path, epoch):
 
 if __name__ == "__main__":
     # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_path = PATH_MODEL_TO_TEST
+    model_paths = PATH_MODEL_TO_TEST
     # Specify the epoch number (e.g. 2) or "best" to get best model
     epoch = TEST_EPOCH
 
-    main(model_path, epoch)
+    for m in model_paths:
+        main(m, epoch)
