@@ -32,9 +32,10 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
 
     # Define the transformation
     val_transform = transforms.Compose([transforms.ToTensor()])
+
+    frames_extracted = 0
     
     if live_demo:
-        frames_extracted = 0
         video_starting_time = None
         for i, (frame, frame_duration) in enumerate(video_frames):
             if i == 0:
@@ -83,9 +84,6 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
     else: 
         # Offline video file
         cap = cv2.VideoCapture(video_frames)
-
-        # Variable to keep track of extracted frames
-        frames_extracted = 0
 
         # Read the video file
         while cap.isOpened():
