@@ -1,3 +1,7 @@
+# PPG constants
+CEAP_MEAN = -0.05
+CEAP_STD = 40.14
+
 # Video models
 video_cnn_models_list = [
                 'resnet18', 

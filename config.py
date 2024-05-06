@@ -1,6 +1,5 @@
-from typing import List
 import os
-from typing import List
+from typing import List, Optional
 
 # General configurations
 DATA_DIR = "data"
@@ -16,7 +15,7 @@ SAVE_MODELS = True
 # Dataset configurations
 DATASET_NAME: str = "RAVDESS" # RAVDESS | FER | ALL
 DF_SPLITTING: List = [0.20, 0.50] #[train/test splitting, test/val splitting]
-LIMIT: int | str = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
+LIMIT: Optional[int | str] = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 BALANCE_DATASET: bool = True # Balance the dataset if True, use the original dataset if False
 USE_POSITIVE_NEGATIVE_LABELS: bool = True
 NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes in the dataset (default: 8)
@@ -92,3 +91,16 @@ OVERLAP_SUBJECTS_FRAMES = False # Overlap the frames of the subjects between tra
 USE_VIDEO_FOR_TESTING = False # Use test video or live video if True, use test dataset if False
 USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
 OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video_real.mp4") # Offline video file
+
+# ----------------------------
+#PPG 
+
+# EmotionNet Configurations
+EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
+LENGTH = 100 #800 seemed to work
+STEP = 100
+
+WT = True #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
+WAVELET_STEP = 10
+LSTM_HIDDEN = 512 
+LSTM_LAYERS = 2
