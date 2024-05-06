@@ -48,7 +48,7 @@ def get_audio_stream():
 
 def get_video_stream():
     try :
-        stream = imageio.get_reader('<video1>') # Alessio: '<video0>' | Danilo: '<video0>'
+        stream = imageio.v3.imiter('<video0>') # Alessio: '<video0>' | Danilo: '<video0>'
         return stream
     except Exception as e:
         st.error('Error initializing the video stream.')

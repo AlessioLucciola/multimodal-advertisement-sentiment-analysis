@@ -53,31 +53,29 @@ class AudioNet_CNN_Transformers(nn.Module):
         self.conv2Dblock2 = nn.Sequential(
             nn.Conv2d(
                 in_channels=1,
-                out_channels=8,
-                kernel_size=3,
-                stride=2),
-            nn.BatchNorm2d(8),
-            nn.ReLU(),
-            nn.Dropout(p=dropout_p),
-            nn.Conv2d(
-                in_channels=8,
                 out_channels=16,
                 kernel_size=3,
-                stride=2),
+                stride=1,
+                padding=1
+                      ),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.Dropout(p=dropout_p), 
+            nn.MaxPool2d(kernel_size=4, stride=4),
+            nn.Dropout(p=dropout_p),
             nn.Conv2d(
-                in_channels=16,
+                in_channels=16, 
                 out_channels=32,
                 kernel_size=3,
-                stride=2),
+                stride=1,
+                padding=1
+                      ),
             nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.Dropout(p=dropout_p),
+            nn.MaxPool2d(kernel_size=4, stride=4),
+            nn.Dropout(p=dropout_p)
         )
 
-        self.fc1_linear = nn.Linear(512*2+num_mfcc, num_classes) 
+        self.fc1_linear = nn.Linear(512+1088+num_mfcc, num_classes) 
         self.softmax_out = nn.Softmax(dim=1)
         
     def forward(self, x):

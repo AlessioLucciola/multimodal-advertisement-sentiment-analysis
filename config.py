@@ -21,8 +21,10 @@ USE_POSITIVE_NEGATIVE_LABELS: bool = True
 NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes in the dataset (default: 8)
 
 # Test configurations
-PATH_MODEL_TO_TEST = "VideoNet_vit-pretrained_2024-04-21_23-34-25"
-TEST_EPOCH = "Best" # Number of epoch to test or "best" to test the best model
+PATH_MODEL_TO_TEST = [
+    "AudioNetCT_2024-05-05_11-51-20"
+]
+TEST_EPOCH = "485" # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -30,11 +32,11 @@ PATH_MODEL_TO_RESUME = ""
 RESUME_EPOCH = ""
 
 # Train configurations
-BATCH_SIZE = 256 # Max (for ViT): 256 | Max (for CNN): 64
-N_EPOCHS = 30
+BATCH_SIZE = 128 # Max (for ViT): 256 | Max (for CNN): 64
+N_EPOCHS = 500
 LR = 1e-3
 REG = 1e-3
-DROPOUT_P = 0.2
+DROPOUT_P = 0.3
 
 # ----------------------------
 
