@@ -38,7 +38,9 @@ class CEAPDataLoader(DataLoader):
         print(f"Stats of raw data are: \n Mean: {mean} \n Std: {std}")
 
         if normalize:
-            self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) // CEAP_STD
+            self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) / CEAP_STD
+            print(f"Normalized data: {self.data}")
+        
 
         print("Splitting data...")
         self.train_df, self.val_df, self.test_df = self.split_data()

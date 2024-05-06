@@ -21,7 +21,6 @@ def statistical_features(x: torch.Tensor) -> torch.Tensor:
 def wavelet_transform(x: torch.Tensor | np.ndarray):
     if isinstance(x, torch.Tensor):
         x = x.detach().numpy()
-    # return np.zeros((LENGTH // WAVELET_STEP,  LENGTH)).T
     scales = np.arange(1, len(x) + 1, WAVELET_STEP)
     coef, _ = pywt.cwt(x, scales, "morl")
     # print(f"coef shape is {coef.shape}")

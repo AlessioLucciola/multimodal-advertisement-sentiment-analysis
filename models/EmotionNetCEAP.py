@@ -77,8 +77,8 @@ class EmotionNet(nn.Module):
         # trg = [trg length, batch size]
         # teacher_forcing_ratio is probability to use teacher forcing
         # e.g. if teacher_forcing_ratio is 0.75 we use ground-truth inputs 75% of the time
-        batch_size = trg.shape[1]
-        trg_length = trg.shape[0]
+        batch_size = src.shape[1]
+        trg_length = src.shape[0]
         trg_vocab_size = self.decoder.output_dim
         # tensor to store decoder outputs
         outputs = torch.zeros(trg_length, batch_size, trg_vocab_size).to(self.device)
@@ -87,7 +87,12 @@ class EmotionNet(nn.Module):
         # hidden = [n layers * n directions, batch size, hidden dim]
         # cell = [n layers * n directions, batch size, hidden dim]
         # first input to the decoder is the <sos> tokens
-        input = trg[0, :]
+        if len(trg.shape) == 2:
+            input = trg[0, :]
+        elif len(trg.shape) == 1:
+            input = trg.view(1, -1)
+        else:
+            raise ValueError(f"trg with shape: {trg.shape} is not supported")
         # input = [batch size]
         for t in range(1, trg_length):
             # insert input token embedding, previous hidden and previous cell states
