@@ -213,23 +213,29 @@ def test_from_video():
     model.eval()
     preds = torch.tensor([]).to(device)
     ppgs = (ppgs - CEAP_MEAN) / CEAP_STD
+    segment_preds = []
     for ppg in tqdm(ppgs, desc="Inference..."):
         ppg = wavelet_transform(ppg.squeeze())
         ppg = torch.from_numpy(ppg).unsqueeze(1).to(device)
         print(f"ppg shape is: {ppg.shape}")
         trg = torch.tensor([0.0]).to(device)
-        preds = torch.cat(
-            (preds, model(src=ppg, trg=trg, teacher_forcing_ratio=0)), dim=0
-        )
-    print(f"preds are: {preds}")
-    print(f"preds shape: {preds.shape}")
-    preds = preds[1:]
-    preds = preds.mean(dim=0)
-    print(f"softmaxed preds are: {preds.softmax(dim=-1)}")
-    preds = preds.argmax(dim=-1)
-    # preds = preds[-1,:].argmax(dim=-1)
-    print(f"avg emotion is  {preds}")
-    return preds
+        # preds = torch.cat(
+        #     (preds, model(src=ppg, trg=trg, teacher_forcing_ratio=0)), dim=0
+        # )
+        preds = model(src=ppg, trg=trg, teacher_forcing_ratio=0)
+        print(f"preds shape: {preds.shape}")
+        preds = preds[1:]
+        preds = preds.mean(dim=0)
+        preds_softmax = preds.softmax(dim=-1)
+        # preds = preds.argmax(dim=-1)
+        # # preds = preds[-1,:].argmax(dim=-1)
+        # print(f"avg emotion is  {preds}")
+        # return preds
+        segment_preds.append(preds_softmax)
+    print(f"segment_preds are: {[segment.tolist() for segment in segment_preds]}")
+    print(f"emotions are: {[segment.argmax(-1).item() for segment in segment_preds]}")
+    return segment_preds
+
 
 
 def get_rppg():
