@@ -5,6 +5,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import AUDIO_SAMPLE_RATE
+from demo_config import INPUT_DEVICE_INDEX, OUTPUT_DEVICE_INDEX, VIDEO_DEVICE_STREAM
 import imageio
 
 # Initialize PyAudio
@@ -27,8 +28,8 @@ def get_audio_stream():
         stream = p.open(format=pyaudio.paFloat32, channels=1, 
                         rate=AUDIO_SAMPLE_RATE, input=True, 
                         frames_per_buffer=2500, 
-                        input_device_index=1, # Alessio: 1 | Danilo: 1
-                        output_device_index=3 # Alessio: 3 | Danilo: 3
+                        input_device_index=INPUT_DEVICE_INDEX,
+                        output_device_index=OUTPUT_DEVICE_INDEX
                         ) 
         return stream
     except (IOError, OSError) as e:
@@ -48,7 +49,7 @@ def get_audio_stream():
 
 def get_video_stream():
     try :
-        stream = imageio.v3.imiter('<video0>') # Alessio: '<video0>' | Danilo: '<video0>'
+        stream = imageio.v3.imiter(VIDEO_DEVICE_STREAM)
         return stream
     except Exception as e:
         st.error('Error initializing the video stream.')

@@ -21,10 +21,12 @@ USE_POSITIVE_NEGATIVE_LABELS: bool = True
 NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes in the dataset (default: 8)
 
 # Test configurations
-PATH_MODEL_TO_TEST = [
-    "AudioNetCT_2024-05-05_11-51-20"
+PATH_MODELS_TO_TEST = [
+    "VideoNet_vit-pretrained_2024-05-04_08-36-28_BLACK_BACKGROUND_WITH_OVERLAP"
 ]
-TEST_EPOCH = "485" # Number of epoch to test or "best" to test the best model
+# Number of epoch to test or "best" to test the best model
+AUDIO_MODEL_EPOCH = 180
+VIDEO_MODEL_EPOCH = 30
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -32,8 +34,8 @@ PATH_MODEL_TO_RESUME = ""
 RESUME_EPOCH = ""
 
 # Train configurations
-BATCH_SIZE = 128 # Max (for ViT): 256 | Max (for CNN): 64
-N_EPOCHS = 500
+BATCH_SIZE = 256 # Max (for ViT): 256 | Max (for CNN): 64
+N_EPOCHS = 30
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.3
@@ -88,9 +90,9 @@ NORMALIZE = True # Normalize the images if True, use the original images if Fals
 OVERLAP_SUBJECTS_FRAMES = False # Overlap the frames of the subjects between train, validation and test if True, False otherwise
 
 # Test configurations
-USE_VIDEO_FOR_TESTING = False # Use test video or live video if True, use test dataset if False
+USE_VIDEO_FOR_TESTING = True # Use test video or live video if True, use test dataset if False
 USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
-OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video_real.mp4") # Offline video file
+OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "01-01-03-02-02-02-17.mp4") # Offline video file (test_video_real)
 
 # ----------------------------
 #PPG 

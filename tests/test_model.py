@@ -12,7 +12,7 @@ import json
 import torchvision.transforms as transforms
 import cv2
 from PIL import Image
-from shared.constants import merged_emotion_mapping
+from shared.constants import merged_emotion_mapping, general_emotion_mapping
 from utils.video_utils import select_model
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
@@ -86,6 +86,7 @@ def get_model_and_dataloader(model_path, device, type):
     dataloader = None
     scaler = None
     num_classes = None
+    use_positive_negative_labels = None
     if type == "AudioNetCT":
         num_classes = NUM_CLASSES if configurations is None else configurations["num_classes"]
         num_mfcc = NUM_MFCC if configurations is None else configurations["num_mfcc"]
@@ -129,6 +130,7 @@ def get_model_and_dataloader(model_path, device, type):
         dropout_p = DROPOUT_P if configurations is None else configurations["dropout_p"]
         use_positive_negative_labels = USE_POSITIVE_NEGATIVE_LABELS if configurations is None else configurations["use_positive_negative_labels"]
         overlap_subjects_frames = OVERLAP_SUBJECTS_FRAMES if configurations is None else configurations["overlap_subjects_frames"]
+        use_positive_negative_labels = USE_POSITIVE_NEGATIVE_LABELS if configurations is None else configurations["use_positive_negative_labels"]
 
         model = select_model(model_path.split('_')[1], hidden_size, num_classes, dropout_p).to(device)
         if not USE_VIDEO_FOR_TESTING:
@@ -148,7 +150,7 @@ def get_model_and_dataloader(model_path, device, type):
     else:
         raise ValueError(f"Unknown architecture {type}")
     
-    return model, dataloader, scaler, num_classes
+    return model, dataloader, scaler, num_classes, use_positive_negative_labels
 
 def load_test_model(model, model_path, epoch, device):
     state_dict = torch.load(
@@ -157,7 +159,7 @@ def load_test_model(model, model_path, epoch, device):
     model.eval()
     return model
 
-def video_test(model, num_classes, cap, device):
+def video_test(model, cap, device, use_positive_negative_labels):
     model.eval()
 
     # Define the transformation
@@ -197,13 +199,14 @@ def video_test(model, num_classes, cap, device):
             # Get prediction from model
             output = model(img)
             pred = torch.argmax(output, -1).detach()
-            emotion = merged_emotion_mapping[pred.item()]
+            prob = output.softmax(dim=1).max().item()
+            emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
 
-            # Display rectagnle with emotion
+            # Display rectagnle with emotion and probability
             cv2.rectangle(frame, (x,y), (x+w, y+h), (255,0,0), 2)
-            cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)            
+            cv2.putText(frame, emotion, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1) 
+            cv2.putText(frame, f"{prob:.2f}", (x, y+h), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 1)   
 
-        
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -211,14 +214,22 @@ def video_test(model, num_classes, cap, device):
     cap.release()
     cv2.destroyAllWindows()
 
-def main(model_path, epoch):
+def main(model_path):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[0]
-    model, dataloader, scaler, num_classes = get_model_and_dataloader(model_path, device, type)
-    model = load_test_model(model, model_path, epoch, device)
 
-    if type == "VideoNet":
+    if type == "AudioNetCT" or type == "AudioNetCL":
+        print("--Test-- Audio model test")
+        epoch = AUDIO_MODEL_EPOCH
+        model, dataloader, scaler, num_classes, _ = get_model_and_dataloader(model_path, device, type)
+        model = load_test_model(model, model_path, epoch, device)
+    elif type == "VideoNet":
+        print("--Test-- Video model test")
+        epoch = VIDEO_MODEL_EPOCH
+        model, dataloader, scaler, num_classes, use_positive_negative_labels = get_model_and_dataloader(model_path, device, type)
+        model = load_test_model(model, model_path, epoch, device)
+
         if USE_VIDEO_FOR_TESTING:
             if USE_LIVE_VIDEO_FOR_TESTING:
                 print("--Test-- Live video test")
@@ -226,19 +237,17 @@ def main(model_path, epoch):
             else:
                 print("--Test-- Offline video test")
                 cap = cv2.VideoCapture(OFFLINE_VIDEO_FILE)
-            video_test(model, num_classes, cap, device)
+            video_test(model, cap, device, use_positive_negative_labels)
             return
-        
+    else:
+        raise ValueError(f"Unknown architecture {type}")
+            
     print("--Test-- Test dataset")
     test_loader = dataloader.get_test_dataloader(scaler=scaler) if type == "AudioNetCT" or type == "AudioNetCL" else dataloader.get_test_dataloader()
     criterion = torch.nn.CrossEntropyLoss()
     test_loop(model, test_loader, device, model_path, criterion, num_classes)
 
 if __name__ == "__main__":
-    # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    model_paths = PATH_MODEL_TO_TEST
-    # Specify the epoch number (e.g. 2) or "best" to get best model
-    epoch = TEST_EPOCH
-
+    model_paths = PATH_MODELS_TO_TEST
     for m in model_paths:
-        main(m, epoch)
+        main(m)
