@@ -94,6 +94,7 @@ if (is_components_initialized):
         print(type(st.session_state["processed_windows"]))
 
         df = pd.DataFrame(st.session_state["processed_windows"])
+        df.drop(columns=['logits'], inplace=True)
         chart = alt.Chart(df).mark_bar().encode(
             y=alt.Y('window_type:N', title='Window Type'),
             x=alt.X('start_time:Q', title='Time'),

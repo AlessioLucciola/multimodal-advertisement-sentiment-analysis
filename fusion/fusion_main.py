@@ -27,7 +27,6 @@ def main(audio_model_path: str,
     audio_output = audio_main(model_path=audio_model_path, epoch=audio_model_epoch, audio_file=audio_frames, live_demo=live_demo)
     # Video processing
     video_output = video_main(model_path=video_model_path, video_frames=video_frames, epoch=video_model_epoch, live_demo=live_demo)
-    video_output = get_frames_duration(video_output, live_demo)
     
     fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
     remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
@@ -38,14 +37,6 @@ def main(audio_model_path: str,
        print(f)
 
     return all_frames
-
-def get_frames_duration(video_frames, live_demo):
-    if live_demo:
-        start_time = datetime.timestamp(video_frames[0][1])
-        frame_duration = [(datetime.timestamp(frame[1]) - start_time, frame[0]) for frame in video_frames]
-    else:
-        frame_duration = video_frames
-    return frame_duration
 
 def compute_fused_predictions(audio_output, video_output, use_positive_negative_labels):
     # Compute the average of logits for each video frame within the corresponding audio window

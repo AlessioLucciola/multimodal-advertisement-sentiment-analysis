@@ -26,21 +26,64 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
     video_path = os.path.join(DEMO_DIR, "video_files", str(current_datetime_str))
     if not os.path.exists(video_path):
         os.makedirs(video_path)
+
+    # Load the face cascade
+    face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
+
+    # Define the transformation
+    val_transform = transforms.Compose([transforms.ToTensor()])
+
+    frames_extracted = 0
     
     if live_demo:
-        pass # TODO: Implement live video processing
+        video_starting_time = None
+        for i, (frame, frame_duration) in enumerate(video_frames):
+            if i == 0:
+                video_starting_time = datetime.timestamp(frame_duration)
+            frame_duration = datetime.timestamp(frame_duration) - video_starting_time
+            faces = face_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
+
+            if len(faces) == 0: # No face detected
+                faces = face_cascade.detectMultiScale(frame, scaleFactor=1.02, minNeighbors=9) # Try again with different parameters
+            if len(faces) == 0: # Still no face detected
+                continue
+            if len(faces) > 1: # More than one face detected
+                # Choose the most prominent face
+                face = max(faces, key=lambda x: x[2] * x[3])
+                faces = [face]
+
+            # Crop the face
+            for (x, y, w, h) in faces:
+                # Extract face from the frame
+                face = frame[y:y+h, x:x+w]
+
+                # Save the frame to the disk
+                cv2.imwrite(os.path.join(video_path, f"{current_datetime_str}_{frames_extracted}.jpg"), face)
+    
+                # Resize face
+                face = cv2.resize(face, IMG_SIZE)
+                img = Image.fromarray(face)
+                img = val_transform(img).unsqueeze(0)
+                img = img.to(device)
+
+                # Get prediction from model
+                output = model(img)
+
+                pred = torch.argmax(output, -1).detach()
+                emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
+
+                # Return frame duration (float in seconds) and output (numpy array)
+                video_output.append({
+                    'frame_duration': frame_duration, 
+                    'emotion_label': pred.item(),
+                    'emotion_string': emotion,
+                    'logits': torch.softmax(output, -1).cpu().detach().numpy()
+                    })
+    
+            frames_extracted += 1
     else: 
         # Offline video file
         cap = cv2.VideoCapture(video_frames)
-
-        # Define the transformation
-        val_transform = transforms.Compose([
-            transforms.ToTensor()])
-        # Load the face cascade
-        face_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
-
-        # Variable to keep track of extracted frames
-        frames_extracted = 0
 
         # Read the video file
         while cap.isOpened():
