@@ -8,7 +8,7 @@ DEMO_DIR = "demo"
 RANDOM_SEED = 42
 USE_DML = False
 USE_MPS = False
-USE_WANDB = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -22,23 +22,23 @@ NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes 
 
 # Test configurations
 PATH_MODELS_TO_TEST = [
-    "VideoNet_vit-pretrained_2024-05-04_08-36-28_BLACK_BACKGROUND_WITH_OVERLAP"
+    "VideoNet_vit-pretrained_2024-04-21_23-34-25_WHITE_BACKGROUND_WITHOUT_OVERLAP"
 ]
 # Number of epoch to test or "best" to test the best model
 AUDIO_MODEL_EPOCH = 180
 VIDEO_MODEL_EPOCH = 30
 
 # Resume training configurations
-RESUME_TRAINING = False
-PATH_MODEL_TO_RESUME = ""
-RESUME_EPOCH = ""
+RESUME_TRAINING = True
+PATH_MODEL_TO_RESUME = "VideoNet_vit-pretrained_2024-04-20_16-47-25_WHITE_BACKGROUND_WITH_OVERLAP"
+RESUME_EPOCH = 15
 
 # Train configurations
 BATCH_SIZE = 256 # Max (for ViT): 256 | Max (for CNN): 64
 N_EPOCHS = 30
 LR = 1e-3
 REG = 1e-3
-DROPOUT_P = 0.3
+DROPOUT_P = 0.2
 
 # ----------------------------
 
@@ -71,7 +71,7 @@ LSTM_NUM_LAYERS = 2
 # Dataset configurations
 VIDEO_DATASET_DIR = os.path.join(DATA_DIR, "VIDEO")   
 VIDEO_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_video_files")
-FRAMES_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_frames_files_black_background") # RAVDESS: _frames_files | _frames_files_black_background
+FRAMES_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_frames_files") # _frames_files | _frames_files_black_background
 VIDEO_METADATA_CSV = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_metadata_original.csv") 
 VIDEO_METADATA_FRAMES_CSV = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_metadata_frames.csv") 
 

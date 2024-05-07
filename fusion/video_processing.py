@@ -122,11 +122,9 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
                     img = img.to(device)
 
                     # Get prediction from mode
-                    
                     output = model(img)
                     pred = torch.argmax(output, -1).detach()
                     emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
-                    output = model(img)
 
                     # Return frame duration (float in seconds) and output (numpy array)
                     video_output.append({
