@@ -28,15 +28,30 @@ def main(audio_model_path: str,
     # Video processing
     video_output = video_main(model_path=video_model_path, video_frames=video_frames, epoch=video_model_epoch, live_demo=live_demo)
     
-    fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
-    remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
+    if len(audio_output) == 0 and len(video_output) == 0:
+        return []
 
-    all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
+    if len(video_output) == 0:
+        audio_windows_list = []
+        for audio in audio_output:
+            audio_windows_list.append({
+                "start_time": audio['longest_voice_segment_start'],
+                "end_time": audio['longest_voice_segment_end'],
+                "emotion_label": audio['emotion_label'],
+                "emotion_string": audio['emotion_string'],
+                "window_type": "audio"
+            })
+        return audio_windows_list
+    else:
+        fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
+        remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
 
-    for f in all_frames:
-       print(f)
+        all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
 
-    return all_frames
+        #for f in all_frames:
+        #   print(f)
+
+        return all_frames
 
 def compute_fused_predictions(audio_output, video_output, use_positive_negative_labels):
     # Compute the average of logits for each video frame within the corresponding audio window

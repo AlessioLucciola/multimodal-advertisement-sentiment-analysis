@@ -3,7 +3,8 @@ import pandas as pd
 
 def create_chart(windows):
     df = pd.DataFrame(windows)
-    df = df.drop(columns=['logits'])
+    if 'logits' in df.columns:
+        df = df.drop(columns=['logits'])
     chart = alt.Chart(df).mark_bar().encode(
         y=alt.Y('window_type:N', title='Window Type'),
         x=alt.X('start_time:Q', title='Time'),
