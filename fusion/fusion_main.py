@@ -28,6 +28,7 @@ def main(audio_model_path: str,
     # Video processing
     video_output = video_main(model_path=video_model_path, video_frames=video_frames, epoch=video_model_epoch, live_demo=live_demo)
     
+    
     if len(audio_output) == 0 and len(video_output) == 0:
         return []
     elif len(video_output) == 0:
@@ -101,9 +102,12 @@ def compute_fused_predictions(audio_output, video_output, use_positive_negative_
     return fused_emotions_list
 
 def compute_remaining_video_predictions(fused_emotion_list, video_output, use_positive_negative_labels):
+    # Substitute the video frames timestamps to create video windows with a duration of max 0.30 seconds
     video_output = substitute_frame_duration(video_output)
     remaining_video_frames = []
 
+    # Check if the video frames intersect with the fused emotion windows, if not add them immediatly to the remaining video frames.
+    # Otherwise discard them since they are already considered in the fused emotion windows
     for frame_video in video_output:
         intersected = False
         for frame_fused in fused_emotion_list:
@@ -120,6 +124,8 @@ def compute_remaining_video_predictions(fused_emotion_list, video_output, use_po
     for i, d in enumerate(remaining_video_frames):
         d['index'] = i
     
+    # For the remaining video frames, find the nearest fused emotion window and update the start and end time of the video frame
+    '''
     fused_emotion_list = sorted(fused_emotion_list, key=lambda x: x['start_time'])
     for i, fused_frame in enumerate(fused_emotion_list):
         nearest_video_end_frame = min(remaining_video_frames, key=lambda x: abs(x['start_time'] - fused_frame['start_time']))
@@ -128,8 +134,8 @@ def compute_remaining_video_predictions(fused_emotion_list, video_output, use_po
         nearest_video_start_frame = min(remaining_video_frames, key=lambda x: abs(x['start_time'] - fused_frame['end_time']))
         nearest_video_start_frame_index = nearest_video_start_frame['index']
         remaining_video_frames[nearest_video_start_frame_index]['start_time'] = fused_frame['end_time']
-    
-    # Discard all the video frames that have a duration of 0
+    '''
+    # Discard all the video frames that have a duration of 0 (if any)
     remaining_video_frames = [frame for frame in remaining_video_frames if frame['start_time'] != frame['end_time']]
 
     # Compute the predictions for the remaining video frames, remove the index and add the window type
@@ -141,7 +147,6 @@ def compute_remaining_video_predictions(fused_emotion_list, video_output, use_po
         frame['window_type'] = 'video' # Add the window type
     
     return remaining_video_frames
-
 
 def substitute_frame_duration(video_output):
     for i in range(len(video_output)):
