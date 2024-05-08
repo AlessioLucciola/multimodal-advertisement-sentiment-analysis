@@ -30,8 +30,7 @@ def main(audio_model_path: str,
     
     if len(audio_output) == 0 and len(video_output) == 0:
         return []
-
-    if len(video_output) == 0:
+    elif len(video_output) == 0:
         audio_windows_list = []
         for audio in audio_output:
             audio_windows_list.append({
@@ -42,6 +41,17 @@ def main(audio_model_path: str,
                 "window_type": "audio"
             })
         return audio_windows_list
+    elif len(audio_output) == 0:
+        video_windows_list = []
+        for video in video_output:
+            video_windows_list.append({
+                "start_time": video['start_time'],
+                "end_time": video['end_time'],
+                "emotion_label": video['emotion_label'],
+                "emotion_string": video['emotion_string'],
+                "window_type": "video"
+            })
+        return video_windows_list
     else:
         fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
         remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
