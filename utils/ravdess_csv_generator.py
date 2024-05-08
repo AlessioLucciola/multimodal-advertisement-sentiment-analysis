@@ -63,7 +63,7 @@ def create_ravdess_csv_from_frames(path):
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "frame": frame}
     df = pd.DataFrame(data)
-    df.to_csv(VIDEO_DATASET_DIR + "/" + "RAVDESS_metadata_frames.csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + path+".csv", index=False)
 
 def create_ravdess_csv_from_frames_w_pixels(path):
     #  Retrieve size from path and convert into a tuple like (234, 234)
@@ -104,11 +104,11 @@ def create_ravdess_csv_from_frames_w_pixels(path):
 
     data = {"file_name": file_names, "emotion": emotion, "emotion_intensity": emotion_intensity, "statement": statement, "repetition": repetition, "actor": actor, "pixels": pixels_list}
     df = pd.DataFrame(data)
-    df.to_csv(VIDEO_DATASET_DIR + "/" + "RAVDESS_metadata_frames_w_pixels.csv", index=False)
+    df.to_csv(VIDEO_DATASET_DIR + "/" + path+".csv", index=False)
 
 if __name__ == "__main__":
-    frames_path = 'RAVDESS_frames' # RAVDESS_frames
+    frames_path = 'RAVDESS_metadata_frames' # RAVDESS_metadata_frames | RAVDESS_metadata_frames_w_pixels
     # Comment / Uncomment the following lines to generate the desired CSV files
-    create_ravdess_csv_from_video()
+    # create_ravdess_csv_from_video()
     create_ravdess_csv_from_frames(frames_path)
-    # create_ravdess_csv_from_frames_w_pixels(frames_path+"_w_pixels")
+    # create_ravdess_csv_from_frames_w_pixels(frames_path)

@@ -22,18 +22,29 @@ def save_frames(filename, input_path, output_path, resolution, skip):
     # Initialize video reader
     cap = cv2.VideoCapture(input_path + '.mp4')
     haar_cascade = cv2.CascadeClassifier('./models/haarcascade/haarcascade_frontalface_default.xml')
-    frames = []
-    count = 0
+    frames_count = 0
+
+    # Retrieve frame count from cap
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+    # Retrieve video length from cap
+    video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS))
+
+    # Compute frame for each second
+    frames_per_second = total_frames // video_length
 
     try:
         # Loop through all frames
-        while True:
+        while cap.read():
             # Capture frame
             ret, frame = cap.read()
-            if (count % skip == 0 and count > 20):
+
+            # Skip the first and last second of the video
+            if frames_count >= frames_per_second and frames_count <= (total_frames - frames_per_second):
                 if not ret:
                     break
 
+                # Detect faces
                 faces = haar_cascade.detectMultiScale(frame, scaleFactor=1.12, minNeighbors=9)
                     
                 if len(faces) == 0: # No face detected
@@ -59,12 +70,12 @@ def save_frames(filename, input_path, output_path, resolution, skip):
                 for (x, y, w, h) in faces: # Save face
                     face = frame[y:y + h, x:x + w] # Crop face
 
-                face = black_background(face) # Remove white background
+                # face = black_background(face) # Remove white background
                 
                 face = cv2.resize(face, resolution) # Resize face
 
-                cv2.imwrite(output_path + f'/{filename}_{count}' + '.png', face) # Save face
-            count += 1
+                cv2.imwrite(output_path + f'/{filename}_{frames_count}' + '.png', face) # Save face
+            frames_count += 1
     finally:
         cap.release()
     return
@@ -77,7 +88,7 @@ def black_background(face):
     return face
 
 if __name__ == "__main__":
-    output_path = FRAMES_FILES_DIR+'_witouth_background'
+    output_path = FRAMES_FILES_DIR # + '_black_background'
     resolution = (224, 224)
 
     filenames = []
