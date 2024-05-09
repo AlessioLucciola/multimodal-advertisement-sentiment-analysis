@@ -214,19 +214,21 @@ def video_test(model, cap, device, use_positive_negative_labels):
     cap.release()
     cv2.destroyAllWindows()
 
-def main(model_path, model_epoch):
+def main(model_path):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[0]
 
     if type == "AudioNetCT" or type == "AudioNetCL":
         print("--Test-- Audio model test")
+        epoch = AUDIO_MODEL_EPOCH
         model, dataloader, scaler, num_classes, _ = get_model_and_dataloader(model_path, device, type)
-        model = load_test_model(model, model_path, model_epoch, device)
+        model = load_test_model(model, model_path, epoch, device)
     elif type == "VideoNet":
         print("--Test-- Video model test")
+        epoch = VIDEO_MODEL_EPOCH
         model, dataloader, scaler, num_classes, use_positive_negative_labels = get_model_and_dataloader(model_path, device, type)
-        model = load_test_model(model, model_path, model_epoch, device)
+        model = load_test_model(model, model_path, epoch, device)
 
         if USE_VIDEO_FOR_TESTING:
             if USE_LIVE_VIDEO_FOR_TESTING:
@@ -246,7 +248,7 @@ def main(model_path, model_epoch):
     test_loop(model, test_loader, device, model_path, criterion, num_classes)
 
 if __name__ == "__main__":
-    models_to_test = MODELS_TO_TEST
-    for m, e in models_to_test:
-        print(f"--Test-- Testing model {m} with epoch {e}")
-        main(m, e)
+    model_paths = PATH_MODELS_TO_TEST
+    for m in model_paths:
+        print(f"--Test-- Testing model {m}")
+        main(m)
