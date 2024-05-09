@@ -20,13 +20,12 @@ BALANCE_DATASET: bool = True # Balance the dataset if True, use the original dat
 USE_POSITIVE_NEGATIVE_LABELS: bool = True
 NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes in the dataset (default: 8)
 
-# Test configurations
-PATH_MODELS_TO_TEST = [
-    "VideoNet_vit-pretrained_2024-05-08_13-58-46"
+# Test configurations ["model_path", "model_epoch"]
+MODELS_TO_TEST = [
+    ["VideoNet_densenet121_2024-04-21_10-28-14_WHITE_BACKGROUND_WITHOUT_OVERLAP", 20],
+    ["VideoNet_densenet121_2024-04-21_02-04-34_WHITE_BACKGROUND_WITH_OVERLAP", 20],
+    ["VideoNet_vit-pretrained_2024-05-08_20-35-26_WHITE_BACKGROUND_WITHOUT_OVERLAP_NEW", 20]
 ]
-# Number of epoch to test or "best" to test the best model
-AUDIO_MODEL_EPOCH = 180
-VIDEO_MODEL_EPOCH = 30
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -69,7 +68,8 @@ LSTM_NUM_LAYERS = 2
 
 # VIDEO 
 # Dataset configurations
-VIDEO_DATASET_DIR = os.path.join(DATA_DIR, "VIDEO")   
+VIDEO_DATASET_DIR = os.path.join(DATA_DIR, "VIDEO")
+VIDEO_TEST_DIR = os.path.join(VIDEO_DATASET_DIR, "test_videos")   
 VIDEO_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_video_files")
 FRAMES_FILES_DIR = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_frames_files") # _frames_files | _frames_files_black_background
 VIDEO_METADATA_CSV = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_metadata_original.csv") 
@@ -90,9 +90,9 @@ NORMALIZE = True # Normalize the images if True, use the original images if Fals
 OVERLAP_SUBJECTS_FRAMES = True # Overlap the frames of the subjects between train, validation and test if True, False otherwise
 
 # Test configurations
-USE_VIDEO_FOR_TESTING = False # Use test video or live video if True, use test dataset if False
+USE_VIDEO_FOR_TESTING = True # Use test video or live video if True, use test dataset if False
 USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
-OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "01-01-03-02-02-02-17.mp4") # Offline video file (test_video_real)
+OFFLINE_VIDEO_FILE = os.path.join(VIDEO_TEST_DIR, "01-01-07-01-01-02-17.mp4") # Offline video file (test_video_real)
 
 # ----------------------------
 #PPG 

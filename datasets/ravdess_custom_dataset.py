@@ -9,6 +9,7 @@ from PIL import Image
 
 pd.set_option('future.no_silent_downcasting', True) # Raise errors instead of warnings for pd.to_numeric
 
+
 class ravdess_custom_dataset(Dataset):
     def __init__(self,
                  data: pd.DataFrame,
@@ -101,6 +102,9 @@ class ravdess_custom_dataset(Dataset):
         print("--Data Balance-- balance_data set to True. Training data will be balanced.")
         # Count images associated to each label
         labels_counts = Counter(data['emotion'])
+        # Display the number of frames files for each class
+        for label, count in labels_counts.items():
+            print(f"--Data Balance-- {label} class has {count} frames files.")
         max_label, max_count = max(labels_counts.items(), key=lambda x: x[1])  # Majority class
         print(f"--Data Balance-- The most common class is {max_label} with {max_count} frames files.")
         
