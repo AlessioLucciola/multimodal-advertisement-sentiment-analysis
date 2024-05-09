@@ -28,7 +28,7 @@ def main(model_path, audio_file, epoch, use_positive_negative_labels=True, live_
         output = model(waveform)
         pred = torch.argmax(output, -1).detach()
         emotion = merged_emotion_mapping[pred.item()] if use_positive_negative_labels else general_emotion_mapping[pred.item()]
-        #print(f"Emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
+        #print(f"Audio emotion detected from {longest_voice_segment_start:.2f}s to {longest_voice_segment_end:.2f}s: {emotion}")
         audio_processed_windows.append({
             "start_time": start_time,
             "end_time": end_time,
@@ -42,7 +42,7 @@ def main(model_path, audio_file, epoch, use_positive_negative_labels=True, live_
     
     audio_processed_windows = merge_overlapping_windows(audio_processed_windows)
     for emotion in audio_processed_windows:
-        print(f"Emotion detected from {emotion['longest_voice_segment_start']:.2f}s to {emotion['longest_voice_segment_end']:.2f}s: {emotion['emotion_string']}")
+        print(f"Audio emotion detected from {emotion['longest_voice_segment_start']:.2f}s to {emotion['longest_voice_segment_end']:.2f}s: {emotion['emotion_string']}")
     return audio_processed_windows
 
 def preprocess_audio_file(audio_file, scaler, live_demo, desired_length_seconds=AUDIO_DURATION, desired_sample_rate=AUDIO_SAMPLE_RATE):

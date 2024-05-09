@@ -1,10 +1,9 @@
 from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH
 from component_initializer import get_audio_stream, get_video_stream
+from demo.demo_utils import create_chart
 from st_pages import Page, show_pages
 from datetime import datetime
 import streamlit as st
-import altair as alt
-import pandas as pd
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -90,31 +89,10 @@ if (is_components_initialized):
     col2.button('Stop recording', on_click=stop_listening, key='stop_button')
 
     if "processed_windows" in st.session_state and st.session_state["processed_windows"] is not None:
-        print(st.session_state["processed_windows"])
-        print(type(st.session_state["processed_windows"]))
+        #print(st.session_state["processed_windows"])
 
-        df = pd.DataFrame(st.session_state["processed_windows"])
-        df.drop(columns=['logits'], inplace=True)
-        chart = alt.Chart(df).mark_bar().encode(
-            y=alt.Y('window_type:N', title='Window Type'),
-            x=alt.X('start_time:Q', title='Time'),
-            x2='end_time:Q',
-            color=alt.Color('emotion_string:N', legend=None),
-            tooltip=['start_time', 'end_time', 'emotion_string']
-        ).properties(
-            width=600,
-            height=200
-        ).configure_axis(
-            labelFontSize=12,
-            titleFontSize=14
-        )
-
-        legend = chart.mark_rect().encode(
-            y=alt.Y('emotion_string:N', axis=alt.Axis(orient='right')),
-            color=alt.Color('emotion_string:N', scale=alt.Scale(scheme='category20'), legend=None),
-        ).properties(
-            title='Emotion'
-        )
+        # Create the chart
+        chart, legend = create_chart(st.session_state["processed_windows"])
 
         # Render the chart using Streamlit
         st.altair_chart(chart, use_container_width=True)

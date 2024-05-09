@@ -79,7 +79,7 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
                     'emotion_string': emotion,
                     'logits': torch.softmax(output, -1).cpu().detach().numpy()
                     })
-    
+                print(frame_duration)
             frames_extracted += 1
     else: 
         # Offline video file
@@ -133,14 +133,14 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
                         'emotion_string': emotion,
                         'logits': torch.softmax(output, -1).cpu().detach().numpy()
                         })
-        
+                print(frame_duration)
                 frames_extracted += 1
 
         cap.release()
         cv2.destroyAllWindows()
 
     for emotion in video_output:
-        print(f"Emotion detected at {emotion['frame_duration']:.2f}s: {emotion['emotion_string']}")
+        print(f"Video emotion detected at {emotion['frame_duration']:.2f}s: {emotion['emotion_string']}")
 
     return video_output
 
