@@ -13,7 +13,7 @@ SAVE_RESULTS = True
 SAVE_MODELS = True
 
 # Dataset configurations
-DATASET_NAME: str = "RAVDESS" # RAVDESS | FER | ALL
+DATASET_NAME: str = "FER" # RAVDESS | FER | ALL
 DF_SPLITTING: List = [0.20, 0.50] #[train/test splitting, test/val splitting]
 LIMIT: Optional[int | str] = None # Limit the number of samples in the dataset in percentage (0.5 means use only 50% of the dataset). Use "None" instead.
 BALANCE_DATASET: bool = True # Balance the dataset if True, use the original dataset if False
@@ -22,7 +22,9 @@ NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes 
 
 # Test configurations
 PATH_MODELS_TO_TEST = [
-    "VideoNet_densenet121_2024-05-09_18-57-14_WHITE_BACKGROUND_WITHOUT_OVERLAP"
+    "VideoNet_resnet101_2024-05-10_13-42-11_FER",
+    "VideoNet_densenet121_2024-05-10_13-22-03_FER",
+    "VideoNet_vit-pretrained_2024-05-10_11-37-00_FER"
 ]
 # Number of epoch to test or "best" to test the best model
 AUDIO_MODEL_EPOCH = 180
@@ -35,7 +37,7 @@ PATH_MODEL_TO_RESUME = ""
 RESUME_EPOCH = 15
 
 # Train configurations
-BATCH_SIZE = 64 # Max (for ViT): 256 | Max (for CNN): 64
+BATCH_SIZE = 256 # Max (for ViT): 256 | Max (for CNN): 64
 N_EPOCHS = 30
 LR = 1e-3
 REG = 1e-3
@@ -78,9 +80,9 @@ VIDEO_METADATA_CSV = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_metadata_o
 VIDEO_METADATA_FRAMES_CSV = os.path.join(VIDEO_DATASET_DIR, DATASET_NAME + "_metadata_frames.csv") 
 
 # Models configurations
-MODEL_NAME = 'densenet121' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
+MODEL_NAME = 'resnet101' # Models: resnet18, resnet34, resnet50, resnet101, densenet121, custom-cnn, vit-pretrained
 HIDDEN_SIZE = [512, 256, 128]  # Hidden layers configurations
-IMG_SIZE = (224, 224) # (224, 224) for RAVDESS | (48, 48) for FER
+IMG_SIZE = (48, 48) # (224, 224) for RAVDESS | (48, 48) for FER
 NUM_WORKERS = os.cpu_count() # Number of workers for dataloader, set to 0 if you want to run the code in a single process
 
 # Train / Validation configurations
@@ -94,7 +96,7 @@ OVERLAP_SUBJECTS_FRAMES = False # Overlap the frames of the subjects between tra
 # Test configurations
 USE_VIDEO_FOR_TESTING = True # Use test video or live video if True, use test dataset if False
 USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
-OFFLINE_VIDEO_FILE = os.path.join(VIDEO_TEST_DIR, "01-01-07-01-01-02-17.mp4") # Offline video file (test_video_real)
+OFFLINE_VIDEO_FILE = os.path.join(VIDEO_TEST_DIR, "test_video_real.mp4") # Offline video file (test_video_real)
 
 # ----------------------------
 #PPG 

@@ -3,6 +3,7 @@ from config import *
 from torchmetrics import Accuracy, Recall, Precision, F1Score, AUROC
 from dataloaders.voice_custom_dataloader import RAVDESSDataLoader
 from dataloaders.ravdess_custom_dataloader import ravdess_custom_dataloader
+from dataloaders.fer_custom_dataloader import fer_custom_dataloader
 from models.AudioNetCT import AudioNet_CNN_Transformers as AudioNetCT
 from models.AudioNetCL import AudioNet_CNN_LSTM as AudioNetCL
 from tqdm import tqdm
@@ -14,6 +15,8 @@ import cv2
 from PIL import Image
 from shared.constants import merged_emotion_mapping, general_emotion_mapping
 from utils.video_utils import select_model
+
+dataset_name = ""
 
 def test_loop(test_model, test_loader, device, model_path, criterion, num_classes):
     test_model.eval()
@@ -131,22 +134,39 @@ def get_model_and_dataloader(model_path, device, type):
         use_positive_negative_labels = USE_POSITIVE_NEGATIVE_LABELS if configurations is None else configurations["use_positive_negative_labels"]
         overlap_subjects_frames = OVERLAP_SUBJECTS_FRAMES if configurations is None else configurations["overlap_subjects_frames"]
         use_positive_negative_labels = USE_POSITIVE_NEGATIVE_LABELS if configurations is None else configurations["use_positive_negative_labels"]
+        dataset_name = DATASET_NAME if configurations is None else configurations["dataset"]
+
 
         model = select_model(model_path.split('_')[1], hidden_size, num_classes, dropout_p).to(device)
         if not USE_VIDEO_FOR_TESTING:
-            dataloader = ravdess_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
-                                   csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
-                                   batch_size=batch_size,
-                                   frames_dir=FRAMES_FILES_DIR,
-                                   seed=RANDOM_SEED,
-                                   limit=LIMIT,
-                                   overlap_subjects_frames=overlap_subjects_frames,
-                                   use_positive_negative_labels=use_positive_negative_labels,
-                                   preload_frames=PRELOAD_FRAMES,
-                                   apply_transformations=APPLY_TRANSFORMATIONS,
-                                   balance_dataset=BALANCE_DATASET,
-                                   normalize=NORMALIZE,
-                                   )
+            if dataset_name == 'RAVDESS':
+                dataloader = ravdess_custom_dataloader(csv_original_files=VIDEO_METADATA_CSV,
+                                    csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
+                                    batch_size=batch_size,
+                                    frames_dir=FRAMES_FILES_DIR,
+                                    seed=RANDOM_SEED,
+                                    limit=LIMIT,
+                                    overlap_subjects_frames=overlap_subjects_frames,
+                                    use_positive_negative_labels=use_positive_negative_labels,
+                                    preload_frames=PRELOAD_FRAMES,
+                                    apply_transformations=APPLY_TRANSFORMATIONS,
+                                    balance_dataset=BALANCE_DATASET,
+                                    normalize=NORMALIZE,
+                                    )
+            elif dataset_name == 'FER':
+                dataloader = fer_custom_dataloader(csv_frames_files=VIDEO_METADATA_FRAMES_CSV,
+                                    batch_size=BATCH_SIZE,
+                                    frames_dir=FRAMES_FILES_DIR,
+                                    seed=RANDOM_SEED,
+                                    limit=LIMIT,
+                                    use_positive_negative_labels=USE_POSITIVE_NEGATIVE_LABELS,
+                                    preload_frames=PRELOAD_FRAMES,
+                                    apply_transformations=APPLY_TRANSFORMATIONS,
+                                    balance_dataset=BALANCE_DATASET,
+                                    normalize=NORMALIZE,
+                                    )
+            else:
+                raise ValueError("dataset_name must be 'RAVDESS' or 'FER'")
     else:
         raise ValueError(f"Unknown architecture {type}")
     
@@ -189,11 +209,16 @@ def video_test(model, cap, device, use_positive_negative_labels):
         for (x, y, w, h) in faces:
             # Extract face from the frame
             face = frame[y:y+h, x:x+w]
+
+            if dataset_name == 'FER':
+                face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY) # Convert face to grayscale (FER)
   
             # Resize face
             face = cv2.resize(face, IMG_SIZE)
             img = Image.fromarray(face)
             img = val_transform(img).unsqueeze(0)
+            if dataset_name == 'FER':
+                img = img.repeat(1, 3, 1, 1)  # Repeat grayscale image to have 3 channels (FER)
             img = img.to(device)
 
             # Get prediction from model

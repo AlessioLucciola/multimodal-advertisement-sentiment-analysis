@@ -138,6 +138,26 @@ mapping_to_positive_negative = {
     7: 1 # surprise -> positive
 }
 
+fer_emotion_mapping = {
+    0: 'Angry',
+    1: 'Disgust',
+    2: 'Fear',
+    3: 'Happy',
+    4: 'Sad',
+    5: 'Surprise',
+    6: 'Neutral'
+}
+
+fer_mapping_to_positive_negative = {
+    0: 2, # Angry -> negative
+    1: 2, # Disgust -> negative
+    2: 2, # Fear -> negative
+    3: 1, # Happy -> positive
+    4: 2, # Sad -> negative
+    5: 1, # Surprise -> positive
+    6: 0 # Neutral -> neutral
+}
+
 merged_emotion_mapping = {
     0: "neutral",
     1: "positive",
