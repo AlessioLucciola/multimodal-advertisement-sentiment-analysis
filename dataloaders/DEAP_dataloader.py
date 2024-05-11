@@ -25,9 +25,18 @@ class DEAPDataLoader(DataLoader):
         self.data = self.slice_data(self.data)
         self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
 
-        #normalize according to CEAP std and mean
+        #scale and normalize according to CEAP std and mean
         print(f"non-normalized data: {self.data}")
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: (torch.tensor(x) - CEAP_MEAN) / CEAP_STD)
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: np.array(x))
+        cat_data = np.concatenate(self.data["ppg"], axis=0)
+        mean, std = cat_data.mean(), cat_data.std()
+        print(f"Before DEAP mean + std: {mean, std}")
+        self.data["ppg"] = CEAP_MEAN + (self.data["ppg"] - mean) * (CEAP_STD / std)
+        # self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) / CEAP_STD
+        print(f"Normalized data: {self.data}")
+        cat_data = np.concatenate(self.data["ppg"], axis=0)
+        mean, std = cat_data.mean(), cat_data.std()
+        print(f"Normalized DEAP mean + std: {mean, std}")
         print(f"normalized data: {self.data}")
 
         tqdm.pandas()
@@ -63,8 +72,7 @@ class DEAPDataLoader(DataLoader):
                 subject = pickle.load(f, encoding='latin1')
                 for trial_i in range(40):
                     # NOTE: valence is in range [1,9]
-                    # 1 is arousal
-                    valence: np.ndarray = subject["labels"][trial_i][0]
+                    valence: np.ndarray = subject["labels"][trial_i][0] #index 0 is valence, 1 arousal
                     data: np.ndarray = subject["data"][trial_i][ppg_channel]
                     df.append({"ppg": data, "valence": valence})
         return pd.DataFrame(df)

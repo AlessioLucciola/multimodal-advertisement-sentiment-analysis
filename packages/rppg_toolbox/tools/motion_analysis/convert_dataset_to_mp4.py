@@ -15,26 +15,31 @@ from scipy import io as scio
 def read_video(video_file):
     """Reads a video file, returns frames(T, H, W, 3) """
     VidObj = cv2.VideoCapture(video_file)
+    fps = VidObj.get(cv2.CAP_PROP_FPS)
     VidObj.set(cv2.CAP_PROP_POS_MSEC, 0)
     success, frame = VidObj.read()
     frames = None
-    # TODO: if you want to use this, you need to match the sample rate after or something
     frames_step = 1
     i = 0
-    max_frames = 1000
+    max_frames = 500
+    fps /= frames_step
+    curr_frame = 0
     while success:
         i += 1
+        if i % frames_step != 0:
+            continue
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
         if frames is None:
             frames = np.expand_dims(np.empty_like(frame), 0)
             frames = np.repeat(frames, max_frames, axis=0)
             print(f"Frames initialization array shape: {frames.shape}")
-        frames[i] = frame
+        frames[curr_frame] = frame
         success, frame = VidObj.read()
-        if i == max_frames-1:
+        curr_frame += 1
+        if curr_frame == max_frames-1:
             break
-    print(f"read video completed!")
-    return frames
+    print(f"read video completed! {fps} fps")
+    return frames, fps
 
 
 

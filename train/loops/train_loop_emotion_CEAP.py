@@ -1,4 +1,4 @@
-from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, SAVE_MODELS train_loo
+from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, SAVE_MODELS 
 from utils.utils import save_results, save_configurations, save_model
 from torchmetrics import Accuracy, Recall
 from datetime import datetime
@@ -155,6 +155,8 @@ def train_eval_loop(device,
             print(f"Best model saved (accuracy: {val_accuracy_metric.compute()}, previous: {best_accuracy}")
             best_accuracy = val_accuracy_metric.compute()
             best_model = copy.deepcopy(model)
+            if SAVE_MODELS:
+              save_model(data_name, model, epoch)
         current_results = {
             'epoch': epoch+1,
             'training_loss': torch.tensor(losses).mean().item(),
@@ -166,7 +168,5 @@ def train_eval_loop(device,
         }
         if SAVE_RESULTS:
             save_results(data_name, current_results)
-        if SAVE_MODELS:
-            save_model(data_name, model, epoch)
         if epoch == config["epochs"]-1 and SAVE_MODELS:
             save_model(data_name, best_model, epoch=None, is_best=True)

@@ -13,6 +13,7 @@ from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
 from packages.rppg_toolbox.main import run_single
 from utils.ppg_utils import wavelet_transform
 from shared.constants import CEAP_MEAN, CEAP_STD
+from packages.rppg_toolbox.utils.plot import plot_signal
 
 
 def test_loop(model, test_loader, device, model_path, criterion, num_classes):
@@ -79,6 +80,7 @@ def test_loop_deap(model, device, model_path, num_classes):
             target = target.float().to(device)
 
             src = src.permute(1, 0, 2)
+            target = target.permute(1, 0)
             
             # print(f"target shape is: {target.shape}")
             output = model(src, target, 0)  # turn off teacher forcing
@@ -97,7 +99,7 @@ def test_loop_deap(model, device, model_path, num_classes):
             # print(f"argmaxed output_mean shape: {preds.shape}")
             accuracy_metric.update(preds, target)
             recall_metric.update(preds, target)
-            pbar.set_postfix_str(f"Test | Loss: {torch.tensor(losses).mean():.2f} | Acc: {(accuracy_metric.compute() * 100):.2f} | Rec: {(recall_metric.compute() * 100):.2f}")
+            # pbar.set_postfix_str(f"Test | Loss: {torch.tensor(losses).mean():.2f} | Acc: {(accuracy_metric.compute() * 100):.2f} | Rec: {(recall_metric.compute() * 100):.2f}")
 
         print(
             f"Test | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(accuracy_metric.compute() * 100):.4f} | Recall: {(recall_metric.compute() * 100):.4f}"
@@ -165,7 +167,6 @@ def get_model_and_dataloader(model_path, device):
     )
 
     model = EmotionNet(encoder, decoder).to(device)
-
     return model, num_classes
 
 
@@ -179,54 +180,26 @@ def load_test_model(model, model_path, epoch, device):
     return model
 
 
-def test_from_video():
+def test_from_video(model: EmotionNet):
     print("Extracting ppg")
-    ppgs = run_single()
-
-    input_dim = LENGTH // WAVELET_STEP if WT else 1
-    output_dim = 3
-    encoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
-    decoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
-    hidden_dim = LSTM_HIDDEN
-    n_layers = LSTM_LAYERS
-    encoder_dropout = DROPOUT_P
-    decoder_dropout = DROPOUT_P
-
-    encoder = Encoder(
-        input_dim,
-        encoder_embedding_dim,
-        hidden_dim,
-        n_layers,
-        encoder_dropout,
-    )
-
-    decoder = Decoder(
-        output_dim,
-        decoder_embedding_dim,
-        hidden_dim,
-        n_layers,
-        decoder_dropout,
-    )
     device = select_device()
-    model = EmotionNet(encoder, decoder).to(device)
-    model.eval()
     preds = torch.tensor([]).to(device)
-    ppgs = ppgs * 1000
-    print(f"non normalized ppgs: {ppgs}")
-    ppgs = (ppgs - CEAP_MEAN) / (CEAP_STD)
-    print(f"standardized ppgs: {ppgs} with shape {ppgs.shape}")
+    ppgs = run_single()
+    plot_signal(ppgs.view(-1), f"ppgs")
+    ppgs = CEAP_MEAN + (ppgs - ppgs.view(-1).mean()) * (CEAP_STD / ppgs.view(-1).std())
+    plot_signal(ppgs.view(-1), f"normalized_ppgs")
+    print(f"ppgs mean and std: {ppgs.view(-1).mean(), ppgs.view(-1).std()}")
     segment_preds = []
-    for ppg in tqdm(ppgs, desc="Inference..."):
+    for i, ppg in tqdm(enumerate(ppgs), desc="Inference..."):
         ppg = wavelet_transform(ppg.squeeze())
         ppg = torch.from_numpy(ppg).unsqueeze(1).to(device)
         print(f"input ppg shape {ppg.shape}")
+        #TODO: see what value to insert here as a starting token since it changes the prediction
         trg = torch.tensor([0.0]).to(device)
-        # preds = torch.cat(
-        #     (preds, model(src=ppg, trg=trg, teacher_forcing_ratio=0)), dim=0
-        # )
         preds = model(src=ppg, trg=trg, teacher_forcing_ratio=0)
         print(f"preds shape: {preds.shape}")
         preds = preds[1:]
+        # preds = preds.mean(dim=0)
         preds = preds[-1:]
         print(f"mean preds is: {preds}")
         # preds_softmax = preds.softmax(dim=-1)
@@ -261,12 +234,13 @@ def main(model_path, epoch):
     # criterion = torch.nn.CrossEntropyLoss()
     # test_loop(model, test_loader, device, model_path, criterion, num_classes)
     test_loop_deap(model, device, model_path, num_classes)
+    # test_from_video(model)
 
 
 if __name__ == "__main__":
-    # # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
-    # model_path = "EmotionNet - LSTM Seq2Seq_2024-05-01_13-11-39"
-    # # Specify the epoch number (e.g. 2) or "best" to get best model
-    # epoch = "204"
-    # main(model_path, epoch)
-    test_from_video()
+    # Name of the sub-folder into "results" folder in which to find the model to test (e.g. "resnet34_2023-12-10_12-29-49")
+    model_path = "EmotionNet - LSTM Seq2Seq_2024-05-01_13-11-39"
+    epoch = "204"
+    # model_path = "EmotionNet - LSTM Seq2Seq_2024-05-11_18-10-59"
+    # epoch = "19"
+    main(model_path, epoch)

@@ -1,6 +1,9 @@
 # PPG constants
-CEAP_MEAN = -0.05
-CEAP_STD = 40.14
+# CEAP_MEAN = -0.05
+# CEAP_STD = 40.14
+
+CEAP_MEAN = 0.546
+CEAP_STD = 0.189
 
 # Video models
 video_cnn_models_list = [
