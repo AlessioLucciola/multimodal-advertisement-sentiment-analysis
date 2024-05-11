@@ -24,11 +24,14 @@ class DEAPDataLoader(DataLoader):
         self.data = self.load_data()
         self.data = self.slice_data(self.data)
         self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
-        tqdm.pandas()
-        self.data["ppg"] = self.data["ppg"].progress_apply(wavelet_transform)
 
         #normalize according to CEAP std and mean
+        print(f"non-normalized data: {self.data}")
         self.data["ppg"] = self.data["ppg"].apply(lambda x: (torch.tensor(x) - CEAP_MEAN) / CEAP_STD)
+        print(f"normalized data: {self.data}")
+
+        tqdm.pandas()
+        self.data["ppg"] = self.data["ppg"].progress_apply(wavelet_transform)
         print(self.data)
         label_counts = self.data['valence'].value_counts()
         print(f"label counts is: {label_counts}")
@@ -76,7 +79,8 @@ class DEAPDataLoader(DataLoader):
                 ppg_segment = ppg[i:i+length]
                 new_row = {
                         "ppg": ppg_segment ,
-                        "valence": label}
+                        "valence": label,
+                        "segment": i}
                 new_df.append(new_row)
         new_df = pd.DataFrame(new_df)
         return new_df

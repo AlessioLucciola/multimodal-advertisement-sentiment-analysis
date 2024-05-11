@@ -79,16 +79,15 @@ def test_loop_deap(model, device, model_path, num_classes):
             target = target.float().to(device)
 
             src = src.permute(1, 0, 2)
-
-            # print(f"target shape is: {target.shape}")
             
+            # print(f"target shape is: {target.shape}")
             output = model(src, target, 0)  # turn off teacher forcing
             output = output[1:]
 
             # print(f"output shape is: {output.shape}")
             # Get the mean emotion between all the timesteps
-            # output_mean = output.mean(dim=0)
-            output_mean = output[-1, :]
+            output_mean = output.mean(dim=0)
+            # output_mean = output[-1, :]
             # print(f"output mean shape is: {output_mean.shape}")
 
             loss = criterion(output_mean, target.long())
@@ -212,12 +211,15 @@ def test_from_video():
     model = EmotionNet(encoder, decoder).to(device)
     model.eval()
     preds = torch.tensor([]).to(device)
-    ppgs = (ppgs - CEAP_MEAN) / CEAP_STD
+    ppgs = ppgs * 1000
+    print(f"non normalized ppgs: {ppgs}")
+    ppgs = (ppgs - CEAP_MEAN) / (CEAP_STD)
+    print(f"standardized ppgs: {ppgs} with shape {ppgs.shape}")
     segment_preds = []
     for ppg in tqdm(ppgs, desc="Inference..."):
         ppg = wavelet_transform(ppg.squeeze())
         ppg = torch.from_numpy(ppg).unsqueeze(1).to(device)
-        print(f"ppg shape is: {ppg.shape}")
+        print(f"input ppg shape {ppg.shape}")
         trg = torch.tensor([0.0]).to(device)
         # preds = torch.cat(
         #     (preds, model(src=ppg, trg=trg, teacher_forcing_ratio=0)), dim=0
@@ -225,20 +227,26 @@ def test_from_video():
         preds = model(src=ppg, trg=trg, teacher_forcing_ratio=0)
         print(f"preds shape: {preds.shape}")
         preds = preds[1:]
-        preds = preds.mean(dim=0)
-        preds_softmax = preds.softmax(dim=-1)
-        # preds = preds.argmax(dim=-1)
-        # # preds = preds[-1,:].argmax(dim=-1)
-        # print(f"avg emotion is  {preds}")
-        # return preds
-        segment_preds.append(preds_softmax)
+        preds = preds[-1:]
+        print(f"mean preds is: {preds}")
+        # preds_softmax = preds.softmax(dim=-1)
+        segment_preds.append(preds)
     print(f"segment_preds are: {[segment.tolist() for segment in segment_preds]}")
     print(f"emotions are: {[segment.argmax(-1).item() for segment in segment_preds]}")
     return segment_preds
 
+def test_from_deap_videos():
+    """
+    Given the DEAP videos from which the PPG signal is extracted, we extract
+    the PPG with the rppg_toolbox library and compare it to the ground truth
+    signal to have an rPPG evaluation.
+    """
+    deap_videos_dir = os.path.join(DATA_DIR, "DEAP", "videos")
+    for v_file in os.listdir(deap_videos_dir):
+        if not v_file.endswith(".avi"): continue
+        #TODO: implement
+         
 
-
-def get_rppg():
     pass
 
 
@@ -261,5 +269,4 @@ if __name__ == "__main__":
     # # Specify the epoch number (e.g. 2) or "best" to get best model
     # epoch = "204"
     # main(model_path, epoch)
-
     test_from_video()

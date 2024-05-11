@@ -46,8 +46,8 @@ class CustomTrainer(BaseTrainer):
         
         predictions = []
         for chunk in frames:
-            print(f"chunk shape: {chunk.shape}")
             chunk = chunk.unsqueeze(0)
+            print(f"chunk shape: {chunk.shape}")
             predictions.extend(self.test_step(chunk))
         predictions = torch.cat(predictions, dim=-1).T
         print(f"predictions are: {predictions} with shape: {predictions.shape}")
@@ -77,6 +77,7 @@ class CustomTrainer(BaseTrainer):
             predictions = []
             for _, test_batch in enumerate(tqdm(data_loader["test"], ncols=80)):
                 data_test = test_batch[0].to(self.config.DEVICE) 
+                print(f"data test shape is: {data_test.shape}")
                 predictions.extend(self.test_step(frames=data_test))
 
         predictions = torch.cat(predictions, dim=-1)

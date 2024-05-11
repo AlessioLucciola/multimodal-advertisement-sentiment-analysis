@@ -40,7 +40,7 @@ TEST:
       CROP_FACE:
         DO_CROP_FACE: True
         BACKEND: 'RF'    # HC for Haar Cascade, RF for RetinaFace
-        USE_LARGE_FACE_BOX: False
+        USE_LARGE_FACE_BOX: True
         LARGE_BOX_COEF: 1.5
         DETECTION:
           DO_DYNAMIC_DETECTION: True #performs detection each DYNAMIC_DETECTION_FREQUENCY frames

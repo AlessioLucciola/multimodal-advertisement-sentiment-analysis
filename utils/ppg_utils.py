@@ -5,8 +5,6 @@ import pandas as pd
 from biosppy.signals import bvp
 from config import WAVELET_STEP
 
-
-
 def statistical_features(x: torch.Tensor) -> torch.Tensor:
     mean = torch.mean(x, dim=1).unsqueeze(0)
     std = torch.std(x, dim=1).unsqueeze(0)
@@ -17,15 +15,14 @@ def statistical_features(x: torch.Tensor) -> torch.Tensor:
     hr = hr.mean()
     return torch.cat((mean, std, skewness, kurtosis, onsets, hr), dim=0)
 
-
 def wavelet_transform(x: torch.Tensor | np.ndarray):
     if isinstance(x, torch.Tensor):
         x = x.detach().numpy()
+    # return np.zeros((LENGTH // WAVELET_STEP,  LENGTH)).T
     scales = np.arange(1, len(x) + 1, WAVELET_STEP)
     coef, _ = pywt.cwt(x, scales, "morl")
     # print(f"coef shape is {coef.shape}")
     return coef.T
-
 
 def stft(x: np.ndarray):
     if isinstance(x, list):
@@ -40,14 +37,7 @@ def stft(x: np.ndarray):
                      return_complex=True,)
                      # window=window, 
                      # win_length=win_length)
-    real = res.real
-    # magnitude = torch.abs(res)
-    # phase = torch.atan2(res.imag, res.real)
-    # out = torch.stack((real, magnitude, phase), dim=0)
-    # print(f"out shape: {out.shape}")
-    # print(f"real part shape is {real.shape}")
     out = res.real
-    # print(f"out shape is: {out.shape}")
     return out
 
 def onsets_and_hr(x):
