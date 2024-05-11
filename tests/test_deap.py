@@ -80,7 +80,6 @@ def test_loop_deap(model, device, model_path, num_classes):
             target = target.float().to(device)
 
             src = src.permute(1, 0, 2)
-            target = target.permute(1, 0)
             
             # print(f"target shape is: {target.shape}")
             output = model(src, target, 0)  # turn off teacher forcing
