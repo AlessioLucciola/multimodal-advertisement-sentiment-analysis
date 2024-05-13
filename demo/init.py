@@ -96,6 +96,13 @@ if (is_components_initialized):
 
         # Render the chart using Streamlit
         st.altair_chart(chart, use_container_width=True)
+        st.write("Legend:")
+        st.write(
+            """ 
+                Neutral: Grey,
+                Positive: Blue,
+                Negative: Orange
+            """)
         
         st.text("Processed windows debug:")
         st.write(st.session_state["processed_windows"])

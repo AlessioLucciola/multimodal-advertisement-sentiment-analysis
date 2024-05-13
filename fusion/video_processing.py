@@ -140,8 +140,8 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
         cap.release()
         cv2.destroyAllWindows()
 
-    for emotion in video_output:
-        print(f"Video emotion detected at {emotion['frame_duration']:.2f}s: {emotion['emotion_string']}")
+    #for emotion in video_output:
+    #    print(f"Video emotion detected at {emotion['frame_duration']:.2f}s: {emotion['emotion_string']}")
 
     return video_output
 

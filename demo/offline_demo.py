@@ -33,7 +33,13 @@ if uploaded_file is not None:
 
         # Render the chart using Streamlit
         st.altair_chart(chart, use_container_width=True)
-        
+        st.write("Legend:")
+        st.write(
+            """ 
+                Neutral: Grey,
+                Positive: Blue,
+                Negative: Orange
+            """)
 
         st.text("Processed windows debug:")
         st.write(processed_windows)
