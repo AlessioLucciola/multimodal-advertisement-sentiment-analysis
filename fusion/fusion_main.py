@@ -43,16 +43,7 @@ def main(audio_model_path: str,
             })
         return audio_windows_list
     elif len(audio_output) == 0:
-        video_windows_list = []
-        for video in video_output:
-            video_windows_list.append({
-                "start_time": video['start_time'],
-                "end_time": video['end_time'],
-                "emotion_label": video['emotion_label'],
-                "emotion_string": video['emotion_string'],
-                "window_type": "video"
-            })
-        return video_windows_list
+        return create_video_windows(video_output)
     else:
         fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
         remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
@@ -161,6 +152,23 @@ def substitute_frame_duration(video_output):
 
 def compute_softmax(logits):
     return np.exp(logits) / np.sum(np.exp(logits), axis=0)
+
+def create_video_windows(video_output):
+    video_windows_list = []
+    for i, frame in enumerate(video_output):
+        if i == 0:
+            start_time = 0.0
+        else:
+            start_time = video_windows_list[i - 1]['end_time']
+        end_time = frame['frame_duration']
+        video_windows_list.append({
+            "start_time": start_time,
+            "end_time": end_time,
+            "emotion_label": frame['emotion_label'],
+            "emotion_string": frame['emotion_string'],
+            "window_type": "video"
+        })
+    return video_windows_list
 
 if __name__ == "__main__":
     audio_model_epoch = 215
