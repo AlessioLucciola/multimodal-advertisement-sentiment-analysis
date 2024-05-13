@@ -8,7 +8,7 @@ import os
 import yaml
 from yacs.config import CfgNode as CN
 
-DUMP_FRAMES_PATH = "temp_frames"
+DUMP_FRAMES_PATH = "temp/temp_frames"
 _C = CN()
 # Base config files
 _C.BASE = ['']

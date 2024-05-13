@@ -102,11 +102,12 @@ def extract_ppg_from_video(vid_path: str | None = None) -> torch.Tensor:
     model_trainer = CustomTrainer(config)
     if vid_path is None: 
         vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"
-    split_paths, fps = read_video(vid_path)
+    video_data = read_video(vid_path)
     bvps = torch.tensor([])
-    for split_path in split_paths:
-        print(f"Extracting ppg from split at: {split_path}")
+    for split_path, split_timestamps in zip(video_data["splits_paths"], video_data["splits_timestamps"]):
+        print(f"Extracting ppg from split at: {split_path}.")
         raw_frames = np.load(split_path)
+        assert len(split_timestamps) == raw_frames.shape[0], f"ERROR: timestamps and frames must be of the same length | timestamp of length {len(split_timestamps)}, split of length {raw_frames.shape[0]}"
         frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
         # print(f"preprocessed frames shape: {frames.shape}")
         frames = preprocess.parse_frames(frames, data_format="NDCHW")

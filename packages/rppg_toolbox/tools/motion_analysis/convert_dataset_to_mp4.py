@@ -10,13 +10,13 @@ import cv2
 import numpy as np
 from scipy import io as scio
 import shutil
-from typing import List, Tuple
+from typing import Dict, Any
 from packages.rppg_toolbox.config import DUMP_FRAMES_PATH
 
 # Functions for reading rPPG media of interest and saving frames
 def read_video(video_file: str,
                max_frames_split: int = 500, 
-               desired_fr: int = 30) -> Tuple[List[str], float]:
+               desired_fr: int = 30) -> Dict[str, Any]:
     """Reads a video file, returns frames(T, H, W, 3) """
     if os.path.exists(DUMP_FRAMES_PATH):
         print(f"temp_frames already found, removing it!")
@@ -26,28 +26,33 @@ def read_video(video_file: str,
     VidObj = cv2.VideoCapture(video_file)
     fps = VidObj.get(cv2.CAP_PROP_FPS)
     VidObj.set(cv2.CAP_PROP_POS_MSEC, 0)
-    success, frame = VidObj.read()
     frames = None
     frames_step = round(fps) // desired_fr
     print(f"frames step for {fps} and {desired_fr}: {frames_step}")
+    success, frame = VidObj.read()
     i = 0
-    fps /= frames_step
     curr_frame = 0
     curr_split = 0
     splits_paths = []
+    splits_timestamps = []
+    curr_timestamps = [] 
     while success:
         i += 1
         if i % frames_step != 0:
             continue
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
+
         if frames is None:
             frames = np.expand_dims(np.empty_like(frame), 0)
             frames = np.repeat(frames, max_frames_split, axis=0)
             print(f"Frames initialization array shape: {frames.shape}")
+
+        timestamp = VidObj.get(cv2.CAP_PROP_POS_FRAMES) / fps
+        curr_timestamps.append(timestamp)
         frames[curr_frame] = frame
         success, frame = VidObj.read()
         curr_frame += 1
-        if curr_frame == max_frames_split-1:
+        if curr_frame == max_frames_split:
             print(f"Split {curr_split} saved!")
             curr_frame = 0
             split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
@@ -55,8 +60,24 @@ def read_video(video_file: str,
             curr_split += 1
             frames = None
             splits_paths.append(split_path)
+            splits_timestamps.append(curr_timestamps)
+            curr_timestamps = []
+        
+    #The last split ended before max_frames_split
+    if curr_frame != 0:
+        print(f"Split {curr_split} saved!")
+        frames = frames[len(curr_timestamps):]
+        split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
+        np.save(split_path, frames)
+        splits_paths.append(split_path)
+        splits_timestamps.append(curr_timestamps)
+
     print(f"read video completed! \n FPS: {fps} | Num Splits: {curr_split}")
-    return splits_paths, fps / frames_step
+    print(f"timestamps lengths: {[len(ts) for ts in splits_timestamps]}")
+
+    return {"splits_paths": splits_paths,
+            "splits_timestamps": splits_timestamps,
+            "fps": fps / frames_step}
 
 
 def read_png_frames(video_file):
