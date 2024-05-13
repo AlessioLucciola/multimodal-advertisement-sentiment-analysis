@@ -6,8 +6,6 @@ import torch
 import torch.nn as nn
 import os
 import json
-from typing import Literal
-from dataloaders.CEAP_dataloader import CEAPDataLoader
 from dataloaders.DEAP_dataloader import DEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
 from packages.rppg_toolbox.main import run_single
@@ -80,6 +78,7 @@ def test_loop_deap(model, device, model_path, num_classes):
             target = target.float().to(device)
 
             src = src.permute(1, 0, 2)
+
             
             # print(f"target shape is: {target.shape}")
             output = model(src, target, 0)  # turn off teacher forcing
@@ -98,22 +97,11 @@ def test_loop_deap(model, device, model_path, num_classes):
             # print(f"argmaxed output_mean shape: {preds.shape}")
             accuracy_metric.update(preds, target)
             recall_metric.update(preds, target)
-            # pbar.set_postfix_str(f"Test | Loss: {torch.tensor(losses).mean():.2f} | Acc: {(accuracy_metric.compute() * 100):.2f} | Rec: {(recall_metric.compute() * 100):.2f}")
+            pbar.set_postfix_str(f"Test | Loss: {torch.tensor(losses).mean():.2f} | Acc: {(accuracy_metric.compute() * 100):.2f} | Rec: {(recall_metric.compute() * 100):.2f}")
 
         print(
             f"Test | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(accuracy_metric.compute() * 100):.4f} | Recall: {(recall_metric.compute() * 100):.4f}"
         )
-
-
-
-def get_dataloader(which_one: Literal["CEAP", "DEAP"]):
-    if which_one == "CEAP":
-        dataloader = CEAPDataLoader(batch_size=32)
-    elif which_one == "DEAP":
-        dataloader = DEAPDataLoader(batch_size=32)
-    else:
-        raise ValueError(f"Dataloder {which_one} does't exist")
-    return dataloader
 
 
 def get_model_and_dataloader(model_path, device):

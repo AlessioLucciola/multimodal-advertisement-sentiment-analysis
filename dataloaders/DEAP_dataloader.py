@@ -44,15 +44,16 @@ class DEAPDataLoader(DataLoader):
         print(self.data)
         label_counts = self.data['valence'].value_counts()
         print(f"label counts is: {label_counts}")
+        
+        #TODO: see if this undersampling is needed
 
-        target_count = label_counts.min()
+        # target_count = label_counts.min()
+        # # Sample function to get balanced sample from each group
+        # def balanced_sample(group):
+        #   return group.sample(target_count, random_state=RANDOM_SEED)
+        # # Apply sample function to each group in the DataFrame 
+        # self.data = self.data.groupby('valence').apply(balanced_sample)
 
-        # Sample function to get balanced sample from each group
-        def balanced_sample(group):
-          return group.sample(target_count, random_state=RANDOM_SEED)
-
-        # Apply sample function to each group in the DataFrame 
-        self.data = self.data.groupby('valence').apply(balanced_sample)
         label_counts = self.data['valence'].value_counts()
         print(f"label counts after balance is: {label_counts}")
 
@@ -108,7 +109,7 @@ class DEAPDataLoader(DataLoader):
 
     def get_test_dataloader(self):
         dataset = DEAPDataset(self.data)
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
 
 if __name__ == "__main__":
