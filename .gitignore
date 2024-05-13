@@ -37,3 +37,4 @@ packages/rppg_toolbox/test.yaml
 packages/rppg_toolbox/data/**
 
 temp_video.mp4
+**/temp_frames/**

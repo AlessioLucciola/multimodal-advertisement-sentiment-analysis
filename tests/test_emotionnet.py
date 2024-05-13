@@ -7,7 +7,7 @@ import os
 import json
 from dataloaders.CEAP_dataloader import CEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
-from packages.rppg_toolbox.main import run_single
+from packages.rppg_toolbox.main import extract_ppg_from_video
 from utils.ppg_utils import wavelet_transform
 from shared.constants import CEAP_MEAN, CEAP_STD
 
@@ -111,7 +111,7 @@ def load_test_model(model, model_path, epoch, device):
 
 def test_from_video():
     print("Extracting ppg")
-    ppgs = run_single()
+    ppgs = extract_ppg_from_video()
 
     input_dim = LENGTH // WAVELET_STEP if WT else 1
     output_dim = 3

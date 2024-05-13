@@ -155,7 +155,6 @@ def get_bvp(signal, fs=35, diff_flag=True, bandpass=True):
     else:
         signal = _detrend(signal, 100)
     
-    print(f"gt_bvp: {signal} with shape {signal.shape}")
     if bandpass:
         [b, a] = butter(1, [0.75 / fs * 2, 2.5 / fs * 2], btype='bandpass')
         signal = scipy.signal.filtfilt(b, a, np.double(signal))

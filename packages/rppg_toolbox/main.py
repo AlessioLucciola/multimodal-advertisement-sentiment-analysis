@@ -4,7 +4,7 @@ import random
 
 import numpy as np
 import torch
-from packages.rppg_toolbox.config import get_config
+from packages.rppg_toolbox.config import get_config, DUMP_FRAMES_PATH
 from packages.rppg_toolbox.dataset.data_loader.CustomLoader import CustomLoader
 from packages.rppg_toolbox.neural_methods.trainer.CustomTrainer import CustomTrainer
 from packages.rppg_toolbox.dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
@@ -14,6 +14,7 @@ from packages.rppg_toolbox.tools.motion_analysis.convert_dataset_to_mp4 import r
 from packages.rppg_toolbox.evaluation.post_process import get_bvp
 from torch.utils.data import DataLoader
 from packages.rppg_toolbox.utils.plot import plot_signal
+import shutil
 
 RANDOM_SEED =  42
 torch.manual_seed(RANDOM_SEED)
@@ -87,7 +88,7 @@ def run():
     )
     test(config, data_loader_dict)
 
-def run_single(vid_path: str | None = None) -> torch.Tensor:
+def extract_ppg_from_video(vid_path: str | None = None) -> torch.Tensor:
     # parse arguments.
     parser = argparse.ArgumentParser()
     parser = add_args(parser)
@@ -101,25 +102,29 @@ def run_single(vid_path: str | None = None) -> torch.Tensor:
     model_trainer = CustomTrainer(config)
     if vid_path is None: 
         vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"
-    raw_frames, fps= read_video(vid_path)
-    frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
-    # print(f"preprocessed frames shape: {frames.shape}")
-    frames = preprocess.parse_frames(frames, data_format="NDCHW")
-    # print(f"parsed frames shape: {frames.shape}")
-    output = model_trainer.test_from_frames(frames).detach()
-    plot_signal(output.reshape(-1).numpy(), "model output")
-
+    split_paths, fps = read_video(vid_path)
     bvps = torch.tensor([])
-    for item in output:
-        npy_bvp = get_bvp(item.squeeze(), diff_flag=True, bandpass=True, fs=round(fps))
-        bvp = torch.tensor(npy_bvp.copy()).to(torch.float32)
-        print(f"npy: {npy_bvp}, bvp: {bvp}")
-        bvps = torch.cat((bvps, bvp.view(1, -1)), dim=0)
+    for split_path in split_paths:
+        print(f"Extracting ppg from split at: {split_path}")
+        raw_frames = np.load(split_path)
+        frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
+        # print(f"preprocessed frames shape: {frames.shape}")
+        frames = preprocess.parse_frames(frames, data_format="NDCHW")
+        # print(f"parsed frames shape: {frames.shape}")
+        output = model_trainer.test_from_frames(frames).detach()
+        # plot_signal(output.reshape(-1).numpy(), "model output")
 
-    print(f"rppg bvp is {bvps} with shape {bvps.shape}")
+        for item in output:
+            npy_bvp = get_bvp(item.squeeze(), diff_flag=True, bandpass=True, fs=round(fps))
+            bvp = torch.tensor(npy_bvp.copy()).to(torch.float32)
+            bvps = torch.cat((bvps, bvp.view(1, -1)), dim=0)
+        print(f"rppg bvp is {bvps} with shape {bvps.shape}")
+
+    shutil.rmtree(DUMP_FRAMES_PATH)
+    print(f"Removed temp_frames directory")
     return bvps
 
 if __name__ == "__main__":
     # run()
-    run_single()
+    extract_ppg_from_video()
 

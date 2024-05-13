@@ -8,7 +8,7 @@ import os
 import json
 from dataloaders.DEAP_dataloader import DEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
-from packages.rppg_toolbox.main import run_single
+from packages.rppg_toolbox.main import extract_ppg_from_video
 from utils.ppg_utils import wavelet_transform
 from shared.constants import CEAP_MEAN, CEAP_STD
 from packages.rppg_toolbox.utils.plot import plot_signal
@@ -169,7 +169,7 @@ def load_test_model(model, model_path, epoch, device):
 
 
 def test_from_video(model_path, epoch):
-    video_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/video.mp4"
+    video_path = "/Users/dov/Desktop/wip-projects/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"
     return ppg_main(model_path=model_path, epoch=epoch, video_frames=video_path)
 
 

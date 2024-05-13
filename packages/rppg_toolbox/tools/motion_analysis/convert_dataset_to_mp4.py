@@ -5,25 +5,36 @@
 # that can ultimately be used with OpenFace for further analysis.
 #
 # See comments and the motion_analysis folder README For more details.
-
 import os, glob
 import cv2
 import numpy as np
 from scipy import io as scio
+import shutil
+from typing import List, Tuple
+from packages.rppg_toolbox.config import DUMP_FRAMES_PATH
 
 # Functions for reading rPPG media of interest and saving frames
-def read_video(video_file):
+def read_video(video_file: str,
+               max_frames_split: int = 500, 
+               desired_fr: int = 30) -> Tuple[List[str], float]:
     """Reads a video file, returns frames(T, H, W, 3) """
+    if os.path.exists(DUMP_FRAMES_PATH):
+        print(f"temp_frames already found, removing it!")
+        shutil.rmtree(DUMP_FRAMES_PATH)
+    os.makedirs(DUMP_FRAMES_PATH, exist_ok=True)
+    print(f"Creating new temp_frames directory!")
     VidObj = cv2.VideoCapture(video_file)
     fps = VidObj.get(cv2.CAP_PROP_FPS)
     VidObj.set(cv2.CAP_PROP_POS_MSEC, 0)
     success, frame = VidObj.read()
     frames = None
-    frames_step = 1
+    frames_step = round(fps) // desired_fr
+    print(f"frames step for {fps} and {desired_fr}: {frames_step}")
     i = 0
-    max_frames = 500
     fps /= frames_step
     curr_frame = 0
+    curr_split = 0
+    splits_paths = []
     while success:
         i += 1
         if i % frames_step != 0:
@@ -31,16 +42,21 @@ def read_video(video_file):
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
         if frames is None:
             frames = np.expand_dims(np.empty_like(frame), 0)
-            frames = np.repeat(frames, max_frames, axis=0)
+            frames = np.repeat(frames, max_frames_split, axis=0)
             print(f"Frames initialization array shape: {frames.shape}")
         frames[curr_frame] = frame
         success, frame = VidObj.read()
         curr_frame += 1
-        if curr_frame == max_frames-1:
-            break
-    print(f"read video completed! {fps} fps")
-    return frames, fps
-
+        if curr_frame == max_frames_split-1:
+            print(f"Split {curr_split} saved!")
+            curr_frame = 0
+            split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
+            np.save(split_path, frames)
+            curr_split += 1
+            frames = None
+            splits_paths.append(split_path)
+    print(f"read video completed! \n FPS: {fps} | Num Splits: {curr_split}")
+    return splits_paths, fps / frames_step
 
 
 def read_png_frames(video_file):

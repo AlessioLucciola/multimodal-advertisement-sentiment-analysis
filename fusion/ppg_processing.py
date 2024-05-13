@@ -9,7 +9,7 @@ import cv2
 from tqdm import tqdm
 from shared.constants import general_emotion_mapping, merged_emotion_mapping, CEAP_STD, CEAP_MEAN
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
-from packages.rppg_toolbox.main import run_single
+from packages.rppg_toolbox.main import extract_ppg_from_video
 from utils.ppg_utils import wavelet_transform
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -22,7 +22,7 @@ def main(model_path: str,
     set_seed(RANDOM_SEED)
     device = select_device()
     preds = torch.tensor([]).to(device)
-    ppgs = run_single(vid_path=video_frames)
+    ppgs = extract_ppg_from_video(vid_path=video_frames)
     ppgs = CEAP_MEAN + (ppgs - ppgs.view(-1).mean()) * (CEAP_STD / ppgs.view(-1).std())
     print(f"ppgs mean and std: {ppgs.view(-1).mean(), ppgs.view(-1).std()}")
     segment_preds = []
