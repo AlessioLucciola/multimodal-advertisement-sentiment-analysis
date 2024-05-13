@@ -1,4 +1,4 @@
-from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH
+from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH, AUDIO_IMPORTANCE
 from component_initializer import get_audio_stream, get_video_stream
 from demo.demo_utils import create_chart
 from st_pages import Page, show_pages
@@ -50,7 +50,8 @@ def stop_listening():
                                                         video_model_epoch=VIDEO_MODEL_EPOCH,
                                                         audio_frames=audio_stream_frames,
                                                         video_frames=video_stream_frames,
-                                                        live_demo=True)
+                                                        live_demo=True,
+                                                        audio_importance=AUDIO_IMPORTANCE)
 
 while st.session_state['run']:
     try:
@@ -96,6 +97,7 @@ if (is_components_initialized):
 
         # Render the chart using Streamlit
         st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(legend, use_container_width=True)
         
         st.text("Processed windows debug:")
         st.write(st.session_state["processed_windows"])

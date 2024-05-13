@@ -79,7 +79,6 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
                     'emotion_string': emotion,
                     'logits': torch.softmax(output, -1).cpu().detach().numpy()
                     })
-                print(frame_duration)
             frames_extracted += 1
     else: 
         # Offline video file
@@ -136,7 +135,6 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
                         'emotion_string': emotion,
                         'logits': torch.softmax(output, -1).cpu().detach().numpy()
                         })
-                print(frame_duration)
                 frames_extracted += 1
 
         cap.release()

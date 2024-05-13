@@ -1,7 +1,6 @@
 from shared.constants import general_emotion_mapping, merged_emotion_mapping
 from fusion.audio_processing import main as audio_main
 from fusion.video_processing import main as video_main
-from datetime import datetime
 import numpy as np
 import os
 from utils.audio_utils import extract_audio_from_video
@@ -14,7 +13,8 @@ def main(audio_model_path: str,
          video_frames: any,
          live_demo: bool = True,
          use_positive_negative_labels = True,
-         get_audio_from_video = True
+         get_audio_from_video = True,
+         audio_importance = 0.60,
          ):
     pass
 
@@ -43,18 +43,9 @@ def main(audio_model_path: str,
             })
         return audio_windows_list
     elif len(audio_output) == 0:
-        video_windows_list = []
-        for video in video_output:
-            video_windows_list.append({
-                "start_time": video['start_time'],
-                "end_time": video['end_time'],
-                "emotion_label": video['emotion_label'],
-                "emotion_string": video['emotion_string'],
-                "window_type": "video"
-            })
-        return video_windows_list
+        return create_video_windows(video_output)
     else:
-        fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels) # Fusion logic in the time windows in which both audio and video are available
+        fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels, audio_importance=audio_importance) # Fusion logic in the time windows in which both audio and video are available
         remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
 
         all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
@@ -64,7 +55,7 @@ def main(audio_model_path: str,
 
         return all_frames
 
-def compute_fused_predictions(audio_output, video_output, use_positive_negative_labels):
+def compute_fused_predictions(audio_output, video_output, use_positive_negative_labels, audio_importance):
     # Compute the average of logits for each video frame within the corresponding audio window
     audio_start_times = [audio['longest_voice_segment_start'] for audio in audio_output]
     audio_end_times = [audio['longest_voice_segment_end'] for audio in audio_output]
@@ -84,7 +75,7 @@ def compute_fused_predictions(audio_output, video_output, use_positive_negative_
         
         audio_logits = audio_output[i]['logits_sum'][0] # Get the logits of the audio window
         audio_logits = compute_softmax(audio_logits) # Convert logits to probabilities using softmax
-        fused_logits = audio_logits + video_logits_avg # Sum the logits of the audio window and video frames
+        fused_logits = (audio_logits * audio_importance) + (video_logits_avg * (1-audio_importance)) # Sum the logits of the audio window and video frames
         
         fused_emotions = fused_logits / 2 # Average the audio and video logits
         pred = np.argmax(fused_emotions, -1)
@@ -161,6 +152,23 @@ def substitute_frame_duration(video_output):
 
 def compute_softmax(logits):
     return np.exp(logits) / np.sum(np.exp(logits), axis=0)
+
+def create_video_windows(video_output):
+    video_windows_list = []
+    for i, frame in enumerate(video_output):
+        if i == 0:
+            start_time = 0.0
+        else:
+            start_time = video_windows_list[i - 1]['end_time']
+        end_time = frame['frame_duration']
+        video_windows_list.append({
+            "start_time": start_time,
+            "end_time": end_time,
+            "emotion_label": frame['emotion_label'],
+            "emotion_string": frame['emotion_string'],
+            "window_type": "video"
+        })
+    return video_windows_list
 
 if __name__ == "__main__":
     audio_model_epoch = 215
