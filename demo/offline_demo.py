@@ -1,4 +1,4 @@
-from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH
+from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH, AUDIO_IMPORTANCE
 from demo.demo_utils import create_chart
 import streamlit as st
 import sys
@@ -21,7 +21,8 @@ if uploaded_file is not None:
                 video_frames="temp_video.mp4",
                 audio_frames=os.path.join("data", "AUDIO", "recorded_audio.wav"),
                 live_demo=False,
-                get_audio_from_video=True
+                get_audio_from_video=True,
+                audio_importance=AUDIO_IMPORTANCE
                 )
     
     #print(processed_windows)
