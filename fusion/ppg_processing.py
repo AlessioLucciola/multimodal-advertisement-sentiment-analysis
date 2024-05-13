@@ -22,7 +22,7 @@ def main(model_path: str,
     set_seed(RANDOM_SEED)
     device = select_device()
     preds = torch.tensor([]).to(device)
-    ppgs = extract_ppg_from_video(vid_path=video_frames)
+    ppgs = extract_ppg_from_video(vid_path=video_frames) #shape: [num_chunks * num_splits, 100]
     ppgs = CEAP_MEAN + (ppgs - ppgs.view(-1).mean()) * (CEAP_STD / ppgs.view(-1).std())
     print(f"ppgs mean and std: {ppgs.view(-1).mean(), ppgs.view(-1).std()}")
     segment_preds = []
@@ -40,8 +40,10 @@ def main(model_path: str,
         print(f"preds shape: {preds.shape}")
         preds = preds[1:]
         # preds = preds.mean(dim=0)
+        # TODO change this, I want all the predictions (one each frame)
+        # TODO: further todo, I can inject the previous LSTM memory into the model to not have a cold start for each segment
         preds = preds[-1:]
-        print(f"mean preds is: {preds}")
+        # print(f"mean preds is: {preds}")
         # preds_softmax = preds.softmax(dim=-1)
         segment_preds.append(preds)
     print(f"segment_preds are: {[segment.tolist() for segment in segment_preds]}")

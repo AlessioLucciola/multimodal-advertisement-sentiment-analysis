@@ -41,7 +41,6 @@ def read_video(video_file: str,
         if i % frames_step != 0:
             continue
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
-
         if frames is None:
             frames = np.expand_dims(np.empty_like(frame), 0)
             frames = np.repeat(frames, max_frames_split, axis=0)

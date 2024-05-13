@@ -112,13 +112,15 @@ def extract_ppg_from_video(vid_path: str | None = None) -> torch.Tensor:
         # print(f"preprocessed frames shape: {frames.shape}")
         frames = preprocess.parse_frames(frames, data_format="NDCHW")
         # print(f"parsed frames shape: {frames.shape}")
-        output = model_trainer.test_from_frames(frames).detach()
+        output = model_trainer.test_from_frames(frames).detach() # shape: [num_chunks, 100]
         # plot_signal(output.reshape(-1).numpy(), "model output")
 
         for item in output:
-            npy_bvp = get_bvp(item.squeeze(), diff_flag=True, bandpass=True, fs=round(fps))
+            npy_bvp = get_bvp(item.squeeze(), diff_flag=True, bandpass=True, fs=round(video_data["fps"]))
             bvp = torch.tensor(npy_bvp.copy()).to(torch.float32)
             bvps = torch.cat((bvps, bvp.view(1, -1)), dim=0)
+
+        # shape: [num_chunks * num_splits, 100]
         print(f"rppg bvp is {bvps} with shape {bvps.shape}")
 
     shutil.rmtree(DUMP_FRAMES_PATH)

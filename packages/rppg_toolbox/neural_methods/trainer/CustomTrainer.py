@@ -50,7 +50,8 @@ class CustomTrainer(BaseTrainer):
             print(f"chunk shape: {chunk.shape}")
             predictions.extend(self.test_step(chunk))
         predictions = torch.cat(predictions, dim=-1).T
-        # print(f"predictions are: {predictions} with shape: {predictions.shape}")
+        # shape is: [num_chunks, 100]
+        # print(f"predictions with shape: {predictions.shape}")
         return predictions
     
     def test_step(self, frames: torch.Tensor) -> List[int]:
