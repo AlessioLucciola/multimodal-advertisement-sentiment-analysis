@@ -12,6 +12,7 @@ from packages.rppg_toolbox.main import run_single
 from utils.ppg_utils import wavelet_transform
 from shared.constants import CEAP_MEAN, CEAP_STD
 from packages.rppg_toolbox.utils.plot import plot_signal
+from fusion.ppg_processing import main as ppg_main
 
 
 def test_loop(model, test_loader, device, model_path, criterion, num_classes):
@@ -167,33 +168,10 @@ def load_test_model(model, model_path, epoch, device):
     return model
 
 
-def test_from_video(model: EmotionNet):
-    print("Extracting ppg")
-    device = select_device()
-    preds = torch.tensor([]).to(device)
-    ppgs = run_single()
-    plot_signal(ppgs.view(-1), f"ppgs")
-    ppgs = CEAP_MEAN + (ppgs - ppgs.view(-1).mean()) * (CEAP_STD / ppgs.view(-1).std())
-    plot_signal(ppgs.view(-1), f"normalized_ppgs")
-    print(f"ppgs mean and std: {ppgs.view(-1).mean(), ppgs.view(-1).std()}")
-    segment_preds = []
-    for i, ppg in tqdm(enumerate(ppgs), desc="Inference..."):
-        ppg = wavelet_transform(ppg.squeeze())
-        ppg = torch.from_numpy(ppg).unsqueeze(1).to(device)
-        print(f"input ppg shape {ppg.shape}")
-        #TODO: see what value to insert here as a starting token since it changes the prediction
-        trg = torch.tensor([0.0]).to(device)
-        preds = model(src=ppg, trg=trg, teacher_forcing_ratio=0)
-        print(f"preds shape: {preds.shape}")
-        preds = preds[1:]
-        # preds = preds.mean(dim=0)
-        preds = preds[-1:]
-        print(f"mean preds is: {preds}")
-        # preds_softmax = preds.softmax(dim=-1)
-        segment_preds.append(preds)
-    print(f"segment_preds are: {[segment.tolist() for segment in segment_preds]}")
-    print(f"emotions are: {[segment.argmax(-1).item() for segment in segment_preds]}")
-    return segment_preds
+def test_from_video(model_path, epoch):
+    video_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/video.mp4"
+    return ppg_main(model_path=model_path, epoch=epoch, video_frames=video_path)
+
 
 def test_from_deap_videos():
     """
@@ -230,4 +208,5 @@ if __name__ == "__main__":
     epoch = "204"
     # model_path = "EmotionNet - LSTM Seq2Seq_2024-05-11_18-10-59"
     # epoch = "19"
-    main(model_path, epoch)
+    # main(model_path, epoch)
+    test_from_video(model_path, epoch)
