@@ -27,7 +27,7 @@ def create_chart(windows):
     )
 
     legend = chart.mark_rect().encode(
-        y=alt.Y('emotion_string:N', axis=alt.Axis(orient='right')),
+        y=alt.Y('emotion_string:N', axis=alt.Axis(orient='left'), title='Emotion'),
         color=alt.Color('emotion_string:N', scale=alt.Scale(range=list(color_scheme.values())), legend=None),
     ).properties(
         title='Emotion'
