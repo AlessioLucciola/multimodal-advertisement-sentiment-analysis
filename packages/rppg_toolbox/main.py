@@ -98,8 +98,6 @@ def run_single(vid_path: str | None = None) -> torch.Tensor:
     # configurations.
     config = get_config(args)
 
-    print('Configuration:')
-    print(config, end='\n\n')
     model_trainer = CustomTrainer(config)
     if vid_path is None: 
         vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"

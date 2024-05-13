@@ -1,5 +1,5 @@
-from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH, AUDIO_IMPORTANCE
-from demo.demo_utils import create_chart
+from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH, AUDIO_IMPORTANCE, PPG_MODEL_PATH, PPG_MODEL_EPOCH
+from demo_utils import create_chart
 import streamlit as st
 import sys
 import os
@@ -16,8 +16,10 @@ if uploaded_file is not None:
 
     processed_windows = fusion_main(audio_model_path=AUDIO_MODEL_PATH,
                 video_model_path=VIDEO_MODEL_PATH,
+                ppg_model_path=PPG_MODEL_PATH,
                 audio_model_epoch=AUDIO_MODEL_EPOCH,
                 video_model_epoch=VIDEO_MODEL_EPOCH,
+                ppg_model_epoch=PPG_MODEL_EPOCH,
                 video_frames="temp_video.mp4",
                 audio_frames=os.path.join("data", "AUDIO", "recorded_audio.wav"),
                 live_demo=False,

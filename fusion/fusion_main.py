@@ -1,6 +1,7 @@
 from shared.constants import general_emotion_mapping, merged_emotion_mapping
 from fusion.audio_processing import main as audio_main
 from fusion.video_processing import main as video_main
+from fusion.ppg_processing import main as ppg_main
 import numpy as np
 import os
 from utils.audio_utils import extract_audio_from_video
@@ -9,6 +10,8 @@ def main(audio_model_path: str,
          audio_model_epoch: int,
          video_model_path: str,
          video_model_epoch: int,
+         ppg_model_path: str,
+         ppg_model_epoch: int,
          audio_frames: any,
          video_frames: any,
          live_demo: bool = True,
@@ -16,13 +19,14 @@ def main(audio_model_path: str,
          get_audio_from_video = True,
          audio_importance = 0.60,
          ):
-    pass
-
     if not live_demo and get_audio_from_video: # Extract audio from the offline video file
         if not os.path.exists(os.path.join("data", "AUDIO")):
             os.makedirs(os.path.join("data", "AUDIO"))
         extract_audio_from_video(video_file=video_frames, audio_path=audio_frames)
 
+    # PPG processing
+    ppg_output = ppg_main(model_path=ppg_model_path, video_frames=video_frames, epoch=ppg_model_epoch, live_demo=live_demo)
+    raise ValueError("stop here")
     # Audio processing
     audio_output = audio_main(model_path=audio_model_path, epoch=audio_model_epoch, audio_file=audio_frames, live_demo=live_demo)
     # Video processing
