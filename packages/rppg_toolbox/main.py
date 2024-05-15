@@ -15,7 +15,7 @@ from packages.rppg_toolbox.evaluation.post_process import get_bvp
 from torch.utils.data import DataLoader
 from packages.rppg_toolbox.utils.plot import plot_signal
 import shutil
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 RANDOM_SEED =  42
 torch.manual_seed(RANDOM_SEED)
@@ -89,7 +89,7 @@ def run():
     )
     test(config, data_loader_dict)
 
-def extract_ppg_from_video(vid_path: str | None = None) -> Tuple[torch.Tensor, List[List[float]]]:
+def extract_ppg_from_video(vid_path: Optional[str | np.ndarray] = None) -> Tuple[torch.Tensor, List[List[float]]]:
     # parse arguments.
     parser = argparse.ArgumentParser()
     parser = add_args(parser)
@@ -103,7 +103,12 @@ def extract_ppg_from_video(vid_path: str | None = None) -> Tuple[torch.Tensor, L
     model_trainer = CustomTrainer(config)
     if vid_path is None: 
         vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"
-    video_data = read_video(vid_path)
+    if isinstance(vid_path, str):
+        video_data = read_video(vid_path)
+    else:
+        video_data = vid_path
+        # TODO: video data shape must be (num_frames, height, width, channels)
+        print(f"Video data shape: {video_data.shape}")
     bvps = torch.tensor([])
     timestamps = video_data["splits_timestamps"]
     for split_path, split_timestamps in zip(video_data["splits_paths"], timestamps):

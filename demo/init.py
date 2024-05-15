@@ -1,4 +1,4 @@
-from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH, AUDIO_IMPORTANCE
+from demo_config import AUDIO_MODEL_EPOCH, VIDEO_MODEL_EPOCH, AUDIO_MODEL_PATH, VIDEO_MODEL_PATH, AUDIO_IMPORTANCE, PPG_MODEL_PATH, PPG_MODEL_EPOCH
 from component_initializer import get_audio_stream, get_video_stream
 from demo.demo_utils import create_chart
 from st_pages import Page, show_pages
@@ -35,19 +35,23 @@ if audio_stream is not None and video_stream is not None:
     
 # Functions
 def start_listening():
+    print("Started listening!")
     st.session_state['audio_stream_frames'] = [] # Initialize audio stream frames
     st.session_state['video_stream_frames'] = [] # Initialize video stream frames
     st.session_state['processed_windows'] = None
     st.session_state['run'] = True
 
 def stop_listening():
+    print("Stopped listening!")
     st.session_state['run'] = False
     audio_stream_frames = b''.join(st.session_state['audio_stream_frames'])
     video_stream_frames = st.session_state['video_stream_frames']
     st.session_state["processed_windows"] = fusion_main(audio_model_path=AUDIO_MODEL_PATH,
                                                         video_model_path=VIDEO_MODEL_PATH,
+                                                        ppg_model_path = PPG_MODEL_PATH,
                                                         audio_model_epoch=AUDIO_MODEL_EPOCH,
                                                         video_model_epoch=VIDEO_MODEL_EPOCH,
+                                                        ppg_model_epoch=PPG_MODEL_EPOCH,
                                                         audio_frames=audio_stream_frames,
                                                         video_frames=video_stream_frames,
                                                         live_demo=True,

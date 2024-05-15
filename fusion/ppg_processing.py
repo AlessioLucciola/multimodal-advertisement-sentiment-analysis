@@ -16,7 +16,7 @@ from typing import Tuple
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def main(model_path: str, 
-         video_frames: str, 
+         video_frames: str | np.ndarray, 
          epoch: int, 
          use_positive_negative_labels:bool = True, 
          live_demo:bool=False):
@@ -35,9 +35,9 @@ def main(model_path: str,
 
     return ppg_output
 
-def get_emotions_from_video(model: EmotionNet, video_path:str, device) -> Tuple[torch.Tensor, torch.Tensor]:
+def get_emotions_from_video(model: EmotionNet, video_frames: str | np.ndarray, device) -> Tuple[torch.Tensor, torch.Tensor]:
     preds = torch.tensor([]).to(device)
-    ppgs, timestamps = extract_ppg_from_video(vid_path=video_path) #ppg shape: [num_chunks * num_splits, 100]
+    ppgs, timestamps = extract_ppg_from_video(vid_path=video_frames) #ppg shape: [num_chunks * num_splits, 100]
     ppgs = CEAP_MEAN + (ppgs - ppgs.view(-1).mean()) * (CEAP_STD / ppgs.view(-1).std())
     print(f"ppgs mean and std: {ppgs.view(-1).mean(), ppgs.view(-1).std()}")
     segment_preds = []
