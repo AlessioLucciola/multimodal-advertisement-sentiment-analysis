@@ -146,3 +146,9 @@ merged_emotion_mapping = {
     1: "positive",
     2: "negative"
 }
+
+ppg_emotion_mapping = {
+    0: "negative",
+    1: "neutral",
+    2: "positive"
+}

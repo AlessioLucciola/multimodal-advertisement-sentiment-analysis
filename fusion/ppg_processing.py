@@ -7,28 +7,40 @@ import sys
 import os
 import cv2
 from tqdm import tqdm
-from shared.constants import general_emotion_mapping, merged_emotion_mapping, CEAP_STD, CEAP_MEAN
+from shared.constants import ppg_emotion_mapping, CEAP_STD, CEAP_MEAN
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
 from packages.rppg_toolbox.main import extract_ppg_from_video
 from utils.ppg_utils import wavelet_transform
+from typing import Tuple
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def main(model_path: str, 
          video_frames: str, 
          epoch: int, 
-         use_positive_negative_labels:bool =True, 
+         use_positive_negative_labels:bool = True, 
          live_demo:bool=False):
+    if not use_positive_negative_labels:
+        raise NotImplementedError("Only negative, neutral, positive labels supported for PPG signal, please set use_positive_negative_labels to True")
     set_seed(RANDOM_SEED)
     device = select_device()
+    model, _ = get_model(model_path, device)
+    model = load_test_model(model, model_path, epoch, device)
+    emotions, timestamps = get_emotions_from_video(model, video_frames, device)
+    ppg_output = [
+            {'frame_duration': timestamp.item(), 
+             'emotion_label': emotion.item(),
+             'emotion_string': ppg_emotion_mapping[int(emotion.item())],}
+            for emotion, timestamp in zip(emotions, timestamps) if timestamp != -1]
+
+    return ppg_output
+
+def get_emotions_from_video(model: EmotionNet, video_path:str, device) -> Tuple[torch.Tensor, torch.Tensor]:
     preds = torch.tensor([]).to(device)
-    ppgs = extract_ppg_from_video(vid_path=video_frames) #shape: [num_chunks * num_splits, 100]
+    ppgs, timestamps = extract_ppg_from_video(vid_path=video_path) #ppg shape: [num_chunks * num_splits, 100]
     ppgs = CEAP_MEAN + (ppgs - ppgs.view(-1).mean()) * (CEAP_STD / ppgs.view(-1).std())
     print(f"ppgs mean and std: {ppgs.view(-1).mean(), ppgs.view(-1).std()}")
     segment_preds = []
-
-    model, _ = get_model(model_path, device)
-    model = load_test_model(model, model_path, epoch, device)
 
     for i, ppg in tqdm(enumerate(ppgs), desc="Inference..."):
         ppg = wavelet_transform(ppg.squeeze())
@@ -38,18 +50,21 @@ def main(model_path: str,
         trg = torch.tensor([0.0]).to(device)
         preds = model(src=ppg, trg=trg, teacher_forcing_ratio=0)
         print(f"preds shape: {preds.shape}")
-        preds = preds[1:]
+        # preds = preds[1:]
         # preds = preds.mean(dim=0)
-        # TODO change this, I want all the predictions (one each frame)
-        # TODO: further todo, I can inject the previous LSTM memory into the model to not have a cold start for each segment
-        preds = preds[-1:]
+        # TODO: I can inject the previous LSTM memory into the model to not have a cold start for each segment
+        # preds = preds[-1:] #NOTE: commented this in order to have 1 prediction per frame
+
         # print(f"mean preds is: {preds}")
         # preds_softmax = preds.softmax(dim=-1)
         segment_preds.append(preds)
-    print(f"segment_preds are: {[segment.tolist() for segment in segment_preds]}")
-    emotions = [segment.argmax(-1).item() for segment in segment_preds]
-    print(f"emotions are: {emotions}")
-    return emotions
+    # print(f"segment_preds are: {[segment.tolist() for segment in segment_preds]}. With length: {len(segment_preds)}, each element has a shape of {segment_preds[0].shape}")
+    emotions = [segment.argmax(-1).squeeze() for segment in segment_preds]
+    emotions = torch.cat(emotions, dim=0)
+    print(f"emotions are: {emotions} with shape {emotions.shape}")
+    timestamps = torch.cat([torch.tensor(ts) for ts in timestamps], dim=0)
+    print(f"timestamps are: {timestamps} with shape {timestamps.shape}")
+    return emotions, timestamps
 
 def get_model(model_path, device):
     # Load configuration

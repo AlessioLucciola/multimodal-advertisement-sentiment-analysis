@@ -15,6 +15,7 @@ from packages.rppg_toolbox.evaluation.post_process import get_bvp
 from torch.utils.data import DataLoader
 from packages.rppg_toolbox.utils.plot import plot_signal
 import shutil
+from typing import List, Tuple
 
 RANDOM_SEED =  42
 torch.manual_seed(RANDOM_SEED)
@@ -88,7 +89,7 @@ def run():
     )
     test(config, data_loader_dict)
 
-def extract_ppg_from_video(vid_path: str | None = None) -> torch.Tensor:
+def extract_ppg_from_video(vid_path: str | None = None) -> Tuple[torch.Tensor, List[List[float]]]:
     # parse arguments.
     parser = argparse.ArgumentParser()
     parser = add_args(parser)
@@ -104,7 +105,8 @@ def extract_ppg_from_video(vid_path: str | None = None) -> torch.Tensor:
         vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"
     video_data = read_video(vid_path)
     bvps = torch.tensor([])
-    for split_path, split_timestamps in zip(video_data["splits_paths"], video_data["splits_timestamps"]):
+    timestamps = video_data["splits_timestamps"]
+    for split_path, split_timestamps in zip(video_data["splits_paths"], timestamps):
         print(f"Extracting ppg from split at: {split_path}.")
         raw_frames = np.load(split_path)
         assert len(split_timestamps) == raw_frames.shape[0], f"ERROR: timestamps and frames must be of the same length | timestamp of length {len(split_timestamps)}, split of length {raw_frames.shape[0]}"
@@ -121,11 +123,11 @@ def extract_ppg_from_video(vid_path: str | None = None) -> torch.Tensor:
             bvps = torch.cat((bvps, bvp.view(1, -1)), dim=0)
 
         # shape: [num_chunks * num_splits, 100]
-        print(f"rppg bvp is {bvps} with shape {bvps.shape}")
+        print(f"ppgs {bvps} with shape {bvps.shape}")
 
     shutil.rmtree(DUMP_FRAMES_PATH)
     print(f"Removed temp_frames directory")
-    return bvps
+    return bvps, timestamps
 
 if __name__ == "__main__":
     # run()

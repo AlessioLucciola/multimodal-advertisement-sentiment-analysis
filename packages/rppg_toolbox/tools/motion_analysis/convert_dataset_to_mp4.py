@@ -42,11 +42,12 @@ def read_video(video_file: str,
             continue
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
         if frames is None:
-            frames = np.expand_dims(np.empty_like(frame), 0)
+            frames = np.expand_dims(np.zeros_like(frame), 0)
             frames = np.repeat(frames, max_frames_split, axis=0)
             print(f"Frames initialization array shape: {frames.shape}")
 
         timestamp = VidObj.get(cv2.CAP_PROP_POS_FRAMES) / fps
+
         curr_timestamps.append(timestamp)
         frames[curr_frame] = frame
         success, frame = VidObj.read()
@@ -63,13 +64,20 @@ def read_video(video_file: str,
             curr_timestamps = []
         
     #The last split ended before max_frames_split
+    # In this case the last last frames are 0, which is ok since we need to pad in order to have sequences of length 100.
+    # We will discard the result anyway since we have 1 prediction per frame, and all the other prediction will be discarded.
     if curr_frame != 0:
         print(f"Split {curr_split} saved!")
-        frames = frames[len(curr_timestamps):]
+        # frames = frames[:len(curr_timestamps)]
+
+        # suppress the linting errors
+        frames: np.ndarray
+
         split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
         np.save(split_path, frames)
         splits_paths.append(split_path)
-        splits_timestamps.append(curr_timestamps)
+        # Padding curr_timestamps with -1 values
+        splits_timestamps.append(curr_timestamps + [-1 for _ in range(frames.shape[0] - len(curr_timestamps))])
 
     print(f"read video completed! \n FPS: {fps} | Num Splits: {curr_split}")
     print(f"timestamps lengths: {[len(ts) for ts in splits_timestamps]}")

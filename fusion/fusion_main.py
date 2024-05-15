@@ -5,6 +5,7 @@ from fusion.ppg_processing import main as ppg_main
 import numpy as np
 import os
 from utils.audio_utils import extract_audio_from_video
+from typing import Any
 
 def main(audio_model_path: str,
          audio_model_epoch: int,
@@ -12,13 +13,16 @@ def main(audio_model_path: str,
          video_model_epoch: int,
          ppg_model_path: str,
          ppg_model_epoch: int,
-         audio_frames: any,
-         video_frames: any,
+         audio_frames: Any,
+         video_frames: Any,
          live_demo: bool = True,
          use_positive_negative_labels = True,
          get_audio_from_video = True,
          audio_importance = 0.60,
          ):
+    """
+    It returns a tuple where the first element contains the audio only/ video only/ audio-video fused windows; and the second element the ppg_windows, if ppg is used, else None
+    """
     if not live_demo and get_audio_from_video: # Extract audio from the offline video file
         if not os.path.exists(os.path.join("data", "AUDIO")):
             os.makedirs(os.path.join("data", "AUDIO"))
@@ -26,15 +30,18 @@ def main(audio_model_path: str,
 
     # PPG processing
     ppg_output = ppg_main(model_path=ppg_model_path, video_frames=video_frames, epoch=ppg_model_epoch, live_demo=live_demo)
-    raise ValueError("stop here")
     # Audio processing
     audio_output = audio_main(model_path=audio_model_path, epoch=audio_model_epoch, audio_file=audio_frames, live_demo=live_demo)
     # Video processing
     video_output = video_main(model_path=video_model_path, video_frames=video_frames, epoch=video_model_epoch, live_demo=live_demo)
     
+    ppg_windows_list = None
+    if len(ppg_output):
+        ppg_windows_list = create_ppg_windows(ppg_output)
+    # return None, ppg_windows_list #TODO: early return just for debug
     
     if len(audio_output) == 0 and len(video_output) == 0:
-        return []
+        return None, ppg_windows_list
     elif len(video_output) == 0:
         audio_windows_list = []
         for audio in audio_output:
@@ -45,19 +52,16 @@ def main(audio_model_path: str,
                 "emotion_string": audio['emotion_string'],
                 "window_type": "audio"
             })
-        return audio_windows_list
+        return audio_windows_list, ppg_windows_list
     elif len(audio_output) == 0:
-        return create_video_windows(video_output)
+        return create_video_windows(video_output), ppg_windows_list
     else:
         fused_emotion_lists = compute_fused_predictions(audio_output, video_output, use_positive_negative_labels, audio_importance=audio_importance) # Fusion logic in the time windows in which both audio and video are available
         remaining_video_frames = compute_remaining_video_predictions(fused_emotion_lists, video_output, use_positive_negative_labels) # Compute predictions for the remaining time windows only with video
 
         all_frames = sorted(fused_emotion_lists + remaining_video_frames, key=lambda x: x['start_time'])
 
-        #for f in all_frames:
-        #   print(f)
-
-        return all_frames
+        return all_frames, ppg_windows_list
 
 def compute_fused_predictions(audio_output, video_output, use_positive_negative_labels, audio_importance):
     # Compute the average of logits for each video frame within the corresponding audio window
@@ -173,6 +177,23 @@ def create_video_windows(video_output):
             "window_type": "video"
         })
     return video_windows_list
+
+def create_ppg_windows(ppg_output):
+    ppg_windows_list = []
+    for i, frame in enumerate(ppg_output):
+        if i == 0:
+            start_time = 0.0
+        else:
+            start_time = ppg_windows_list[i - 1]['end_time']
+        end_time = frame['frame_duration']
+        ppg_windows_list.append({
+            "start_time": start_time,
+            "end_time": end_time,
+            "emotion_label": frame['emotion_label'],
+            "emotion_string": frame['emotion_string'],
+            "window_type": "ppg"
+        })
+    return ppg_windows_list
 
 if __name__ == "__main__":
     audio_model_epoch = 215

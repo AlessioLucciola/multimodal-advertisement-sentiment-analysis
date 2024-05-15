@@ -7,7 +7,7 @@ color_scheme = {
     'negative': '#FF7F0E'  # Orange
 }
 
-def create_chart(windows):
+def create_chart(windows, title: str):
     df = pd.DataFrame(windows)
     if 'logits' in df.columns:
         df = df.drop(columns=['logits'])
@@ -30,7 +30,7 @@ def create_chart(windows):
         y=alt.Y('emotion_string:N', axis=alt.Axis(orient='left'), title='Emotion'),
         color=alt.Color('emotion_string:N', scale=alt.Scale(range=list(color_scheme.values())), legend=None),
     ).properties(
-        title='Emotion'
+        title=title
     )
 
     return chart, legend
