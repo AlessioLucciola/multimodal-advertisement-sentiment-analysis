@@ -41,24 +41,19 @@ def get_emotions_from_video(model: EmotionNet, video_frames: str | np.ndarray, d
     ppgs = CEAP_MEAN + (ppgs - ppgs.view(-1).mean()) * (CEAP_STD / ppgs.view(-1).std())
     print(f"ppgs mean and std: {ppgs.view(-1).mean(), ppgs.view(-1).std()}")
     segment_preds = []
-
+    memory, first_input = None, None
     for i, ppg in tqdm(enumerate(ppgs), desc="Inference..."):
         ppg = wavelet_transform(ppg.squeeze())
         ppg = torch.from_numpy(ppg).unsqueeze(1).to(device)
-        print(f"input ppg shape {ppg.shape}")
         #TODO: see what value to insert here as a starting token since it changes the prediction
+        #TODO: maybe train the model using always the 0 as the starting input 
         trg = torch.tensor([0.0]).to(device)
-        preds = model(src=ppg, trg=trg, teacher_forcing_ratio=0)
-        print(f"preds shape: {preds.shape}")
-        # preds = preds[1:]
-        # preds = preds.mean(dim=0)
-        # TODO: I can inject the previous LSTM memory into the model to not have a cold start for each segment
-        # preds = preds[-1:] #NOTE: commented this in order to have 1 prediction per frame
 
-        # print(f"mean preds is: {preds}")
-        # preds_softmax = preds.softmax(dim=-1)
+        preds, memory = model(src=ppg, trg=trg, memory=memory, first_input=first_input)
+
+        first_input = preds[-1].argmax(-1).float()
         segment_preds.append(preds)
-    # print(f"segment_preds are: {[segment.tolist() for segment in segment_preds]}. With length: {len(segment_preds)}, each element has a shape of {segment_preds[0].shape}")
+
     emotions = [segment.argmax(-1).squeeze() for segment in segment_preds]
     emotions = torch.cat(emotions, dim=0)
     print(f"emotions are: {emotions} with shape {emotions.shape}")

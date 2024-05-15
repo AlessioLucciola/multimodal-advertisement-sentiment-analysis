@@ -85,7 +85,7 @@ def train_eval_loop(device,
 
             optimizer.zero_grad()
             #TODO: remove teacher_forcing_ratio option from the model
-            output = model(src, target, 0)
+            output, _ = model(src, target)
             # output = [trg length, batch size, trg vocab size]
             output_dim = output.shape[-1]
             # print(f"output[1:] shape: {output[1:].shape}")
@@ -128,7 +128,7 @@ def train_eval_loop(device,
                 src = src.permute(1,0,2)
                 target = target.permute(1,0)
 
-                output = model(src, target, 0)  # turn off teacher forcing
+                output, _ = model(src, target)
                 # output = [trg length, batch size, trg vocab size]
                 output_dim = output.shape[-1]
                 output = output[1:].view(-1, output_dim)

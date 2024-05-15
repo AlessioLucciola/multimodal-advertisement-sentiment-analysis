@@ -1,8 +1,8 @@
-from config import WT, BATCH_SIZE
+from config import WT
 import torch.nn as nn
 import torch
 from utils.utils import select_device
-import random
+from typing import Optional
 
 
 class Encoder(nn.Module):
@@ -72,7 +72,7 @@ class EmotionNet(nn.Module):
             encoder.n_layers == decoder.n_layers
         ), "Encoder and decoder must have equal number of layers!"
 
-    def forward(self, src, trg, teacher_forcing_ratio):
+    def forward(self, src, trg, memory: Optional[tuple] = None, first_input: Optional[torch.Tensor] = None):
         # src = [src length, batch size]
         # trg = [trg length, batch size]
         # teacher_forcing_ratio is probability to use teacher forcing
@@ -83,16 +83,23 @@ class EmotionNet(nn.Module):
         # tensor to store decoder outputs
         outputs = torch.zeros(trg_length, batch_size, trg_vocab_size).to(self.device)
         # last hidden state of the encoder is used as the initial hidden state of the decoder
-        hidden, cell = self.encoder(src)
+        if memory is None:
+            hidden, cell = self.encoder(src)
+        else:
+            hidden, cell = memory
         # hidden = [n layers * n directions, batch size, hidden dim]
         # cell = [n layers * n directions, batch size, hidden dim]
         # first input to the decoder is the <sos> tokens
-        if len(trg.shape) == 2:
-            input = trg[0, :]
-        elif len(trg.shape) == 1:
-            input = trg.view(1, -1)
+        if first_input is not None:
+            input = first_input
         else:
-            raise ValueError(f"trg with shape: {trg.shape} is not supported")
+            # if len(trg.shape) == 2:
+            #     input = trg[0, :]
+            # elif len(trg.shape) == 1:
+            #     input = trg.view(1, -1)
+            # else:
+            #     raise ValueError(f"trg with shape: {trg.shape} is not supported")
+            input = torch.zeros((1, batch_size)).to(self.device)
         # input = [batch size]
         for t in range(1, trg_length):
             # insert input token embedding, previous hidden and previous cell states
@@ -107,4 +114,4 @@ class EmotionNet(nn.Module):
             # get the highest predicted token from our predictions
             input = output.argmax(1).float()
             # input = [batch size]
-        return outputs
+        return outputs, (hidden, cell)
