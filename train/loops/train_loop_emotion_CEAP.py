@@ -8,6 +8,8 @@ import wandb
 import copy
 import random
 
+import torch
+
 
 def train_eval_loop(device,
                     train_loader: torch.utils.data.DataLoader,
@@ -73,6 +75,10 @@ def train_eval_loop(device,
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
         model.train()
         losses = []
+        if epoch > 0:
+            model.tf_ratio -= model.tf_ratio * 0.3
+        if epoch > 5:
+            model.tf_ratio = 0
 
         for tr_batch in tqdm(train_loader, desc="Training", leave=False):
             src, target = tr_batch["ppg"], tr_batch["valence"]

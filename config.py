@@ -8,7 +8,7 @@ DEMO_DIR = "demo"
 RANDOM_SEED = 42
 USE_DML = False
 USE_MPS = True
-USE_WANDB = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -32,11 +32,11 @@ PATH_MODEL_TO_RESUME = ""
 RESUME_EPOCH = ""
 
 # Train configurations
-BATCH_SIZE = 128 # Max (for ViT): 256 | Max (for CNN): 64
+BATCH_SIZE = 64 # Max (for ViT): 256 | Max (for CNN): 64
 N_EPOCHS = 500
-LR = 1e-3
-REG = 1e-3
-DROPOUT_P = 0.3
+LR = 1e-4
+REG = 0
+DROPOUT_P = 0
 
 # ----------------------------
 
@@ -98,9 +98,9 @@ OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video_real.mp4") # Of
 # EmotionNet Configurations
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
 LENGTH = 100 #800 seemed to work
-STEP = 100
+STEP = 50
 
 WT = True #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
 WAVELET_STEP = 10
-LSTM_HIDDEN = 512 
+LSTM_HIDDEN = 256
 LSTM_LAYERS = 2

@@ -51,7 +51,7 @@ def get_emotions_from_video(model: EmotionNet, video_frames: str | np.ndarray, d
 
         preds, memory = model(src=ppg, trg=trg, memory=memory, first_input=first_input)
 
-        first_input = preds[-1].argmax(-1).float()
+        first_input = preds[-1].argmax(1).float()
         segment_preds.append(preds)
 
     emotions = [segment.argmax(-1).squeeze() for segment in segment_preds]

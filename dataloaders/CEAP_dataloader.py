@@ -21,7 +21,7 @@ from utils.ppg_utils import wavelet_transform
 class CEAPDataLoader(DataLoader):
     def __init__(self, 
                  batch_size: int,
-                 normalize: bool = False):
+                 normalize: bool = True):
         self.batch_size = batch_size
         print("Loading data...")
         data_type = "Frame"
@@ -40,17 +40,10 @@ class CEAPDataLoader(DataLoader):
         # Convert lists to numpy arrays
         self.data["ppg"] = self.data["ppg"].apply(lambda x: np.array(x))
         if normalize:
-            raise NotImplementedError("There is no need to normalize")
-            cat_data = np.concatenate(self.data["ppg"], axis=0)
-            mean, std = cat_data.mean(), cat_data.std()
-            print(f"Before CEAP mean + std: {mean, std}")
-            scaling_factor = (CEAP_STD / std) + (CEAP_MEAN - mean)
-            self.data["ppg"] = self.data["ppg"] * scaling_factor
             self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) / CEAP_STD
-            print(f"Normalized data: {self.data}")
             cat_data = np.concatenate(self.data["ppg"], axis=0)
             mean, std = cat_data.mean(), cat_data.std()
-            print(f"Normalized CEAP mean + std: {mean, std}")
+            print(f"Stats of normalized data are: \n Mean: {mean} \n Std: {std}")
         
 
         print("Splitting data...")
