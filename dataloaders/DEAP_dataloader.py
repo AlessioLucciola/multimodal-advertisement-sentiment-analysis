@@ -3,6 +3,7 @@ from config import (
     LENGTH,
     RANDOM_SEED,
     STEP,
+    WT
 )
 import pickle
 from shared.constants import CEAP_MEAN, CEAP_STD
@@ -15,37 +16,48 @@ import numpy as np
 import pandas as pd
 from datasets.DEAP_dataset import DEAPDataset
 from utils.ppg_utils import wavelet_transform
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
 
+# Sample rate is 128hz
+# Signals are 8064 long
+# Each signal is 63 seconds long
 
 class DEAPDataLoader(DataLoader):
     def __init__(self,
                  batch_size: int):
         self.batch_size = batch_size
         self.data = self.load_data()
-        self.data = self.slice_data(self.data)
-        self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
+        # self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
+        self.data["valence"] = self.data["valence"].apply(lambda x: round(x))
 
-        #scale and normalize according to CEAP std and mean
-        print(f"non-normalized data: {self.data}")
+        #Standardize
         self.data["ppg"] = self.data["ppg"].apply(lambda x: np.array(x))
+        print(f"Shape of signal is: {self.data['ppg'].iloc[0].shape}")
         cat_data = np.concatenate(self.data["ppg"], axis=0)
         mean, std = cat_data.mean(), cat_data.std()
         print(f"Before DEAP mean + std: {mean, std}")
-        self.data["ppg"] = CEAP_MEAN + (self.data["ppg"] - mean) * (CEAP_STD / std)
-        # self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) / CEAP_STD
-        print(f"Normalized data: {self.data}")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: (x-mean)/std) 
         cat_data = np.concatenate(self.data["ppg"], axis=0)
         mean, std = cat_data.mean(), cat_data.std()
         print(f"Normalized DEAP mean + std: {mean, std}")
-        print(f"normalized data: {self.data}")
 
-        tqdm.pandas()
-        self.data["ppg"] = self.data["ppg"].progress_apply(wavelet_transform)
-        print(self.data)
-        label_counts = self.data['valence'].value_counts()
-        print(f"label counts is: {label_counts}")
-        
-        #TODO: see if this undersampling is needed
+        self.train_df, self.val_df, self.test_df = self.split_data()
+        self.train_df = self.slice_data(self.train_df)
+        self.val_df = self.slice_data(self.val_df)
+        self.test_df = self.slice_data(self.test_df)
+
+        if WT:
+            print(f"Performing wavelet transform...")
+            tqdm.pandas()
+            self.train_df["ppg"] = self.train_df["ppg"].progress_apply(wavelet_transform)
+            self.val_df["ppg"] = self.val_df["ppg"].progress_apply(wavelet_transform)
+            self.test_df["ppg"] = self.test_df["ppg"].progress_apply(wavelet_transform)
+        else:
+            print("Skipped wavelet transform")
+
+        print(f"Train_df length: {len(self.train_df)}")
+        print(f"Val_df length: {len(self.val_df)}")
+        print(f"Test_df length: {len(self.test_df)}")
 
         # target_count = label_counts.min()
         # # Sample function to get balanced sample from each group
@@ -53,9 +65,6 @@ class DEAPDataLoader(DataLoader):
         #   return group.sample(target_count, random_state=RANDOM_SEED)
         # # Apply sample function to each group in the DataFrame 
         # self.data = self.data.groupby('valence').apply(balanced_sample)
-
-        label_counts = self.data['valence'].value_counts()
-        print(f"label counts after balance is: {label_counts}")
 
     def load_data(self) -> pd.DataFrame:
         data_dir = os.path.join(DATA_DIR, "DEAP", "data")
@@ -77,6 +86,52 @@ class DEAPDataLoader(DataLoader):
                     data: np.ndarray = subject["data"][trial_i][ppg_channel]
                     df.append({"ppg": data, "valence": valence})
         return pd.DataFrame(df)
+
+    def split_data(self):
+        train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED)
+        val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
+        return train_df, val_df, test_df
+
+        # NOTE: split by subjects
+        df = self.data
+
+        train_ratio = 0.6
+        val_ratio = 0.2
+        test_ratio = 0.2
+        if train_ratio + val_ratio + test_ratio != 1:
+            raise ValueError("Ratios must sum to 1. Please adjust the values.")
+
+        pid_groups = df['participant_id'].tolist()
+        X = df['ppg'].tolist()
+        Y = df['valence'].tolist()
+        sss = GroupShuffleSplit(n_splits=1, test_size=val_ratio + test_ratio, random_state=RANDOM_SEED)
+
+        # Split the dataframe based on pid groups
+        for train_index, test_index in sss.split(X, Y, pid_groups):  # Splitting based on labels maintains class balance
+            train_df = df.iloc[train_index]
+            remaining = df.iloc[test_index]
+
+            # Further split remaining data into validation and test sets (optional)
+            sss_inner = GroupShuffleSplit(n_splits=1, test_size=test_ratio / (val_ratio + test_ratio), random_state=RANDOM_SEED)
+            X_remaining, Y_remaining = remaining["ppg"].tolist(), remaining["valence"].tolist()    
+            pid_groups_remaining = remaining['participant_id'].tolist()
+            val_index, test_index = next(sss_inner.split(X_remaining, Y_remaining, pid_groups_remaining))
+            val_df = remaining.iloc[val_index]
+            test_df = remaining.iloc[test_index]
+
+        train_pids = set(train_df["participant_id"].unique())
+        val_pids = set(val_df["participant_id"].unique())
+        test_pids = set(test_df["participant_id"].unique())
+        
+        # print("train pids ", train_pids)
+        # print("val pids ", val_pids)
+        # print("test pids ",test_pids )
+
+        assert len(train_pids & val_pids) == 0
+        assert len(train_pids & test_pids) == 0
+        assert len(val_pids & test_pids) == 0
+         
+        return train_df, val_df, test_df
 
     def slice_data(self, df, length=LENGTH, step=STEP) -> pd.DataFrame:
         if length > 3000:
@@ -102,14 +157,16 @@ class DEAPDataLoader(DataLoader):
         return self.labels.tolist()
 
     def get_train_dataloader(self):
-        raise NotImplementedError("Train loader not implemented for DEAP")
+        dataset = DEAPDataset(self.train_df)
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
     def get_val_dataloader(self):
-        raise NotImplementedError("Validation loader not implemented for DEAP")
+        dataset = DEAPDataset(self.val_df)
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
     def get_test_dataloader(self):
-        dataset = DEAPDataset(self.data)
-        return DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        dataset = DEAPDataset(self.test_df)
+        return DataLoader(dataset, batch_size=self.batch_size, shuffle=False)
 
 
 if __name__ == "__main__":
