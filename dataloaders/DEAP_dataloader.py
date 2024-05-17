@@ -15,32 +15,31 @@ import torch
 import numpy as np
 import pandas as pd
 from datasets.DEAP_dataset import DEAPDataset
-from utils.ppg_utils import wavelet_transform
+from utils.ppg_utils import wavelet_transform, stft
 from sklearn.model_selection import train_test_split, GroupShuffleSplit
+from scipy import signal
+from packages.rppg_toolbox.utils.plot import plot_signal
 
 # Sample rate is 128hz
 # Signals are 8064 long
 # Each signal is 63 seconds long
+
+
+PLOT_DEBUG_INDEX = 1
 
 class DEAPDataLoader(DataLoader):
     def __init__(self,
                  batch_size: int):
         self.batch_size = batch_size
         self.data = self.load_data()
-        # self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
-        self.data["valence"] = self.data["valence"].apply(lambda x: round(x))
-
-        #Standardize
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: np.array(x))
-        print(f"Shape of signal is: {self.data['ppg'].iloc[0].shape}")
-        cat_data = np.concatenate(self.data["ppg"], axis=0)
-        mean, std = cat_data.mean(), cat_data.std()
-        print(f"Before DEAP mean + std: {mean, std}")
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: (x-mean)/std) 
-        cat_data = np.concatenate(self.data["ppg"], axis=0)
-        mean, std = cat_data.mean(), cat_data.std()
-        print(f"Normalized DEAP mean + std: {mean, std}")
-
+        self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
+        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "original")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: self.detrend_ppg(np.array(x)))
+        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "detrended")
+            
+        print("Performing min-max normalization")
+        self.data = self.normalize_data(self.data)
+        
         self.train_df, self.val_df, self.test_df = self.split_data()
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
@@ -69,14 +68,14 @@ class DEAPDataLoader(DataLoader):
     def load_data(self) -> pd.DataFrame:
         data_dir = os.path.join(DATA_DIR, "DEAP", "data")
         # metadata_dir = os.path.join(DATA_DIR, "DEAP", "metadata")
-        ppg_channel = 39
+        ppg_channel = 38
         df = []
 
-        for file in os.listdir(data_dir):
+        for i, file in enumerate(os.listdir(data_dir)):
             if not file.endswith(".dat"):
                 continue
             abs_path = os.path.join(data_dir, file)
-            print(f"reading file: {abs_path}")
+            print(f"reading file: {abs_path}: subject is {i}")
             with open(abs_path, "rb") as f:
                 # resolve the python 2 data problem by encoding : latin1
                 subject = pickle.load(f, encoding='latin1')
@@ -84,9 +83,59 @@ class DEAPDataLoader(DataLoader):
                     # NOTE: valence is in range [1,9]
                     valence: np.ndarray = subject["labels"][trial_i][0] #index 0 is valence, 1 arousal
                     data: np.ndarray = subject["data"][trial_i][ppg_channel]
-                    df.append({"ppg": data, "valence": valence})
+                    df.append({"ppg": data, "valence": valence, "subject": i})
         return pd.DataFrame(df)
+    
+    def normalize_data(self, df):
+        """
+        Compute the min and max value per subject and uses min-max scaling in order to normalize the data.
+        """
+        min_max_mapping = {}
+        for i, row in df.iterrows():
+            ppg, subject = row["ppg"], row["subject"]
+            _min, _max = min(ppg), max(ppg)
+            if subject not in min_max_mapping:
+                min_max_mapping[subject] = {"_min": _min, "_max": _max}
+            else:
+                if _min < min_max_mapping[subject]["_min"]:
+                    min_max_mapping[subject]["_min"] =  _min
+                if _max > min_max_mapping[subject]["_max"]:
+                    min_max_mapping[subject]["_max"] = _max
+        
+        alpha = 1000
+        new_df = []
+        for i, row in df.iterrows():
+            ppg, subject, valence = row["ppg"], row["subject"], row["valence"]
+            _min, _max = min_max_mapping[subject]["_min"], min_max_mapping[subject]["_max"] 
+            ppg = (ppg - _min) / (_max - _min) * alpha
+            new_df.append({"ppg": ppg, "valence": valence, "subject": subject})
+        return pd.DataFrame(new_df)
 
+
+    def get_mean_std(self):
+        cat_data = np.concatenate(self.data["ppg"], axis=0)
+        mean, std = cat_data.mean(), cat_data.std()
+        return mean, std
+
+    def standardize_data(self):
+        #Standardize
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: np.array(x))
+        print(f"Shape of signal is: {self.data['ppg'].iloc[0].shape}")
+        mean, std = self.get_mean_std()
+        print(f"Before DEAP mean + std: {mean, std}")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: (x-mean)/std) 
+        mean, std = self.get_mean_std()
+        print(f"Normalized DEAP mean + std: {mean, std}")
+
+    def detrend_ppg(self, ppg_signal):
+        x = np.linspace(0, ppg_signal.shape[0], ppg_signal.shape[0])
+        # print(f"x shape is: {x.shape}, while ppg_signal shape is {ppg_signal.shape}")
+        model = np.polyfit(x, ppg_signal, 10)
+        predicted = np.polyval(model, x)
+        return ppg_signal - predicted
+        return signal.detrend(ppg_signal)
+
+       
     def split_data(self):
         train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED)
         val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
@@ -115,7 +164,7 @@ class DEAPDataLoader(DataLoader):
             sss_inner = GroupShuffleSplit(n_splits=1, test_size=test_ratio / (val_ratio + test_ratio), random_state=RANDOM_SEED)
             X_remaining, Y_remaining = remaining["ppg"].tolist(), remaining["valence"].tolist()    
             pid_groups_remaining = remaining['participant_id'].tolist()
-            val_index, test_index = next(sss_inner.split(X_remaining, Y_remaining, pid_groups_remaining))
+            val_index, test_index = next(sss_inner_.split(X_remaining, Y_remaining, pid_groups_remaining))
             val_df = remaining.iloc[val_index]
             test_df = remaining.iloc[test_index]
 
@@ -137,23 +186,27 @@ class DEAPDataLoader(DataLoader):
         if length > 3000:
             raise ValueError(f"Length cannot be greater than original length")
         new_df = []
-        for _, row in df.iterrows():
-            ppg, label = row["ppg"], row["valence"]
+        for row_i, row in df.iterrows():
+            ppg, label, subject = row["ppg"], row["valence"], row["subject"]
             for i in range(0, len(ppg) - length + 1, step):
+                if row_i == PLOT_DEBUG_INDEX and i ==0:
+                    plot_signal(ppg, "before_slice")
                 ppg_segment = ppg[i:i+length]
+                if row_i == PLOT_DEBUG_INDEX and i ==0:
+                    plot_signal(ppg_segment, "after_slice")
                 new_row = {
                         "ppg": ppg_segment ,
                         "valence": label,
-                        "segment": i}
+                        "subject": subject}
                 new_df.append(new_row)
         new_df = pd.DataFrame(new_df)
         return new_df
     
     def discretize_labels(self, valence: torch.Tensor) -> List[float]:
         self.labels = torch.full_like(valence, -1)
-        self.labels[(valence >= 1) & (valence <= 4) ] = 0 
-        self.labels[(valence > 4) & (valence <= 6) ] = 1
-        self.labels[(valence > 6) & (valence <= 9) ] = 2
+        self.labels[(valence >= 1) & (valence <= 3) ] = 0 
+        self.labels[(valence >= 3) & (valence <= 6) ] = 1
+        self.labels[(valence >= 6) & (valence <= 9) ] = 2
         return self.labels.tolist()
 
     def get_train_dataloader(self):

@@ -1,5 +1,5 @@
 
-from config import DROPOUT_P, NUM_MFCC, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS
+from config import DROPOUT_P, LSTM_HIDDEN_SIZE, LSTM_NUM_LAYERS, EMOTION_NUM_CLASSES
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -53,28 +53,29 @@ class EmotionNet(nn.Module):
         self.CNN_block_1d = nn.Sequential(
             nn.Conv1d(
                 in_channels=1,
-                out_channels=8,
+                out_channels=10,
                 kernel_size=3,
                 stride=1),
-            nn.BatchNorm1d(8),
+            nn.BatchNorm1d(10),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2),
             nn.Dropout(p=dropout_p),
             nn.Conv1d(
-                in_channels=8,
-                out_channels=16,
+                in_channels=10,
+                out_channels=20,
                 kernel_size=3,
                 stride=1),
-            nn.BatchNorm1d(16),
+            nn.BatchNorm1d(20),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2),
             nn.Dropout(p=dropout_p),
         )
 
-        self.fc = nn.Sequential(
-                nn.Linear(512,128),
-                nn.Linear(128, num_classes))
+        # self.fc = nn.Sequential(
+        #         nn.Linear(660, 512),
+        #         nn.Linear(512, EMOTION_NUM_CLASSES))
 
+        self.fc = nn.Linear(512, EMOTION_NUM_CLASSES)
     def forward(self, x):
         x = x.unsqueeze(1)
         CNN_embedding = self.CNN_block(x)
@@ -94,4 +95,5 @@ class EmotionNet(nn.Module):
         output_logits = self.fc(complete_embedding)  
         # print(f"output logits are: {output_logits}")
         # print(f"preds are: {output_logits.argmax(1)}")
-        return F.log_softmax(output_logits, dim=-1)
+        # return F.log_softmax(output_logits, dim=-1)
+        return output_logits

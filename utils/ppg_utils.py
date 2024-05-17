@@ -29,16 +29,17 @@ def stft(x: np.ndarray):
         x = np.array(x)
 
     x_torch = torch.from_numpy(x)
-    # win_length = 199
-    # window = torch.signal.windows.hamming(win_length)
+    win_length = 64
+    window = torch.signal.windows.hamming(win_length)
     res = torch.stft(input=x_torch, 
-                     n_fft=599,
-                     hop_length=10, 
-                     return_complex=True,)
-                     # window=window, 
-                     # win_length=win_length)
-    out = res.real
-    return out
+                     n_fft=64,
+                     hop_length=2, 
+                     return_complex=True,
+                     window=window, 
+                     win_length=win_length)
+    magnitude = torch.abs(res)
+    phase = torch.angle(res)
+    return torch.stack((magnitude, phase), dim=0)
 
 def onsets_and_hr(x):
     features = bvp.bvp(x, 100, show=False)

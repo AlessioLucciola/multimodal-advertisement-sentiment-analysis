@@ -71,8 +71,9 @@ def main():
 
     scheduler = None
 
-    # criterion = torch.nn.CrossEntropyLoss()
-    criterion = torch.nn.NLLLoss()
+    criterion = torch.nn.CrossEntropyLoss()
+    # criterion = torch.nn.NLLLoss()
+    # criterion = torch.nn.MSELoss()
 
     config = {
         "architecture": "EmotionNet - LSTM Seq2Seq",

@@ -96,8 +96,7 @@ OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video_real.mp4") # Of
 #PPG 
 
 # EmotionNet Configurations
-# EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
-EMOTION_NUM_CLASSES = 9  # valence
+EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
 LENGTH = 256 #800 seemed to work
 STEP = 256
 
