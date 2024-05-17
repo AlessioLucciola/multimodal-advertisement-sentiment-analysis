@@ -28,6 +28,7 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
     script_directory = os.path.dirname(__file__)
     values = [[d["test_"+metric[0]] for d in data] for metric in metrics]
     colors = ["#7b00c2", "#189e00"]
+    legend = ["Without Overlap", "With Overlap"]
 
     for i, metric in enumerate(metrics):
         _, ax = plt.subplots(figsize=(12, 6))
@@ -45,9 +46,10 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
                 ax.set_ylabel(f"{metric[1]} (%)" if metric[0] != "test_loss" else metric[1], fontsize=14)
                 ax.set_title(f'{metric[1]} Test Results', fontsize=16)
 
+
         # Add a legend based on the colors
         # Without overlap: #7b00c2, with overlap: #189e00
-        ax.legend(["Without Overlap", "With Overlap"], loc='best')                
+        ax.legend(legend, loc='best')          
 
         # Add a description under the title
         ax.text(0.5, -0.1, configuration, ha='center', va='center',
