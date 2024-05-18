@@ -76,6 +76,11 @@ def signaltonoise(a, axis=0, ddof=0):
     sd = a.std(axis=axis, ddof=ddof)
     return np.where(sd == 0, 0, m/sd)
 
+def second_derivative(signal):
+    x = np.linspace(0, signal.shape[0], num=signal.shape[0])
+    dfdx = np.gradient(signal, x)
+    d2fdx2 = np.gradient(dfdx, x)
+    return d2fdx2
 
 
 if __name__ == "__main__":

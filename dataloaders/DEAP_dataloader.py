@@ -15,7 +15,7 @@ import torch
 import numpy as np
 import pandas as pd
 from datasets.DEAP_dataset import DEAPDataset
-from utils.ppg_utils import wavelet_transform, stft, signaltonoise
+from utils.ppg_utils import wavelet_transform, stft, signaltonoise, second_derivative
 from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from scipy import signal
 from packages.rppg_toolbox.utils.plot import plot_signal
@@ -28,7 +28,7 @@ warnings.filterwarnings('ignore')
 # Each signal is 63 seconds long
 
 
-PLOT_DEBUG_INDEX = 861
+PLOT_DEBUG_INDEX = 1
 BAD_SIGNAL_INDEX = 10
 
 class DEAPDataLoader(DataLoader):
@@ -50,24 +50,25 @@ class DEAPDataLoader(DataLoader):
         
         self.data["stn"] = self.data["ppg"].apply(lambda x: signaltonoise(x))
         
-        print("plotting good and bad signals...")
-        bad_signal_plot = 0
-        good_signal_plot = 0
-        for i, row in self.data.iterrows():
-            if bad_signal_plot > 5 and good_signal_plot > 5:
-                break
-            ppg, stn = row["ppg"], row["stn"]
-            print(f"stn for i: {i} is: {stn}")
-            if stn >= -0.02 and good_signal_plot <=5:
-                plot_signal(np.array(ppg), f"debug_plots/good_signal_{good_signal_plot}_{i}")
-                good_signal_plot +=1 
-            if stn < -0.02 and bad_signal_plot <= 5:
-                plot_signal(np.array(ppg), f"debug_plots/bad_signal_{bad_signal_plot}_{i}")
-                bad_signal_plot += 1
+        # NOISE_THRESHOLD = 0.002
+        # print("plotting good and bad signals...")
+        # bad_signal_plot = 0
+        # good_signal_plot = 0
+        # for i, row in self.data.iterrows():
+        #     if bad_signal_plot > 5 and good_signal_plot > 5:
+        #         break
+        #     ppg, stn = row["ppg"], row["stn"]
+        #     print(f"stn for i: {i} is: {stn}")
+        #     if stn >= NOISE_THRESHOLD and good_signal_plot <=5:
+        #         plot_signal(np.array(ppg), f"debug_plots/good_signal_{good_signal_plot}_{i}")
+        #         good_signal_plot +=1 
+        #     if stn < NOISE_THRESHOLD and bad_signal_plot <= 5:
+        #         plot_signal(np.array(ppg), f"debug_plots/bad_signal_{bad_signal_plot}_{i}")
+        #         bad_signal_plot += 1
         
-        print(f"Data before filtering bad signals: {len(self.data)}")
-        self.data = self.data.query('stn > -0.02')
-        print(f"Data after filtering bad signals: {len(self.data)}")
+        # print(f"Data before filtering bad signals: {len(self.data)}")
+        # self.data = self.data.query(f'stn > {NOISE_THRESHOLD}')
+        # print(f"Data after filtering bad signals: {len(self.data)}")
 
         print("Performing min-max normalization")
         self.data = self.normalize_data(self.data)
@@ -189,11 +190,13 @@ class DEAPDataLoader(DataLoader):
         
         # alpha = 1000
         alpha = 1
+        a, b = [-1,1]
         new_df = []
         for i, row in df.iterrows():
             ppg, subject, valence = row["ppg"], row["subject"], row["valence"]
-            _min, _max = min_max_mapping[subject]["_min"], min_max_mapping[subject]["_max"] 
-            ppg = (ppg - _min) / (_max - _min) * alpha
+            # _min, _max = min_max_mapping[subject]["_min"], min_max_mapping[subject]["_max"] 
+            _min, _max = min(ppg), max(ppg)
+            ppg = (a + ((ppg - _min)*(b-a)) / (_max - _min)) * alpha
             new_df.append({"ppg": ppg, "valence": valence, "subject": subject})
         return pd.DataFrame(new_df)
 
@@ -227,59 +230,93 @@ class DEAPDataLoader(DataLoader):
         val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
         return train_df, val_df, test_df
 
-        # NOTE: split by subjects
-        df = self.data
+    def slice_ppg_window(self, ppg_signal,peak_index, window_size):
+      """
+      Slices a window from the PPG signal to contain a single pulse with the peak at the center.
 
-        train_ratio = 0.6
-        val_ratio = 0.2
-        test_ratio = 0.2
-        if train_ratio + val_ratio + test_ratio != 1:
-            raise ValueError("Ratios must sum to 1. Please adjust the values.")
+      Args:
+        ppg_signal: A NumPy array representing the filtered PPG signal.
+        window_size: The desired size of the window (number of data points).
 
-        pid_groups = df['participant_id'].tolist()
-        X = df['ppg'].tolist()
-        Y = df['valence'].tolist()
-        sss = GroupShuffleSplit(n_splits=1, test_size=val_ratio + test_ratio, random_state=RANDOM_SEED)
+      Returns:
+        A NumPy array containing the sliced window with the peak at the center.
+      """
+      # Ensure the window size is less than or equal to the signal length
+      window_size = min(window_size, len(ppg_signal))
+      # Calculate the half window size (assuming an even window size for peak centering)
+      half_window_size = window_size // 2
+      # Check if the peak is close enough to the edges to fit the entire window
+      if peak_index < half_window_size or peak_index >= len(ppg_signal) - half_window_size:
+        # If not, center the window as much as possible
+        start_index = max(0, peak_index - half_window_size + 1)
+        end_index = min(len(ppg_signal), peak_index + half_window_size)
+      else:
+        # Center the window perfectly
+        start_index = peak_index - half_window_size
+        end_index = start_index + window_size
+      # Slice the window from the signal
+      sliced_window = ppg_signal[start_index:end_index]
+      return sliced_window 
 
-        # Split the dataframe based on pid groups
-        for train_index, test_index in sss.split(X, Y, pid_groups):  # Splitting based on labels maintains class balance
-            train_df = df.iloc[train_index]
-            remaining = df.iloc[test_index]
+    def slice_ppg_windows(self, ppg_signal, window_size, overlap=0):
+          """
+          Slices the entire PPG signal into windows containing single pulses.
 
-            # Further split remaining data into validation and test sets (optional)
-            sss_inner = GroupShuffleSplit(n_splits=1, test_size=test_ratio / (val_ratio + test_ratio), random_state=RANDOM_SEED)
-            X_remaining, Y_remaining = remaining["ppg"].tolist(), remaining["valence"].tolist()    
-            pid_groups_remaining = remaining['participant_id'].tolist()
-            val_index, test_index = next(sss_inner_.split(X_remaining, Y_remaining, pid_groups_remaining))
-            val_df = remaining.iloc[val_index]
-            test_df = remaining.iloc[test_index]
+          Args:
+            ppg_signal: A NumPy array representing the filtered PPG signal.
+            window_size: The desired size of the window (number of data points).
+            overlap (optional): The number of data points by which consecutive windows overlap.
 
-        train_pids = set(train_df["participant_id"].unique())
-        val_pids = set(val_df["participant_id"].unique())
-        test_pids = set(test_df["participant_id"].unique())
-        
-        # print("train pids ", train_pids)
-        # print("val pids ", val_pids)
-        # print("test pids ",test_pids )
+          Returns:
+            A list of NumPy arrays, where each array represents a window with a single pulse.
+          """
 
-        assert len(train_pids & val_pids) == 0
-        assert len(train_pids & test_pids) == 0
-        assert len(val_pids & test_pids) == 0
-         
-        return train_df, val_df, test_df
+          # Find all potential peak indices
+          potential_peaks = np.diff(np.sign(np.diff(ppg_signal))) > 0  # Identify rising edges
 
+          # Create an empty list to store windows
+          windows = []
+
+          # Iterate through potential peaks
+          for peak_index in potential_peaks.nonzero()[0]:
+            # Call the slice function for each peak
+            sliced_window = self.slice_ppg_window(ppg_signal, peak_index, window_size)
+            windows.append(sliced_window)
+
+          # Handle overlapping windows (optional)
+          if overlap > 0:
+            # Adjust window start indices for overlapping windows
+            for i in range(1, len(windows)):
+              windows[i][0] = max(windows[i][0], windows[i-1][window_size - overlap])
+
+          return windows    
+
+    #TODO: take a single pulse for each window, and align it in the center
     def slice_data(self, df, length=LENGTH, step=STEP) -> pd.DataFrame:
         if length > 3000:
             raise ValueError(f"Length cannot be greater than original length")
         new_df = []
         for row_i, row in df.iterrows():
             ppg, label, subject = row["ppg"], row["valence"], row["subject"]
-            for i in range(0, len(ppg) - length + 1, step):
-                if row_i == PLOT_DEBUG_INDEX and i ==0:
-                    plot_signal(ppg, "before_slice")
-                ppg_segment = ppg[i:i+length]
-                if row_i == PLOT_DEBUG_INDEX and i ==0:
-                    plot_signal(ppg_segment, "after_slice")
+            if row_i == PLOT_DEBUG_INDEX:
+                plot_signal(ppg, "before_slice")
+            ppg_segments = self.slice_ppg_windows(ppg, window_size=length)
+            for i, ppg_segment in enumerate(ppg_segments):
+                if len(ppg_segment) != length:
+                    continue
+
+                #Remove low quality sliced that comes from low quality signal
+                if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 3:
+                    # plot_signal(ppg_segment, f"debug_plots/bad_slices/slice_{i}")
+                    continue 
+                
+                # Only keep signals that have the peak on the center
+                if not 30 <= np.argmax(ppg_segment) <= 80:
+                    continue
+
+        
+                # plot_signal(ppg_segment, f"debug_plots/slices/after_slice_{i}_{row_i}")
+
                 new_row = {
                         "ppg": ppg_segment ,
                         "valence": label,

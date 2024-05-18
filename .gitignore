@@ -38,3 +38,5 @@ packages/rppg_toolbox/data/**
 
 temp_video.mp4
 **/temp/**
+
+**/debug_plots/**

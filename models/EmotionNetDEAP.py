@@ -71,15 +71,15 @@ class EmotionNet(nn.Module):
             nn.Dropout(p=dropout_p),
         )
 
-        # self.fc = nn.Sequential(
-        #         nn.Linear(660, 512),
-        #         nn.Linear(512, EMOTION_NUM_CLASSES))
+        self.fc = nn.Sequential(
+                nn.Linear(660, 512),
+                nn.Linear(512, EMOTION_NUM_CLASSES))
 
-        self.fc = nn.Linear(512, EMOTION_NUM_CLASSES)
+        # self.fc = nn.Linear(512, EMOTION_NUM_CLASSES)
         # self.fc = nn.Linear(hidden_size, EMOTION_NUM_CLASSES)
     def forward(self, x):
         x = x.unsqueeze(1)
-        CNN_embedding = self.CNN_block(x)
+        CNN_embedding = self.CNN_block_1d(x)
         CNN_embedding = torch.flatten(CNN_embedding, start_dim=1) 
 
         # x_lstm = torch.squeeze(x, 1)
