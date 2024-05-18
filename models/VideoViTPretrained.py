@@ -38,6 +38,11 @@ class VideoViTPretrained(nn.Module):
 
         if DATASET_NAME == "FER":
             self.resize = transforms.Resize((224, 224))  # Resize input to 224x224
+
+        # Print the number of trainable parameters
+        print(f'Model has {sum(p.numel() for p in self.model.parameters() if p.requires_grad)} trainable params.')
+        # Print the number of layers
+        print(f'Model has {len(list(self.model.parameters()))} layers.')
     
     def forward(self, x):
         if DATASET_NAME == "FER":

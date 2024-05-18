@@ -44,7 +44,11 @@ class VideoDenseNet121(nn.Module):
         model_parameters = filter(
             lambda p: p.requires_grad, self.model.parameters())
         params = sum([np.prod(p.size()) for p in model_parameters])
+
+        # Print the number of trainable parameters
         print(f'Model has {params} trainable params.')
+        # Print the number of layers
+        print(f'Model has {len(list(self.model.parameters()))} layers.')
 
     def forward(self, x):
         return self.model(x)
