@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from biosppy.signals import bvp
 from config import WAVELET_STEP, LENGTH
+from scipy.signal import welch, filtfilt, butter
 
 def statistical_features(x: torch.Tensor) -> torch.Tensor:
     mean = torch.mean(x, dim=1).unsqueeze(0)
@@ -48,6 +49,33 @@ def onsets_and_hr(x):
     delta = onsets.shape[1] - hr.shape[1]
     onsets = onsets[:, :-delta]
     return torch.cat((onsets, hr), dim=0)
+
+def power_spectrum(ppg_data, fs=128):
+  """
+  Calculates the power spectrum of a PPG signal.
+
+  Args:
+      ppg_data: The PPG signal as a NumPy array.
+      fs: The sampling frequency of the signal in Hz.
+
+  Returns:
+      A tuple containing:
+          - frequencies: An array of frequencies corresponding to the power spectrum.
+          - power_density: An array of power spectral density values.
+  """
+
+  # Welch's method is a common approach for estimating power spectra
+  frequencies, power_density = welch(ppg_data, fs=fs, nperseg=1024, window='hann')
+
+  return frequencies, power_density
+
+
+def signaltonoise(a, axis=0, ddof=0):
+    a = np.asanyarray(a)
+    m = a.mean(axis)
+    sd = a.std(axis=axis, ddof=ddof)
+    return np.where(sd == 0, 0, m/sd)
+
 
 
 if __name__ == "__main__":

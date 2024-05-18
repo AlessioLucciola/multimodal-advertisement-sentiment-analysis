@@ -86,7 +86,7 @@ def train_eval_loop(device,
 
             loss = criterion(output, target)
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
             losses.append(loss.item())
 
@@ -129,22 +129,22 @@ def train_eval_loop(device,
         print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(val_losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f}")
         print("-" * 50)
     
-        # if val_accuracy_metric.compute() > best_accuracy:
-        #     print(f"Best model saved (accuracy: {val_accuracy_metric.compute()}, previous: {best_accuracy}")
-        #     best_accuracy = val_accuracy_metric.compute()
-        #     best_model = copy.deepcopy(model)
-        #     if SAVE_MODELS:
-        #       save_model(data_name, model, epoch)
-        # current_results = {
-        #     'epoch': epoch+1,
-        #     'training_loss': torch.tensor(losses).mean().item(),
-        #     'training_accuracy': accuracy_metric.compute().item(),
-        #     'training_recall': recall_metric.compute().item(),
-        #     'validation_loss': torch.tensor(val_losses).mean().item(),
-        #     'validation_accuracy': val_accuracy_metric.compute().item(),
-        #     'validation_recall': val_recall_metric.compute().item(),
-        # }
-        # if SAVE_RESULTS:
-        #     save_results(data_name, current_results)
-        # if epoch == config["epochs"]-1 and SAVE_MODELS:
-        #     save_model(data_name, best_model, epoch=None, is_best=True)
+        if val_accuracy_metric.compute() > best_accuracy:
+            print(f"Best model saved (accuracy: {val_accuracy_metric.compute()}, previous: {best_accuracy}")
+            best_accuracy = val_accuracy_metric.compute()
+            best_model = copy.deepcopy(model)
+            if SAVE_MODELS:
+              save_model(data_name, model, epoch)
+        current_results = {
+            'epoch': epoch+1,
+            'training_loss': torch.tensor(losses).mean().item(),
+            'training_accuracy': accuracy_metric.compute().item(),
+            'training_recall': recall_metric.compute().item(),
+            'validation_loss': torch.tensor(val_losses).mean().item(),
+            'validation_accuracy': val_accuracy_metric.compute().item(),
+            'validation_recall': val_recall_metric.compute().item(),
+        }
+        if SAVE_RESULTS:
+            save_results(data_name, current_results)
+        if epoch == config["epochs"]-1 and SAVE_MODELS:
+            save_model(data_name, best_model, epoch=None, is_best=True)

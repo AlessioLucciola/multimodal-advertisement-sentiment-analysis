@@ -76,6 +76,7 @@ class EmotionNet(nn.Module):
         #         nn.Linear(512, EMOTION_NUM_CLASSES))
 
         self.fc = nn.Linear(512, EMOTION_NUM_CLASSES)
+        # self.fc = nn.Linear(hidden_size, EMOTION_NUM_CLASSES)
     def forward(self, x):
         x = x.unsqueeze(1)
         CNN_embedding = self.CNN_block(x)
@@ -92,6 +93,7 @@ class EmotionNet(nn.Module):
 
         # complete_embedding = torch.cat([CNN_embedding, lstm_embedding], dim=1)
         complete_embedding = CNN_embedding
+        # complete_embedding = lstm_embedding
         output_logits = self.fc(complete_embedding)  
         # print(f"output logits are: {output_logits}")
         # print(f"preds are: {output_logits.argmax(1)}")

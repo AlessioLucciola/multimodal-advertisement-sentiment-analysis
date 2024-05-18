@@ -15,17 +15,21 @@ import torch
 import numpy as np
 import pandas as pd
 from datasets.DEAP_dataset import DEAPDataset
-from utils.ppg_utils import wavelet_transform, stft
+from utils.ppg_utils import wavelet_transform, stft, signaltonoise
 from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from scipy import signal
 from packages.rppg_toolbox.utils.plot import plot_signal
+import warnings
+from scipy.signal import butter, filtfilt
+warnings.filterwarnings('ignore')
 
 # Sample rate is 128hz
 # Signals are 8064 long
 # Each signal is 63 seconds long
 
 
-PLOT_DEBUG_INDEX = 1
+PLOT_DEBUG_INDEX = 861
+BAD_SIGNAL_INDEX = 10
 
 class DEAPDataLoader(DataLoader):
     def __init__(self,
@@ -34,9 +38,37 @@ class DEAPDataLoader(DataLoader):
         self.data = self.load_data()
         self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
         plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "original")
+        print("Detrending signal...")
         self.data["ppg"] = self.data["ppg"].apply(lambda x: self.detrend_ppg(np.array(x)))
         plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "detrended")
-            
+        print("Bandpass filtering...")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: self.bandpass_filter_ppg(np.array(x)))
+        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "bandpass_filtered")
+        print("Moving average filtering...")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: self.moving_average_filter(x))
+        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "moving_average_filtered")
+        
+        self.data["stn"] = self.data["ppg"].apply(lambda x: signaltonoise(x))
+        
+        print("plotting good and bad signals...")
+        bad_signal_plot = 0
+        good_signal_plot = 0
+        for i, row in self.data.iterrows():
+            if bad_signal_plot > 5 and good_signal_plot > 5:
+                break
+            ppg, stn = row["ppg"], row["stn"]
+            print(f"stn for i: {i} is: {stn}")
+            if stn >= -0.02 and good_signal_plot <=5:
+                plot_signal(np.array(ppg), f"debug_plots/good_signal_{good_signal_plot}_{i}")
+                good_signal_plot +=1 
+            if stn < -0.02 and bad_signal_plot <= 5:
+                plot_signal(np.array(ppg), f"debug_plots/bad_signal_{bad_signal_plot}_{i}")
+                bad_signal_plot += 1
+        
+        print(f"Data before filtering bad signals: {len(self.data)}")
+        self.data = self.data.query('stn > -0.02')
+        print(f"Data after filtering bad signals: {len(self.data)}")
+
         print("Performing min-max normalization")
         self.data = self.normalize_data(self.data)
         
@@ -70,7 +102,6 @@ class DEAPDataLoader(DataLoader):
         # metadata_dir = os.path.join(DATA_DIR, "DEAP", "metadata")
         ppg_channel = 38
         df = []
-
         for i, file in enumerate(os.listdir(data_dir)):
             if not file.endswith(".dat"):
                 continue
@@ -86,6 +117,60 @@ class DEAPDataLoader(DataLoader):
                     df.append({"ppg": data, "valence": valence, "subject": i})
         return pd.DataFrame(df)
     
+    def moving_average_filter(self, data, window_size=10):
+      """
+      Applies a moving average filter to a 1D NumPy array.
+
+      Args:
+          data: The 1D NumPy array to filter.
+          window_size: The size of the moving average window (positive integer).
+
+      Returns:
+          The filtered 1D NumPy array.
+      """
+
+      # Check for valid window size
+      if window_size <= 0:
+        raise ValueError("Window size must be a positive integer.")
+
+      # Calculate the number of elements to pad at the beginning and end
+      pad_size = window_size // 2
+
+      # Pad the data with mirrored values at the beginning and end
+      padded_data = np.concatenate((data[:pad_size][::-1], data, data[-pad_size:][::-1]))
+
+      # Apply moving average using convolution
+      smoothed_data = np.convolve(padded_data, np.ones(window_size) / window_size, mode='valid')
+
+      return smoothed_data
+
+    def bandpass_filter_ppg(self, data, fs=128, lowcut=0.5, highcut=20, order=5):
+      """
+      Bandpass filters a PPG signal using a Butterworth filter.
+
+      Args:
+          data: The PPG signal as a numpy array.
+          fs: The sampling frequency of the signal in Hz.
+          lowcut: Lower cutoff frequency of the bandpass filter in Hz.
+          highcut: Higher cutoff frequency of the bandpass filter in Hz.
+          order: The order of the Butterworth filter (default: 5).
+
+      Returns:
+          The filtered PPG signal as a numpy array.
+      """
+
+      nyquist = 0.5 * fs
+      lowcut_norm = lowcut / nyquist
+      highcut_norm = highcut / nyquist
+
+      # Design the Butterworth filter
+      b, a = butter(order, [lowcut_norm, highcut_norm], btype='band')
+
+      # Apply the filter twice (filtfilt) for zero-phase filtering
+      filtered_data = filtfilt(b, a, data)
+
+      return filtered_data
+
     def normalize_data(self, df):
         """
         Compute the min and max value per subject and uses min-max scaling in order to normalize the data.
@@ -102,7 +187,8 @@ class DEAPDataLoader(DataLoader):
                 if _max > min_max_mapping[subject]["_max"]:
                     min_max_mapping[subject]["_max"] = _max
         
-        alpha = 1000
+        # alpha = 1000
+        alpha = 1
         new_df = []
         for i, row in df.iterrows():
             ppg, subject, valence = row["ppg"], row["subject"], row["valence"]
@@ -130,7 +216,7 @@ class DEAPDataLoader(DataLoader):
     def detrend_ppg(self, ppg_signal):
         x = np.linspace(0, ppg_signal.shape[0], ppg_signal.shape[0])
         # print(f"x shape is: {x.shape}, while ppg_signal shape is {ppg_signal.shape}")
-        model = np.polyfit(x, ppg_signal, 10)
+        model = np.polyfit(x, ppg_signal, 50)
         predicted = np.polyval(model, x)
         return ppg_signal - predicted
         return signal.detrend(ppg_signal)

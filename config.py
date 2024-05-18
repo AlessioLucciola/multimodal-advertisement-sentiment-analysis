@@ -34,7 +34,7 @@ RESUME_EPOCH = ""
 # Train configurations
 BATCH_SIZE = 128 # Max (for ViT): 256 | Max (for CNN): 64
 N_EPOCHS = 500
-LR = 1e-3
+LR = 1e-2
 REG = 0
 DROPOUT_P = 0
 
