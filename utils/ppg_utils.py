@@ -21,7 +21,7 @@ def wavelet_transform(x: torch.Tensor | np.ndarray):
         x = x.detach().numpy()
     # return np.zeros((LENGTH // WAVELET_STEP,  LENGTH))
     scales = np.arange(1, len(x) + 1, WAVELET_STEP)
-    coef, _ = pywt.cwt(x, scales, "morl")
+    coef, _ = pywt.cwt(x, scales, "mexh", method="conv")
     # print(f"coef shape is {coef.shape}")
     return coef
 

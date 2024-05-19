@@ -73,6 +73,8 @@ class DEAPDataLoader(DataLoader):
         print("Performing min-max normalization")
         self.data = self.normalize_data(self.data)
         
+        # TODO: for debug, split after
+        # self.data = self.slice_data(self.data)
         self.train_df, self.val_df, self.test_df = self.split_data()
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
@@ -90,13 +92,24 @@ class DEAPDataLoader(DataLoader):
         print(f"Train_df length: {len(self.train_df)}")
         print(f"Val_df length: {len(self.val_df)}")
         print(f"Test_df length: {len(self.test_df)}")
+        
+        label_counts = self.train_df["valence"].value_counts()
+        print("Count before train", label_counts)
+        target_count = label_counts.min()
+        # Sample function to get balanced sample from each group
+        def balanced_sample(group):
+          return group.sample(target_count, random_state=RANDOM_SEED)
+        # Apply sample function to each group in the DataFrame 
+        self.train_df = self.train_df.groupby('valence').apply(balanced_sample)
+        print("Count after train", self.train_df["valence"].value_counts())
 
-        # target_count = label_counts.min()
-        # # Sample function to get balanced sample from each group
-        # def balanced_sample(group):
-        #   return group.sample(target_count, random_state=RANDOM_SEED)
-        # # Apply sample function to each group in the DataFrame 
-        # self.data = self.data.groupby('valence').apply(balanced_sample)
+        label_counts = self.val_df["valence"].value_counts()
+        print("Count before val", label_counts)
+        target_count = label_counts.min()
+        # Sample function to get balanced sample from each group
+        # Apply sample function to each group in the DataFrame 
+        self.val_df = self.val_df.groupby('valence').apply(balanced_sample)
+        print("Count after val", self.val_df["valence"].value_counts())
 
     def load_data(self) -> pd.DataFrame:
         data_dir = os.path.join(DATA_DIR, "DEAP", "data")
@@ -145,7 +158,7 @@ class DEAPDataLoader(DataLoader):
 
       return smoothed_data
 
-    def bandpass_filter_ppg(self, data, fs=128, lowcut=0.5, highcut=20, order=5):
+    def bandpass_filter_ppg(self, data, fs=128, lowcut=0.5, highcut=40, order=5):
       """
       Bandpass filters a PPG signal using a Butterworth filter.
 
@@ -188,15 +201,13 @@ class DEAPDataLoader(DataLoader):
                 if _max > min_max_mapping[subject]["_max"]:
                     min_max_mapping[subject]["_max"] = _max
         
-        # alpha = 1000
-        alpha = 1
-        a, b = [-1,1]
+        a, b = [0,1]
         new_df = []
         for i, row in df.iterrows():
             ppg, subject, valence = row["ppg"], row["subject"], row["valence"]
             # _min, _max = min_max_mapping[subject]["_min"], min_max_mapping[subject]["_max"] 
             _min, _max = min(ppg), max(ppg)
-            ppg = (a + ((ppg - _min)*(b-a)) / (_max - _min)) * alpha
+            ppg = a + ((ppg - _min)*(b-a)) / (_max - _min)
             new_df.append({"ppg": ppg, "valence": valence, "subject": subject})
         return pd.DataFrame(new_df)
 
@@ -278,7 +289,9 @@ class DEAPDataLoader(DataLoader):
           windows = []
 
           # Iterate through potential peaks
-          for peak_index in potential_peaks.nonzero()[0]:
+          PEAK_STEP = 5
+          for i in range(0, len(potential_peaks.nonzero()[0]), PEAK_STEP):
+            peak_index = potential_peaks.nonzero()[0][i]
             # Call the slice function for each peak
             sliced_window = self.slice_ppg_window(ppg_signal, peak_index, window_size)
             windows.append(sliced_window)
@@ -291,7 +304,6 @@ class DEAPDataLoader(DataLoader):
 
           return windows    
 
-    #TODO: take a single pulse for each window, and align it in the center
     def slice_data(self, df, length=LENGTH, step=STEP) -> pd.DataFrame:
         if length > 3000:
             raise ValueError(f"Length cannot be greater than original length")
@@ -306,14 +318,13 @@ class DEAPDataLoader(DataLoader):
                     continue
 
                 #Remove low quality sliced that comes from low quality signal
-                if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 3:
-                    # plot_signal(ppg_segment, f"debug_plots/bad_slices/slice_{i}")
+                if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 7:
+                    # plot_signal(ppg_segment, f"debug_plots/bad_slices/slice_{i}_{row_i}")
                     continue 
                 
                 # Only keep signals that have the peak on the center
-                if not 30 <= np.argmax(ppg_segment) <= 80:
-                    continue
-
+                # if not 30 <= np.argmax(ppg_segment) <= 80:
+                #     continue
         
                 # plot_signal(ppg_segment, f"debug_plots/slices/after_slice_{i}_{row_i}")
 
@@ -327,8 +338,8 @@ class DEAPDataLoader(DataLoader):
     
     def discretize_labels(self, valence: torch.Tensor) -> List[float]:
         self.labels = torch.full_like(valence, -1)
-        self.labels[(valence >= 1) & (valence <= 3) ] = 0 
-        self.labels[(valence >= 3) & (valence <= 6) ] = 1
+        self.labels[(valence >= 1) & (valence < 3) ] = 0 
+        self.labels[(valence >= 3) & (valence < 6) ] = 1
         self.labels[(valence >= 6) & (valence <= 9) ] = 2
         return self.labels.tolist()
 
