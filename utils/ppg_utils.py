@@ -42,6 +42,16 @@ def stft(x: np.ndarray):
     phase = torch.angle(res)
     return torch.stack((magnitude, phase), dim=0)
 
+def fft(x: np.ndarray):
+    if isinstance(x, list):
+        x = np.array(x)
+
+    x_torch = torch.from_numpy(x)
+    res = torch.fft.fft(x_torch)
+    magnitude = torch.abs(res)
+    phase = torch.angle(res)
+    return torch.stack((res.real, magnitude, phase), dim=0)
+
 def onsets_and_hr(x):
     features = bvp.bvp(x, 100, show=False)
     onsets = torch.tensor(features["onsets"]).unsqueeze(0)

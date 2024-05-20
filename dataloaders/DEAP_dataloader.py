@@ -15,7 +15,7 @@ import torch
 import numpy as np
 import pandas as pd
 from datasets.DEAP_dataset import DEAPDataset
-from utils.ppg_utils import wavelet_transform, stft, signaltonoise, second_derivative
+from utils.ppg_utils import wavelet_transform, stft, signaltonoise, second_derivative, fft
 from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from scipy import signal
 from packages.rppg_toolbox.utils.plot import plot_signal
@@ -48,8 +48,6 @@ class DEAPDataLoader(DataLoader):
         self.data["ppg"] = self.data["ppg"].apply(lambda x: self.moving_average_filter(x))
         plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "moving_average_filtered")
         
-        self.data["stn"] = self.data["ppg"].apply(lambda x: signaltonoise(x))
-        
         # NOISE_THRESHOLD = 0.002
         # print("plotting good and bad signals...")
         # bad_signal_plot = 0
@@ -79,37 +77,49 @@ class DEAPDataLoader(DataLoader):
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
         self.test_df = self.slice_data(self.test_df)
+        
+        # self.train_df, (mean, std) = self.standardize_data(self.train_df)
+        # self.val_df = self.standardize_data(self.val_df, mean=mean, std=std)
+        # self.test_df = self.standardize_data(self.test_df, mean=mean, std=std)
 
         if WT:
             print(f"Performing wavelet transform...")
             tqdm.pandas()
-            self.train_df["ppg"] = self.train_df["ppg"].progress_apply(wavelet_transform)
-            self.val_df["ppg"] = self.val_df["ppg"].progress_apply(wavelet_transform)
-            self.test_df["ppg"] = self.test_df["ppg"].progress_apply(wavelet_transform)
+            self.train_df["ppg"] = self.train_df["ppg"].progress_apply(fft)
+            self.val_df["ppg"] = self.val_df["ppg"].progress_apply(fft)
+            self.test_df["ppg"] = self.test_df["ppg"].progress_apply(fft)
+            # self.train_df["ppg"] = self.train_df["ppg"].progress_apply(wavelet_transform)
+            # self.val_df["ppg"] = self.val_df["ppg"].progress_apply(wavelet_transform)
+            # self.test_df["ppg"] = self.test_df["ppg"].progress_apply(wavelet_transform)
         else:
             print("Skipped wavelet transform")
 
         print(f"Train_df length: {len(self.train_df)}")
         print(f"Val_df length: {len(self.val_df)}")
         print(f"Test_df length: {len(self.test_df)}")
+
         
         label_counts = self.train_df["valence"].value_counts()
         print("Count before train", label_counts)
         target_count = label_counts.min()
-        # Sample function to get balanced sample from each group
+
         def balanced_sample(group):
-          return group.sample(target_count, random_state=RANDOM_SEED)
-        # Apply sample function to each group in the DataFrame 
+            return group.sample(target_count, random_state=RANDOM_SEED)
+
         self.train_df = self.train_df.groupby('valence').apply(balanced_sample)
         print("Count after train", self.train_df["valence"].value_counts())
 
         label_counts = self.val_df["valence"].value_counts()
         print("Count before val", label_counts)
         target_count = label_counts.min()
-        # Sample function to get balanced sample from each group
-        # Apply sample function to each group in the DataFrame 
         self.val_df = self.val_df.groupby('valence').apply(balanced_sample)
         print("Count after val", self.val_df["valence"].value_counts())
+        
+        # print(self.train_df)
+        # mean, std = self.get_mean_std(self.train_df.copy())
+        # print(f"mean and std of train is: {mean, std}")
+        # self.train_df = self.standardize_data(self.train_df.copy())
+        # self.val_df = self.standardize_data(self.val_df.copy(), mean=mean, std=std)
 
     def load_data(self) -> pd.DataFrame:
         data_dir = os.path.join(DATA_DIR, "DEAP", "data")
@@ -212,20 +222,27 @@ class DEAPDataLoader(DataLoader):
         return pd.DataFrame(new_df)
 
 
-    def get_mean_std(self):
-        cat_data = np.concatenate(self.data["ppg"], axis=0)
+    def get_mean_std(self, data):
+        cat_data = np.concatenate(data["ppg"], axis=0)
         mean, std = cat_data.mean(), cat_data.std()
         return mean, std
 
-    def standardize_data(self):
+
+    def standardize_data(self, data, mean=None, std=None):
+        if mean is not None and std is not None:
+            data["ppg"] = data["ppg"].apply(lambda x: (x-mean)/std) 
+            mean, std = self.get_mean_std(data)
+            print(f"Normalized DEAP mean + std: {mean, std}")
+            return data
         #Standardize
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: np.array(x))
-        print(f"Shape of signal is: {self.data['ppg'].iloc[0].shape}")
-        mean, std = self.get_mean_std()
-        print(f"Before DEAP mean + std: {mean, std}")
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: (x-mean)/std) 
-        mean, std = self.get_mean_std()
+        data["ppg"] = data["ppg"].apply(lambda x: np.array(x))
+        print(f"Shape of signal is: {data['ppg'].iloc[0].shape}")
+        og_mean, og_std = self.get_mean_std(data)
+        print(f"Before DEAP mean + std: {og_mean, og_std}")
+        data["ppg"] = data["ppg"].apply(lambda x: (x-og_mean)/og_std) 
+        mean, std = self.get_mean_std(data)
         print(f"Normalized DEAP mean + std: {mean, std}")
+        return data, (og_mean, og_std)
 
     def detrend_ppg(self, ppg_signal):
         x = np.linspace(0, ppg_signal.shape[0], ppg_signal.shape[0])
@@ -233,7 +250,6 @@ class DEAPDataLoader(DataLoader):
         model = np.polyfit(x, ppg_signal, 50)
         predicted = np.polyval(model, x)
         return ppg_signal - predicted
-        return signal.detrend(ppg_signal)
 
        
     def split_data(self):
@@ -289,7 +305,7 @@ class DEAPDataLoader(DataLoader):
           windows = []
 
           # Iterate through potential peaks
-          PEAK_STEP = 5
+          PEAK_STEP = 1
           for i in range(0, len(potential_peaks.nonzero()[0]), PEAK_STEP):
             peak_index = potential_peaks.nonzero()[0][i]
             # Call the slice function for each peak
@@ -318,18 +334,18 @@ class DEAPDataLoader(DataLoader):
                     continue
 
                 #Remove low quality sliced that comes from low quality signal
-                if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 7:
+                if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 3:
                     # plot_signal(ppg_segment, f"debug_plots/bad_slices/slice_{i}_{row_i}")
                     continue 
                 
                 # Only keep signals that have the peak on the center
-                # if not 30 <= np.argmax(ppg_segment) <= 80:
-                #     continue
+                if not 30 <= np.argmax(ppg_segment) <= 80:
+                    continue
         
                 # plot_signal(ppg_segment, f"debug_plots/slices/after_slice_{i}_{row_i}")
 
                 new_row = {
-                        "ppg": ppg_segment ,
+                        "ppg": ppg_segment,
                         "valence": label,
                         "subject": subject}
                 new_df.append(new_row)
@@ -338,9 +354,9 @@ class DEAPDataLoader(DataLoader):
     
     def discretize_labels(self, valence: torch.Tensor) -> List[float]:
         self.labels = torch.full_like(valence, -1)
-        self.labels[(valence >= 1) & (valence < 3) ] = 0 
-        self.labels[(valence >= 3) & (valence < 6) ] = 1
-        self.labels[(valence >= 6) & (valence <= 9) ] = 2
+        self.labels[(valence >= 1) & (valence < 2) ] = 0 
+        self.labels[(valence >= 2) & (valence < 7) ] = 1
+        self.labels[(valence >= 7) & (valence <= 9) ] = 2
         return self.labels.tolist()
 
     def get_train_dataloader(self):
