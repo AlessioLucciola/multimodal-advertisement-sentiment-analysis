@@ -47,6 +47,8 @@ class DEAPDataLoader(DataLoader):
         print("Moving average filtering...")
         self.data["ppg"] = self.data["ppg"].apply(lambda x: self.moving_average_filter(x))
         plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "moving_average_filtered")
+
+
         
         # NOISE_THRESHOLD = 0.002
         # print("plotting good and bad signals...")
@@ -70,17 +72,21 @@ class DEAPDataLoader(DataLoader):
 
         print("Performing min-max normalization")
         self.data = self.normalize_data(self.data)
-        
-        # TODO: for debug, split after
-        # self.data = self.slice_data(self.data)
+
+        print("Standardizing data") 
+        ppgs = self.data["ppg"].to_numpy()
+        mean, std = ppgs.mean(), ppgs.std()
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: (x-mean)/std) 
+
+        print("Splitting the data")
         self.train_df, self.val_df, self.test_df = self.split_data()
+
+        print("Slicing the data")
         self.train_df = self.slice_data(self.train_df)
         self.val_df = self.slice_data(self.val_df)
         self.test_df = self.slice_data(self.test_df)
         
-        # self.train_df, (mean, std) = self.standardize_data(self.train_df)
-        # self.val_df = self.standardize_data(self.val_df, mean=mean, std=std)
-        # self.test_df = self.standardize_data(self.test_df, mean=mean, std=std)
+
 
         if WT:
             print(f"Performing wavelet transform...")
@@ -88,38 +94,34 @@ class DEAPDataLoader(DataLoader):
             self.train_df["ppg"] = self.train_df["ppg"].progress_apply(fft)
             self.val_df["ppg"] = self.val_df["ppg"].progress_apply(fft)
             self.test_df["ppg"] = self.test_df["ppg"].progress_apply(fft)
-            # self.train_df["ppg"] = self.train_df["ppg"].progress_apply(wavelet_transform)
-            # self.val_df["ppg"] = self.val_df["ppg"].progress_apply(wavelet_transform)
-            # self.test_df["ppg"] = self.test_df["ppg"].progress_apply(wavelet_transform)
         else:
             print("Skipped wavelet transform")
 
+        self.balance_data()
         print(f"Train_df length: {len(self.train_df)}")
         print(f"Val_df length: {len(self.val_df)}")
         print(f"Test_df length: {len(self.test_df)}")
+    
 
-        
+
+    def balance_data(self):
         label_counts = self.train_df["valence"].value_counts()
-        print("Count before train", label_counts)
+        print("Count before (train)", label_counts)
         target_count = label_counts.min()
 
         def balanced_sample(group):
             return group.sample(target_count, random_state=RANDOM_SEED)
 
         self.train_df = self.train_df.groupby('valence').apply(balanced_sample)
-        print("Count after train", self.train_df["valence"].value_counts())
+        print("Count after (train)", self.train_df["valence"].value_counts())
 
         label_counts = self.val_df["valence"].value_counts()
-        print("Count before val", label_counts)
         target_count = label_counts.min()
+        print("Count before (val)", label_counts)
         self.val_df = self.val_df.groupby('valence').apply(balanced_sample)
-        print("Count after val", self.val_df["valence"].value_counts())
+        print("Count after (val)", self.val_df["valence"].value_counts())
+
         
-        # print(self.train_df)
-        # mean, std = self.get_mean_std(self.train_df.copy())
-        # print(f"mean and std of train is: {mean, std}")
-        # self.train_df = self.standardize_data(self.train_df.copy())
-        # self.val_df = self.standardize_data(self.val_df.copy(), mean=mean, std=std)
 
     def load_data(self) -> pd.DataFrame:
         data_dir = os.path.join(DATA_DIR, "DEAP", "data")
@@ -223,7 +225,7 @@ class DEAPDataLoader(DataLoader):
 
 
     def get_mean_std(self, data):
-        cat_data = np.concatenate(data["ppg"], axis=0)
+        cat_data = data["ppg"].to_numpy()
         mean, std = cat_data.mean(), cat_data.std()
         return mean, std
 
@@ -235,13 +237,9 @@ class DEAPDataLoader(DataLoader):
             print(f"Normalized DEAP mean + std: {mean, std}")
             return data
         #Standardize
-        data["ppg"] = data["ppg"].apply(lambda x: np.array(x))
-        print(f"Shape of signal is: {data['ppg'].iloc[0].shape}")
         og_mean, og_std = self.get_mean_std(data)
         print(f"Before DEAP mean + std: {og_mean, og_std}")
         data["ppg"] = data["ppg"].apply(lambda x: (x-og_mean)/og_std) 
-        mean, std = self.get_mean_std(data)
-        print(f"Normalized DEAP mean + std: {mean, std}")
         return data, (og_mean, og_std)
 
     def detrend_ppg(self, ppg_signal):
@@ -253,8 +251,8 @@ class DEAPDataLoader(DataLoader):
 
        
     def split_data(self):
-        train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED)
-        val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED)
+        train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED, stratify=self.data["valence"])
+        val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=RANDOM_SEED, stratify=temp_df["valence"])
         return train_df, val_df, test_df
 
     def slice_ppg_window(self, ppg_signal,peak_index, window_size):
@@ -334,7 +332,7 @@ class DEAPDataLoader(DataLoader):
                     continue
 
                 #Remove low quality sliced that comes from low quality signal
-                if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 3:
+                if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 4:
                     # plot_signal(ppg_segment, f"debug_plots/bad_slices/slice_{i}_{row_i}")
                     continue 
                 
@@ -357,6 +355,9 @@ class DEAPDataLoader(DataLoader):
         self.labels[(valence >= 1) & (valence < 2) ] = 0 
         self.labels[(valence >= 2) & (valence < 7) ] = 1
         self.labels[(valence >= 7) & (valence <= 9) ] = 2
+        # self.labels[(valence >= 1) & (valence < 3) ] = 0 
+        # self.labels[(valence >= 3) & (valence < 6) ] = 1
+        # self.labels[(valence >= 6) & (valence <= 9) ] = 2
         return self.labels.tolist()
 
     def get_train_dataloader(self):

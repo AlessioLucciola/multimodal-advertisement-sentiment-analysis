@@ -46,11 +46,12 @@ def fft(x: np.ndarray):
     if isinstance(x, list):
         x = np.array(x)
 
-    x_torch = torch.from_numpy(x)
+    x_torch = torch.tensor(x)
     res = torch.fft.fft(x_torch)
     magnitude = torch.abs(res)
     phase = torch.angle(res)
-    return torch.stack((res.real, magnitude, phase), dim=0)
+    out = torch.stack((x_torch, res.real, magnitude, phase), dim=0)
+    return out.numpy()
 
 def onsets_and_hr(x):
     features = bvp.bvp(x, 100, show=False)

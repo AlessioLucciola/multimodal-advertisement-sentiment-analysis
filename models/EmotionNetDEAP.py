@@ -48,7 +48,7 @@ class EmotionNet(nn.Module):
 
         self.CNN_block_1d = nn.Sequential(
             nn.Conv1d(
-                in_channels=3,
+                in_channels=4,
                 out_channels=32,
                 kernel_size=3),
             nn.BatchNorm1d(32),
@@ -63,25 +63,33 @@ class EmotionNet(nn.Module):
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2),
             nn.Dropout(p=dropout_p),
-            # nn.Conv1d(
-            #     in_channels=128,
-            #     out_channels=256,
-            #     kernel_size=3),
-            # nn.BatchNorm1d(256),
-            # nn.ReLU(),
-            # nn.MaxPool1d(kernel_size=2),
-            # nn.Dropout(p=dropout_p),
+            nn.Conv1d(
+                in_channels=64,
+                out_channels=128,
+                kernel_size=3),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2),
+            nn.Dropout(p=dropout_p),
+            nn.Conv1d(
+                in_channels=128,
+                out_channels=256,
+                kernel_size=3),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2),
+            nn.Dropout(p=dropout_p),
             nn.Flatten()
         )
          
 
         self.fc = nn.Sequential(
-                nn.Linear(2112, 512),
+                nn.Linear(1536, 512),
                 nn.ReLU(),
-                nn.Dropout(dropout_p),
+                nn.Dropout(0.2),
                 nn.Linear(512, 256),
                 nn.ReLU(),
-                nn.Dropout(dropout_p),
+                nn.Dropout(0.2),
                 nn.Linear(256, EMOTION_NUM_CLASSES))
 
         self.fc2 = nn.Sequential(

@@ -35,8 +35,8 @@ RESUME_EPOCH = ""
 BATCH_SIZE = 512 # Max (for ViT): 256 | Max (for CNN): 64
 N_EPOCHS = 500
 LR = 0.001
-REG = 0
-DROPOUT_P = 0.4
+REG = 0.001
+DROPOUT_P = 0.1
 
 # ----------------------------
 
@@ -97,8 +97,8 @@ OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video_real.mp4") # Of
 
 # EmotionNet Configurations
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
-LENGTH = 140
-STEP = 140
+LENGTH = 128
+STEP = 128
 WT = True #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
 WAVELET_STEP = 16
 LSTM_HIDDEN = 256
