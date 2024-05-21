@@ -120,17 +120,22 @@ class DEAPDataLoader(DataLoader):
         self.train_df = self.train_df.groupby('valence').apply(balanced_sample)
         print("Count after (train)", self.train_df["valence"].value_counts())
 
-        label_counts = self.val_df["valence"].value_counts()
-        target_count = label_counts.min()
-        print("Count before (val)", label_counts)
-        self.val_df = self.val_df.groupby('valence').apply(balanced_sample)
-        print("Count after (val)", self.val_df["valence"].value_counts())
+        # label_counts = self.val_df["valence"].value_counts()
+        # target_count = label_counts.min()
+        # print("Count before (val)", label_counts)
+        # self.val_df = self.val_df.groupby('valence').apply(balanced_sample)
+        # print("Count after (val)", self.val_df["valence"].value_counts())
+
+        # label_counts = self.test_df["valence"].value_counts()
+        # target_count = label_counts.min()
+        # print("Count before (val)", label_counts)
+        # self.test_df = self.test_df.groupby('valence').apply(balanced_sample)
+        # print("Count after (test)", self.test_df["valence"].value_counts())
 
         
 
     def load_data(self) -> pd.DataFrame:
         data_dir = os.path.join(DATA_DIR, "DEAP", "data")
-        # metadata_dir = os.path.join(DATA_DIR, "DEAP", "metadata")
         ppg_channel = 38
         df = []
         for i, file in enumerate(os.listdir(data_dir)):
@@ -142,7 +147,6 @@ class DEAPDataLoader(DataLoader):
                 # resolve the python 2 data problem by encoding : latin1
                 subject = pickle.load(f, encoding='latin1')
                 for trial_i in range(40):
-                    # NOTE: valence is in range [1,9]
                     valence: np.ndarray = subject["labels"][trial_i][0] #index 0 is valence, 1 arousal
                     data: np.ndarray = subject["data"][trial_i][ppg_channel]
                     df.append({"ppg": data, "valence": valence, "subject": i})

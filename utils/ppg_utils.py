@@ -5,6 +5,7 @@ import pandas as pd
 from biosppy.signals import bvp
 from config import WAVELET_STEP, LENGTH
 from scipy.signal import welch, filtfilt, butter
+from packages.rppg_toolbox.utils.plot import plot_signal
 
 def statistical_features(x: torch.Tensor) -> torch.Tensor:
     mean = torch.mean(x, dim=1).unsqueeze(0)

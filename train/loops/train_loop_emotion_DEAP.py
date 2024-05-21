@@ -68,7 +68,7 @@ def train_eval_loop(device,
         task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
     val_f1_metric = F1Score(task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
     
-    best_accuracy = 0.45
+    best_accuracy = 0.40
     best_model = None
 
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
@@ -134,7 +134,7 @@ def train_eval_loop(device,
         print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(val_losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f} | F1: {(val_f1_metric.compute() * 100):.4f}")
         print("-" * 50)
     
-        if val_accuracy_metric.compute() > best_accuracy:
+        if val_accuracy_metric.compute() > best_accuracy and val_recall_metric.compute() > 0.4:
             print(f"Best model saved (accuracy: {val_accuracy_metric.compute()}, previous: {best_accuracy}")
             best_accuracy = val_accuracy_metric.compute()
             best_model = copy.deepcopy(model)
@@ -145,9 +145,11 @@ def train_eval_loop(device,
             'training_loss': torch.tensor(losses).mean().item(),
             'training_accuracy': accuracy_metric.compute().item(),
             'training_recall': recall_metric.compute().item(),
+            'training_f1': f1_metric.compute().item(),
             'validation_loss': torch.tensor(val_losses).mean().item(),
             'validation_accuracy': val_accuracy_metric.compute().item(),
             'validation_recall': val_recall_metric.compute().item(),
+            'validation_f1': val_f1_metric.compute().item(),
         }
         if SAVE_RESULTS:
             save_results(data_name, current_results)

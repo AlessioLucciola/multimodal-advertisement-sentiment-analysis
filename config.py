@@ -22,9 +22,9 @@ NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes 
 
 # Test configurations
 PATH_MODEL_TO_TEST = [
-    "AudioNetCT_2024-05-05_11-51-20"
+    "EmotionNet_2024-05-21_10-16-34_final_copy"
 ]
-TEST_EPOCH = "485" # Number of epoch to test or "best" to test the best model
+TEST_EPOCH = "160" # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -33,10 +33,10 @@ RESUME_EPOCH = ""
 
 # Train configurations
 BATCH_SIZE = 512 # Max (for ViT): 256 | Max (for CNN): 64
-N_EPOCHS = 500
+N_EPOCHS = 5000
 LR = 0.0001
 
-REG = 0.04
+REG = 0.03
 DROPOUT_P = 0
 # ----------------------------
 
