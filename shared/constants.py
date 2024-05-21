@@ -5,6 +5,9 @@
 CEAP_MEAN = 0.546
 CEAP_STD = 0.189
 
+SCALED_DEAP_MEAN = 0.560787915300721
+SCALED_DEAP_STD = 0.19942466308352924
+
 # Video models
 video_cnn_models_list = [
                 'resnet18', 

@@ -15,8 +15,8 @@ from packages.rppg_toolbox.config import DUMP_FRAMES_PATH
 
 # Functions for reading rPPG media of interest and saving frames
 def read_video(video_file: str,
-               max_frames_split: int = 500, 
-               desired_fr: int = 30) -> Dict[str, Any]:
+               max_frames_split: int = 128, 
+               desired_fr: int = 60) -> Dict[str, Any]:
     """Reads a video file, returns frames(T, H, W, 3) """
     if os.path.exists(DUMP_FRAMES_PATH):
         print(f"temp_frames already found, removing it!")
@@ -68,11 +68,8 @@ def read_video(video_file: str,
     # We will discard the result anyway since we have 1 prediction per frame, and all the other prediction will be discarded.
     if curr_frame != 0:
         print(f"Split {curr_split} saved!")
-        # frames = frames[:len(curr_timestamps)]
-
         # suppress the linting errors
         frames: np.ndarray
-
         split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
         np.save(split_path, frames)
         splits_paths.append(split_path)

@@ -22,9 +22,9 @@ NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes 
 
 # Test configurations
 PATH_MODEL_TO_TEST = [
-    "EmotionNet_2024-05-21_10-16-34_final_copy"
+    "EmotionNet_2024-05-21_10-16-34_final"
 ]
-TEST_EPOCH = "160" # Number of epoch to test or "best" to test the best model
+TEST_EPOCH = "565" # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
