@@ -51,8 +51,8 @@ TEST:
         H: 72
         W: 72
 
-DEVICE: cpu # MPS is not supported I think since I get a strange error
-NUM_OF_GPU_TRAIN: 0
+DEVICE: cuda # MPS is not supported I think since I get a strange error
+NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp
 MODEL:

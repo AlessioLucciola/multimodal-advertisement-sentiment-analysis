@@ -16,7 +16,7 @@ from packages.rppg_toolbox.config import DUMP_FRAMES_PATH
 # Functions for reading rPPG media of interest and saving frames
 def read_video(video_file: str,
                max_frames_split: int = 128, 
-               desired_fr: int = 60) -> Dict[str, Any]:
+               desired_fr: int = 30) -> Dict[str, Any]:
     """Reads a video file, returns frames(T, H, W, 3) """
     if os.path.exists(DUMP_FRAMES_PATH):
         print(f"temp_frames already found, removing it!")
@@ -38,6 +38,8 @@ def read_video(video_file: str,
     curr_timestamps = [] 
     while success:
         i += 1
+        print(f"Frame {i}")
+        print(f"Frames_step {frames_step}")
         if i % frames_step != 0:
             continue
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)

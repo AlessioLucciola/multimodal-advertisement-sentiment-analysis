@@ -151,7 +151,7 @@ def calculate_metric_per_video(predictions, labels, fs=30, diff_flag=True, use_b
 def get_bvp(signal, fs=35, diff_flag=True, bandpass=True):
     # Detrend and filter
     if diff_flag:  # if the predictions and labels are 1st derivative of PPG signal.
-        signal = _detrend(np.cumsum(signal), 100)
+        signal = _detrend(np.cumsum(signal.cpu().numpy()), 100)
     else:
         signal = _detrend(signal, 100)
     
