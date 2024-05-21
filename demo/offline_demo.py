@@ -36,14 +36,14 @@ if uploaded_file is not None:
         # Render the chart using Streamlit
         st.altair_chart(chart, use_container_width=True)
         st.altair_chart(legend, use_container_width=True)
-        st.text("Processed windows debug:")
-        st.write(processed_windows)
 
     if ppg_windows is not None:
         chart, legend = create_chart(ppg_windows, title="Emotion with PPG signal")
         # Render the chart using Streamlit
         # st.altair_chart(chart, use_container_width=True)
         st.altair_chart(legend, use_container_width=True)
-        st.text("Processed windows debug:")
-        st.write(ppg_windows)
 
+    st.text("Processed windows debug:")
+    st.write(processed_windows)
+    st.text("Processed windows debug:")
+    st.write(ppg_windows)
