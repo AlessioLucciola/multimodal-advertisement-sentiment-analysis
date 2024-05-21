@@ -31,7 +31,7 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
     legend = ["Without Overlap", "With Overlap"]
 
     for i, metric in enumerate(metrics):
-        _, ax = plt.subplots(figsize=(12, 6))
+        _, ax = plt.subplots(figsize=(12, 10))
         for j in range(len(models_name)):
             if j < 2:
                 ax.bar(j, values[i][j], color=colors[0], width=0.9)
@@ -59,7 +59,7 @@ def create_plots(metrics, data, models_name, configuration, save_plot_prefix="pl
         if not os.path.exists(os.path.join(script_directory, "results")):
             os.makedirs(os.path.join(script_directory, "results"))
         save_path = os.path.join(
-            script_directory, "results", f"{save_plot_prefix}_test_{metric[0]}.png")
+            script_directory, "results", f"video_{save_plot_prefix}_test_{metric[0]}.png")
         plt.savefig(save_path)
         print(f"Plot saved as {save_path}")
 
