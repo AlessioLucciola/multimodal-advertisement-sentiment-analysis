@@ -18,3 +18,11 @@ def select_model(model_name, hidden_size, num_classes, dropout_p):
         raise ValueError(f'Invalid Model Name: Options {video_models_list}')
     
     return model
+
+def split_video(video_path: str, frame_range: int = 100):
+    """
+    Given a video path and a frame range, it returns N slices of the video,
+    each of them containing `frame_range` frames.
+    """
+    #TODO: implement this
+    pass

@@ -21,7 +21,7 @@ from utils.ppg_utils import wavelet_transform
 class CEAPDataLoader(DataLoader):
     def __init__(self, 
                  batch_size: int,
-                 normalize: bool = False):
+                 normalize: bool = True):
         self.batch_size = batch_size
         print("Loading data...")
         data_type = "Frame"
@@ -36,9 +36,15 @@ class CEAPDataLoader(DataLoader):
 
         mean, std = self.get_stats() 
         print(f"Stats of raw data are: \n Mean: {mean} \n Std: {std}")
-
+        
+        # Convert lists to numpy arrays
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: np.array(x))
         if normalize:
-            self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) // CEAP_STD
+            self.data["ppg"] = (self.data["ppg"] - CEAP_MEAN) / CEAP_STD
+            cat_data = np.concatenate(self.data["ppg"], axis=0)
+            mean, std = cat_data.mean(), cat_data.std()
+            print(f"Stats of normalized data are: \n Mean: {mean} \n Std: {std}")
+        
 
         print("Splitting data...")
         self.train_df, self.val_df, self.test_df = self.split_data()
@@ -199,16 +205,15 @@ class CEAPDataLoader(DataLoader):
         return new_df
 
     def get_stats(self) -> Tuple[float, float]:
-        data_type = "Raw"
+        data_type = "Frame"
         raw_data = self.load_data(data_type=data_type, 
                                   annotation_type=data_type,
                                   data_path=os.path.join(DATA_DIR, "CEAP", "5_PhysioData", data_type),
                                   annotation_path=os.path.join(DATA_DIR, "CEAP", "3_AnnotationData", data_type),
                                   load_labels=False)
         
-
-        ppg_mean = np.stack(raw_data["ppg"].to_numpy(), axis=0).mean()
-        ppg_std = np.stack(raw_data["ppg"].to_numpy(), axis=0).std()
+        ppg_mean = np.concatenate(raw_data["ppg"].to_numpy(), axis=0).mean()
+        ppg_std = np.concatenate(raw_data["ppg"].to_numpy(), axis=0).std()
         return ppg_mean, ppg_std
 
     def get_train_dataloader(self):
@@ -226,7 +231,7 @@ class CEAPDataLoader(DataLoader):
 
 if __name__ == "__main__":
     # Test the dataloader
-    dataloader = CEAPDataLoader(batch_size=32)
+    dataloader = CEAPDataLoader(batch_size=32, normalize=True)
     train_loader = dataloader.get_train_dataloader()
     val_loader = dataloader.get_val_dataloader()
     test_loader = dataloader.get_test_dataloader()

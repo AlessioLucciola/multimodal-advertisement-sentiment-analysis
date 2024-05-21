@@ -7,9 +7,10 @@ import os
 import json
 from dataloaders.CEAP_dataloader import CEAPDataLoader
 from models.EmotionNetCEAP import EmotionNet, Encoder, Decoder
-from packages.rppg_toolbox.main import run_single
+from packages.rppg_toolbox.main import extract_ppg_from_video
 from utils.ppg_utils import wavelet_transform
 from shared.constants import CEAP_MEAN, CEAP_STD
+
 
 def test_loop(model, test_loader, device, model_path, criterion, num_classes):
     model.eval()
@@ -68,9 +69,11 @@ def get_model_and_dataloader(model_path, device):
     output_dim = 3
     encoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
     decoder_embedding_dim = LENGTH // WAVELET_STEP if WT else 1
-    hidden_dim = LSTM_HIDDEN if configurations is None else configurations["lstm_config"]["num_hidden"]
-    n_layers = LSTM_LAYERS if configurations is None else configurations["lstm_config"]["num_layers"]
-    encoder_dropout = DROPOUT_P 
+    hidden_dim = LSTM_HIDDEN if configurations is None else configurations[
+        "lstm_config"]["num_hidden"]
+    n_layers = LSTM_LAYERS if configurations is None else configurations[
+        "lstm_config"]["num_layers"]
+    encoder_dropout = DROPOUT_P
     decoder_dropout = DROPOUT_P
     num_classes = EMOTION_NUM_CLASSES
 
@@ -92,14 +95,15 @@ def get_model_and_dataloader(model_path, device):
 
     model = EmotionNet(encoder, decoder).to(device)
 
-    dataloader = CEAPDataLoader(batch_size=32)
+    dataloader = CEAPDataLoader(batch_size=32, normalize=True)
 
     return model, dataloader, num_classes
 
 
 def load_test_model(model, model_path, epoch, device):
     state_dict = torch.load(
-        f"{PATH_TO_SAVE_RESULTS}/{model_path}/models/mi_project_{epoch}.pt", map_location=device)
+        f"{PATH_TO_SAVE_RESULTS}/{model_path}/models/mi_project_{epoch}.pt",
+        map_location=device)
     model.load_state_dict(state_dict)
     model.eval()
     return model
@@ -107,7 +111,7 @@ def load_test_model(model, model_path, epoch, device):
 
 def test_from_video():
     print("Extracting ppg")
-    ppgs = run_single()
+    ppgs = extract_ppg_from_video()
 
     input_dim = LENGTH // WAVELET_STEP if WT else 1
     output_dim = 3
@@ -137,12 +141,20 @@ def test_from_video():
     model = EmotionNet(encoder, decoder).to(device)
     model.eval()
     preds = torch.tensor([]).to(device)
+    ppgs = (ppgs - CEAP_MEAN) / CEAP_STD
+    print(f"standardized ppgs: {ppgs}")
     for ppg in tqdm(ppgs, desc="Inference..."):
         ppg = wavelet_transform(ppg.squeeze())
         ppg = torch.from_numpy(ppg).unsqueeze(1).to(device)
         print(f"ppg shape is: {ppg.shape}")
         trg = torch.zeros((100, 1)).to(device)
-        preds = torch.cat((preds, model(src=ppg, trg=trg, teacher_forcing_ratio=0)), dim=0)
+        preds = torch.cat(
+            (preds,
+             model(
+                 src=ppg,
+                 trg=trg,
+                 teacher_forcing_ratio=0)),
+            dim=0)
     preds = (preds - CEAP_MEAN) / CEAP_STD
     print(f"standardized preds are: {preds}")
     print(f"preds shape: {preds.shape}")
@@ -162,7 +174,8 @@ def get_rppg():
 def main(model_path, epoch):
     set_seed(RANDOM_SEED)
     device = select_device()
-    model, dataloader, num_classes = get_model_and_dataloader(model_path, device)
+    model, dataloader, num_classes = get_model_and_dataloader(
+        model_path, device)
     model = load_test_model(model, model_path, epoch, device)
 
     test_loader = dataloader.get_test_dataloader()

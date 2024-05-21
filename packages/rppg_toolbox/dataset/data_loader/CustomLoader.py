@@ -90,9 +90,8 @@ class CustomLoader(InferenceOnlyBaseLoader):
             frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
             if frames is None:
                 frames = np.expand_dims(np.empty_like(frame), 0)
-                print(f"frames initialization with shape: {frames.shape}")
                 frames = np.repeat(frames, max_frames, axis=0)
-                print(f"frames repeat with shape: {frames.shape}")
+                print(f"Frames initialization array shape: {frames.shape}")
             frames[i] = frame
             success, frame = VidObj.read()
             if i == max_frames-1:

@@ -15,6 +15,9 @@ TEMP
 
 !**/.gitkeep
 
+**/temp/**
+**/debug_plots/**
+
 packages/rppg_toolbox/*.log
 packages/rppg_toolbox/*.mat
 packages/rppg_toolbox/.idea
@@ -36,3 +39,4 @@ packages/rppg_toolbox/debug_utils_physnet.py
 packages/rppg_toolbox/test.yaml
 packages/rppg_toolbox/data/**
 
+temp_video.mp4

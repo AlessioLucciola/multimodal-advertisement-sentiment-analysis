@@ -7,8 +7,8 @@ PATH_TO_SAVE_RESULTS = "results"
 DEMO_DIR = "demo"
 RANDOM_SEED = 42
 USE_DML = False
-USE_MPS = False
-USE_WANDB = True
+USE_MPS = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -22,9 +22,9 @@ NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes 
 
 # Test configurations
 PATH_MODEL_TO_TEST = [
-    "AudioNetCT_2024-05-05_11-51-20"
+    "EmotionNet_2024-05-21_10-16-34_final"
 ]
-TEST_EPOCH = "485" # Number of epoch to test or "best" to test the best model
+TEST_EPOCH = "565" # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -32,12 +32,12 @@ PATH_MODEL_TO_RESUME = ""
 RESUME_EPOCH = ""
 
 # Train configurations
-BATCH_SIZE = 128 # Max (for ViT): 256 | Max (for CNN): 64
-N_EPOCHS = 500
-LR = 1e-3
-REG = 1e-3
-DROPOUT_P = 0.3
+BATCH_SIZE = 512 # Max (for ViT): 256 | Max (for CNN): 64
+N_EPOCHS = 5000
+LR = 0.0001
 
+REG = 0.03
+DROPOUT_P = 0
 # ----------------------------
 
 # AUDIO
@@ -97,10 +97,9 @@ OFFLINE_VIDEO_FILE = os.path.join(VIDEO_DATASET_DIR, "test_video_real.mp4") # Of
 
 # EmotionNet Configurations
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
-LENGTH = 100 #800 seemed to work
-STEP = 100
-
+LENGTH = 128
+STEP = 128
 WT = True #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
-WAVELET_STEP = 10
-LSTM_HIDDEN = 512 
+WAVELET_STEP = 16
+LSTM_HIDDEN = 256
 LSTM_LAYERS = 2
