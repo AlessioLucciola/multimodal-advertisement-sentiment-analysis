@@ -7,8 +7,8 @@ PATH_TO_SAVE_RESULTS = "results"
 DEMO_DIR = "demo"
 RANDOM_SEED = 42
 USE_DML = False
-USE_MPS = False
-USE_WANDB = True
+USE_MPS = True
+USE_WANDB = False
 SAVE_RESULTS = True
 SAVE_MODELS = True
 
@@ -21,16 +21,10 @@ USE_POSITIVE_NEGATIVE_LABELS: bool = True
 NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes in the dataset (default: 8)
 
 # Test configurations
-PATH_MODELS_TO_TEST = [
-    "VideoNet_vit-pretrained_2024-05-08_20-35-26_RAVDESS_WHITE_BACKGROUND_WITHOUT_OVERLAP",
-    "VideoNet_densenet121_2024-05-09_18-57-14_RAVDESS_WHITE_BACKGROUND_WITHOUT_OVERLAP",
-    "VideoNet_vit-pretrained_2024-05-08_11-06-28_RAVDESS_WHITE_BACKGROUND_WITH_OVERLAP",
-    "VideoNet_densenet121_2024-05-09_17-42-10_RAVDESS_WHITE_BACKGROUND_WITH_OVERLAP"
+PATH_MODEL_TO_TEST = [
+    "EmotionNet_2024-05-21_10-16-34_final"
 ]
-# Number of epoch to test or "best" to test the best model
-AUDIO_MODEL_EPOCH = 180
-VIDEO_MODEL_EPOCH = 30
-
+TEST_EPOCH = "565" # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = False
@@ -44,6 +38,8 @@ LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2
 
+REG = 0.03
+DROPOUT_P = 0
 # ----------------------------
 
 # AUDIO
@@ -104,10 +100,9 @@ OFFLINE_VIDEO_FILE = os.path.join(VIDEO_TEST_DIR, "test_video_real.mp4") # Offli
 
 # EmotionNet Configurations
 EMOTION_NUM_CLASSES = 3  # Bad mood, neutral, good mood
-LENGTH = 100 #800 seemed to work
-STEP = 100
-
+LENGTH = 128
+STEP = 128
 WT = True #Wheter to perform or not Wavelet Transform on PPG before feeding it to the model
-WAVELET_STEP = 10
-LSTM_HIDDEN = 512 
+WAVELET_STEP = 16
+LSTM_HIDDEN = 256
 LSTM_LAYERS = 2

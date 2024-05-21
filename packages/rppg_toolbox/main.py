@@ -4,15 +4,18 @@ import random
 
 import numpy as np
 import torch
-from packages.rppg_toolbox.config import get_config
+from packages.rppg_toolbox.config import get_config, DUMP_FRAMES_PATH
 from packages.rppg_toolbox.dataset.data_loader.CustomLoader import CustomLoader
 from packages.rppg_toolbox.neural_methods.trainer.CustomTrainer import CustomTrainer
 from packages.rppg_toolbox.dataset.data_loader.InferenceOnlyBaseLoader import InferenceOnlyBaseLoader
 from packages.rppg_toolbox.neural_methods.trainer.BaseTrainer import BaseTrainer
 from packages.rppg_toolbox.utils import preprocess
 from packages.rppg_toolbox.tools.motion_analysis.convert_dataset_to_mp4 import read_video
-
+from packages.rppg_toolbox.evaluation.post_process import get_bvp
 from torch.utils.data import DataLoader
+from packages.rppg_toolbox.utils.plot import plot_signal
+import shutil
+from typing import List, Tuple, Optional
 
 RANDOM_SEED =  42
 torch.manual_seed(RANDOM_SEED)
@@ -86,7 +89,7 @@ def run():
     )
     test(config, data_loader_dict)
 
-def run_single(vid_path: str | None = None) -> torch.Tensor:
+def extract_ppg_from_video(vid_path: Optional[str | np.ndarray] = None) -> Tuple[torch.Tensor, List[List[float]]]:
     # parse arguments.
     parser = argparse.ArgumentParser()
     parser = add_args(parser)
@@ -97,20 +100,41 @@ def run_single(vid_path: str | None = None) -> torch.Tensor:
     # configurations.
     config = get_config(args)
 
-    print('Configuration:')
-    print(config, end='\n\n')
     model_trainer = CustomTrainer(config)
     if vid_path is None: 
-        vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/video.mp4"
-    raw_frames = read_video(vid_path)
-    frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
-    print(f"preprocessed frames shape: {frames.shape}")
-    frames = preprocess.parse_frames(frames, data_format="NDCHW")
-    print(f"parsed frames shape: {frames.shape}")
-    output = model_trainer.test_from_frames(frames)
-    return output
+        vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"
+    if isinstance(vid_path, str):
+        video_data = read_video(vid_path)
+    else:
+        video_data = vid_path
+        # TODO: video data shape must be (num_frames, height, width, channels)
+        print(f"Video data shape: {video_data.shape}")
+    bvps = torch.tensor([])
+    timestamps = video_data["splits_timestamps"]
+    for split_path, split_timestamps in zip(video_data["splits_paths"], timestamps):
+        print(f"Extracting ppg from split at: {split_path}.")
+        raw_frames = np.load(split_path)
+        assert len(split_timestamps) == raw_frames.shape[0], f"ERROR: timestamps and frames must be of the same length | timestamp of length {len(split_timestamps)}, split of length {raw_frames.shape[0]}"
+        frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
+        # print(f"preprocessed frames shape: {frames.shape}")
+        frames = preprocess.parse_frames(frames, data_format="NDCHW")
+        # print(f"parsed frames shape: {frames.shape}")
+        output = model_trainer.test_from_frames(frames).detach() # shape: [num_chunks, 100]
+        # plot_signal(output.reshape(-1).numpy(), "model output")
+
+        for item in output:
+            npy_bvp = get_bvp(item.squeeze(), diff_flag=True, bandpass=True, fs=round(video_data["fps"]))
+            bvp = torch.tensor(npy_bvp.copy()).to(torch.float32)
+            bvps = torch.cat((bvps, bvp.view(1, -1)), dim=0)
+
+        # shape: [num_chunks * num_splits, 100]
+        print(f"ppgs {bvps} with shape {bvps.shape}")
+
+    shutil.rmtree(DUMP_FRAMES_PATH)
+    print(f"Removed temp_frames directory")
+    return bvps, timestamps
 
 if __name__ == "__main__":
-    # run_single()
-    run()
+    # run()
+    extract_ppg_from_video()
 

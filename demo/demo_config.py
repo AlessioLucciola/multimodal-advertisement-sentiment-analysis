@@ -1,8 +1,10 @@
 # Models configurations
 AUDIO_MODEL_PATH = "AudioNetCT_2024-05-05_11-51-20"
-VIDEO_MODEL_PATH = "VideoNet_vit-pretrained_2024-05-11_08-58-31_FER"
+VIDEO_MODEL_PATH ="VideoNet_resnet101_2024-05-11_08-33-01_FER"
+PPG_MODEL_PATH = "EmotionNet_2024-05-21_10-16-34_final"
 AUDIO_MODEL_EPOCH = 155
 VIDEO_MODEL_EPOCH = 60
+PPG_MODEL_EPOCH = 565
 AUDIO_IMPORTANCE = 0.6
 
 # Audio/video configurations  
