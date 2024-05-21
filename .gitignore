@@ -10,7 +10,6 @@ checkpoints
 wandb
 TEMP
 **/*.npy
-**/*.pth
 **/.DS_Store
 
 !**/.gitkeep
