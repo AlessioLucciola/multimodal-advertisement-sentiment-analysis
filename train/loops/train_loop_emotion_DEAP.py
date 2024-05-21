@@ -1,14 +1,12 @@
 from config import SAVE_RESULTS, PATH_MODEL_TO_RESUME, RESUME_EPOCH, SAVE_MODELS 
 from utils.utils import save_results, save_configurations, save_model
-from torchmetrics import Accuracy, Recall
+from torchmetrics import Accuracy, Recall, F1Score
 from datetime import datetime
 from tqdm import tqdm
 import torch
 import wandb
 import copy
-
 import torch
-
 
 def train_eval_loop(device,
                     train_loader: torch.utils.data.DataLoader,
@@ -62,13 +60,15 @@ def train_eval_loop(device,
         task="multiclass", num_classes=config['num_classes']).to(device)
     recall_metric = Recall(
         task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
+    f1_metric = F1Score(task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
 
     val_accuracy_metric = Accuracy(
         task="multiclass", num_classes=config['num_classes']).to(device)
     val_recall_metric = Recall(
         task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
+    val_f1_metric = F1Score(task="multiclass", num_classes=config['num_classes'], average='macro').to(device)
     
-    best_accuracy = 0.7
+    best_accuracy = 0.45
     best_model = None
 
     for epoch in range(RESUME_EPOCH if resume else 0, config["epochs"]):
@@ -79,7 +79,7 @@ def train_eval_loop(device,
             src, target = tr_batch["ppg"], tr_batch["valence"]
 
             src = src.float().to(device)
-            target = target.float().to(device)
+            target = target.long().to(device)
 
             optimizer.zero_grad()
             output = model(src).squeeze()
@@ -94,6 +94,7 @@ def train_eval_loop(device,
             with torch.no_grad():
                 preds = output.argmax(dim=1)
                 accuracy_metric.update(preds, target)
+                f1_metric.update(preds, target)
                 recall_metric.update(preds, target)
 
         if config["use_wandb"]:
@@ -101,7 +102,9 @@ def train_eval_loop(device,
                     {"Training Loss": torch.tensor(losses).mean()})
             wandb.log({"Training Accuracy": accuracy_metric.compute() * 100})
             wandb.log({"Training Recall": recall_metric.compute() * 100})
-        print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(accuracy_metric.compute() * 100):.4f} | Recall: {(recall_metric.compute() * 100):.4f}")
+            wandb.log({"Training F1": f1_metric.compute() * 100})
+
+        print(f"Train | Epoch {epoch} | Loss: {torch.tensor(losses).mean():.4f} | Accuracy: {(accuracy_metric.compute() * 100):.4f} | Recall: {(recall_metric.compute() * 100):.4f} | F1: {(f1_metric.compute() * 100):.4f}")
         
         model.eval()
         val_losses = []
@@ -110,7 +113,7 @@ def train_eval_loop(device,
                 src, target = val_batch["ppg"], val_batch["valence"]
 
                 src = src.float().to(device)
-                target = target.float().to(device)
+                target = target.long().to(device)
 
                 output = model(src).squeeze()
                 loss = criterion(output, target)
@@ -119,14 +122,16 @@ def train_eval_loop(device,
                 preds = output.argmax(dim=1)
                 val_accuracy_metric.update(preds, target)
                 val_recall_metric.update(preds, target)
+                val_f1_metric.update(preds, target)
 
         if config["use_wandb"]:
             wandb.log(
                     {"Validation Loss": torch.tensor(val_losses).mean()})
             wandb.log({"Validation Accuracy": val_accuracy_metric.compute() * 100})
             wandb.log({"Validation Recall": val_recall_metric.compute() * 100})
+            wandb.log({"Validation F1": val_f1_metric.compute() * 100})
 
-        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(val_losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f}")
+        print(f"Validation | Epoch {epoch} | Loss: {torch.tensor(val_losses).mean():.4f} | Accuracy: {(val_accuracy_metric.compute() * 100):.4f} | Recall: {(val_recall_metric.compute() * 100):.4f} | F1: {(val_f1_metric.compute() * 100):.4f}")
         print("-" * 50)
     
         if val_accuracy_metric.compute() > best_accuracy:

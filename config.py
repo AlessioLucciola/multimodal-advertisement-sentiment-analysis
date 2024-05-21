@@ -34,10 +34,10 @@ RESUME_EPOCH = ""
 # Train configurations
 BATCH_SIZE = 512 # Max (for ViT): 256 | Max (for CNN): 64
 N_EPOCHS = 500
-LR = 0.001
-REG = 0.001
-DROPOUT_P = 0.1
+LR = 0.0001
 
+REG = 0.04
+DROPOUT_P = 0
 # ----------------------------
 
 # AUDIO

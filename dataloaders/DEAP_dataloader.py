@@ -2,11 +2,10 @@ from config import (
     DATA_DIR,
     LENGTH,
     RANDOM_SEED,
-    STEP,
-    WT
+    WT,
+    BALANCE_DATASET
 )
 import pickle
-from shared.constants import CEAP_MEAN, CEAP_STD
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing import List
@@ -15,17 +14,11 @@ import torch
 import numpy as np
 import pandas as pd
 from datasets.DEAP_dataset import DEAPDataset
-from utils.ppg_utils import wavelet_transform, stft, signaltonoise, second_derivative, fft
-from sklearn.model_selection import train_test_split, GroupShuffleSplit
-from scipy import signal
+from utils.ppg_utils import fft, detrend, bandpass_filter, moving_average_filter
+from sklearn.model_selection import train_test_split
 from packages.rppg_toolbox.utils.plot import plot_signal
 import warnings
-from scipy.signal import butter, filtfilt
 warnings.filterwarnings('ignore')
-
-# Sample rate is 128hz
-# Signals are 8064 long
-# Each signal is 63 seconds long
 
 
 PLOT_DEBUG_INDEX = 1
@@ -37,19 +30,18 @@ class DEAPDataLoader(DataLoader):
         self.batch_size = batch_size
         self.data = self.load_data()
         self.data["valence"] = self.data["valence"].apply(lambda x: self.discretize_labels(torch.tensor(x)))
-        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "original")
+        # plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "Original Signal")
         print("Detrending signal...")
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: self.detrend_ppg(np.array(x)))
-        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "detrended")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: detrend(np.array(x)))
+        # plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "Detrended Signal")
         print("Bandpass filtering...")
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: self.bandpass_filter_ppg(np.array(x)))
-        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "bandpass_filtered")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: bandpass_filter(np.array(x)))
+        # plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "Bandpass Filtered Signal")
         print("Moving average filtering...")
-        self.data["ppg"] = self.data["ppg"].apply(lambda x: self.moving_average_filter(x))
-        plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "moving_average_filtered")
+        self.data["ppg"] = self.data["ppg"].apply(lambda x: moving_average_filter(x))
+        # plot_signal(self.data["ppg"].iloc[PLOT_DEBUG_INDEX], "Moving Average Filtered Signal")
 
-
-        
+         
         # NOISE_THRESHOLD = 0.002
         # print("plotting good and bad signals...")
         # bad_signal_plot = 0
@@ -70,13 +62,24 @@ class DEAPDataLoader(DataLoader):
         # self.data = self.data.query(f'stn > {NOISE_THRESHOLD}')
         # print(f"Data after filtering bad signals: {len(self.data)}")
 
+
         print("Performing min-max normalization")
         self.data = self.normalize_data(self.data)
 
-        print("Standardizing data") 
-        ppgs = self.data["ppg"].to_numpy()
+        ppgs = np.stack(self.data["ppg"].to_numpy())
         mean, std = ppgs.mean(), ppgs.std()
+        print(f"DEAP mean and std are: {mean, std}")
+
+        print("Standardizing data") 
+        ppgs = np.stack(self.data["ppg"].to_numpy())
+        mean, std = ppgs.mean(), ppgs.std()
+        print(f"DEAP mean and std are: {mean, std}")
         self.data["ppg"] = self.data["ppg"].apply(lambda x: (x-mean)/std) 
+        ppgs = np.stack(self.data["ppg"].to_numpy())
+        mean, std = ppgs.mean(), ppgs.std()
+        print(f"DEAP mean and std are: {mean, std}")
+
+
 
         print("Splitting the data")
         self.train_df, self.val_df, self.test_df = self.split_data()
@@ -89,15 +92,17 @@ class DEAPDataLoader(DataLoader):
 
 
         if WT:
-            print(f"Performing wavelet transform...")
+            print(f"Performing FFT...")
             tqdm.pandas()
             self.train_df["ppg"] = self.train_df["ppg"].progress_apply(fft)
             self.val_df["ppg"] = self.val_df["ppg"].progress_apply(fft)
             self.test_df["ppg"] = self.test_df["ppg"].progress_apply(fft)
         else:
-            print("Skipped wavelet transform")
+            print("Skipped FFT")
+        
+        if BALANCE_DATASET:
+            self.balance_data()
 
-        self.balance_data()
         print(f"Train_df length: {len(self.train_df)}")
         print(f"Val_df length: {len(self.val_df)}")
         print(f"Test_df length: {len(self.test_df)}")
@@ -143,59 +148,6 @@ class DEAPDataLoader(DataLoader):
                     df.append({"ppg": data, "valence": valence, "subject": i})
         return pd.DataFrame(df)
     
-    def moving_average_filter(self, data, window_size=10):
-      """
-      Applies a moving average filter to a 1D NumPy array.
-
-      Args:
-          data: The 1D NumPy array to filter.
-          window_size: The size of the moving average window (positive integer).
-
-      Returns:
-          The filtered 1D NumPy array.
-      """
-
-      # Check for valid window size
-      if window_size <= 0:
-        raise ValueError("Window size must be a positive integer.")
-
-      # Calculate the number of elements to pad at the beginning and end
-      pad_size = window_size // 2
-
-      # Pad the data with mirrored values at the beginning and end
-      padded_data = np.concatenate((data[:pad_size][::-1], data, data[-pad_size:][::-1]))
-
-      # Apply moving average using convolution
-      smoothed_data = np.convolve(padded_data, np.ones(window_size) / window_size, mode='valid')
-
-      return smoothed_data
-
-    def bandpass_filter_ppg(self, data, fs=128, lowcut=0.5, highcut=40, order=5):
-      """
-      Bandpass filters a PPG signal using a Butterworth filter.
-
-      Args:
-          data: The PPG signal as a numpy array.
-          fs: The sampling frequency of the signal in Hz.
-          lowcut: Lower cutoff frequency of the bandpass filter in Hz.
-          highcut: Higher cutoff frequency of the bandpass filter in Hz.
-          order: The order of the Butterworth filter (default: 5).
-
-      Returns:
-          The filtered PPG signal as a numpy array.
-      """
-
-      nyquist = 0.5 * fs
-      lowcut_norm = lowcut / nyquist
-      highcut_norm = highcut / nyquist
-
-      # Design the Butterworth filter
-      b, a = butter(order, [lowcut_norm, highcut_norm], btype='band')
-
-      # Apply the filter twice (filtfilt) for zero-phase filtering
-      filtered_data = filtfilt(b, a, data)
-
-      return filtered_data
 
     def normalize_data(self, df):
         """
@@ -241,14 +193,6 @@ class DEAPDataLoader(DataLoader):
         print(f"Before DEAP mean + std: {og_mean, og_std}")
         data["ppg"] = data["ppg"].apply(lambda x: (x-og_mean)/og_std) 
         return data, (og_mean, og_std)
-
-    def detrend_ppg(self, ppg_signal):
-        x = np.linspace(0, ppg_signal.shape[0], ppg_signal.shape[0])
-        # print(f"x shape is: {x.shape}, while ppg_signal shape is {ppg_signal.shape}")
-        model = np.polyfit(x, ppg_signal, 50)
-        predicted = np.polyval(model, x)
-        return ppg_signal - predicted
-
        
     def split_data(self):
         train_df, temp_df = train_test_split(self.data, test_size=0.2, random_state=RANDOM_SEED, stratify=self.data["valence"])
@@ -258,17 +202,8 @@ class DEAPDataLoader(DataLoader):
     def slice_ppg_window(self, ppg_signal,peak_index, window_size):
       """
       Slices a window from the PPG signal to contain a single pulse with the peak at the center.
-
-      Args:
-        ppg_signal: A NumPy array representing the filtered PPG signal.
-        window_size: The desired size of the window (number of data points).
-
-      Returns:
-        A NumPy array containing the sliced window with the peak at the center.
       """
-      # Ensure the window size is less than or equal to the signal length
       window_size = min(window_size, len(ppg_signal))
-      # Calculate the half window size (assuming an even window size for peak centering)
       half_window_size = window_size // 2
       # Check if the peak is close enough to the edges to fit the entire window
       if peak_index < half_window_size or peak_index >= len(ppg_signal) - half_window_size:
@@ -283,49 +218,29 @@ class DEAPDataLoader(DataLoader):
       sliced_window = ppg_signal[start_index:end_index]
       return sliced_window 
 
-    def slice_ppg_windows(self, ppg_signal, window_size, overlap=0):
+    def slice_ppg_windows(self, ppg_signal, window_size):
           """
           Slices the entire PPG signal into windows containing single pulses.
-
-          Args:
-            ppg_signal: A NumPy array representing the filtered PPG signal.
-            window_size: The desired size of the window (number of data points).
-            overlap (optional): The number of data points by which consecutive windows overlap.
-
-          Returns:
-            A list of NumPy arrays, where each array represents a window with a single pulse.
           """
 
           # Find all potential peak indices
           potential_peaks = np.diff(np.sign(np.diff(ppg_signal))) > 0  # Identify rising edges
 
-          # Create an empty list to store windows
           windows = []
-
-          # Iterate through potential peaks
           PEAK_STEP = 1
           for i in range(0, len(potential_peaks.nonzero()[0]), PEAK_STEP):
             peak_index = potential_peaks.nonzero()[0][i]
-            # Call the slice function for each peak
             sliced_window = self.slice_ppg_window(ppg_signal, peak_index, window_size)
             windows.append(sliced_window)
 
-          # Handle overlapping windows (optional)
-          if overlap > 0:
-            # Adjust window start indices for overlapping windows
-            for i in range(1, len(windows)):
-              windows[i][0] = max(windows[i][0], windows[i-1][window_size - overlap])
-
           return windows    
 
-    def slice_data(self, df, length=LENGTH, step=STEP) -> pd.DataFrame:
-        if length > 3000:
+    def slice_data(self, df, length=LENGTH) -> pd.DataFrame:
+        if length > 8064:
             raise ValueError(f"Length cannot be greater than original length")
         new_df = []
         for row_i, row in df.iterrows():
             ppg, label, subject = row["ppg"], row["valence"], row["subject"]
-            if row_i == PLOT_DEBUG_INDEX:
-                plot_signal(ppg, "before_slice")
             ppg_segments = self.slice_ppg_windows(ppg, window_size=length)
             for i, ppg_segment in enumerate(ppg_segments):
                 if len(ppg_segment) != length:
@@ -334,6 +249,7 @@ class DEAPDataLoader(DataLoader):
                 #Remove low quality sliced that comes from low quality signal
                 if len((np.diff(np.sign(np.diff(ppg_segment))) > 0).nonzero()[0]) > 4:
                     # plot_signal(ppg_segment, f"debug_plots/bad_slices/slice_{i}_{row_i}")
+                    # plot_signal(ppg, f"debug_plots/bad_slices/whole_slice_{row_i}")
                     continue 
                 
                 # Only keep signals that have the peak on the center
@@ -341,7 +257,8 @@ class DEAPDataLoader(DataLoader):
                     continue
         
                 # plot_signal(ppg_segment, f"debug_plots/slices/after_slice_{i}_{row_i}")
-
+                # plot_signal(ppg, f"debug_plots/slices/whole_slice_{row_i}")
+                
                 new_row = {
                         "ppg": ppg_segment,
                         "valence": label,
@@ -376,8 +293,3 @@ class DEAPDataLoader(DataLoader):
 if __name__ == "__main__":
     # Test the dataloader
     dataloader = DEAPDataLoader(batch_size=32)
-    # test_loader = dataloader.get_test_dataloader()
-
-    # for i, data in enumerate(test_loader):
-    #     print(f"Data size is {len(data)}")
-    #     break

@@ -52,7 +52,7 @@ def get_model_and_dataloader():
 
     elif MODEL_NAME == "EmotionNetDEAP":
         loader = DEAPDataLoader(batch_size=BATCH_SIZE)
-        model = EmotionNetDEAP(input_size=input_dim, num_layers=LSTM_LAYERS, hidden_size=LSTM_HIDDEN, dropout_p=DROPOUT_P, num_classes=EMOTION_NUM_CLASSES).to(select_device())
+        model = EmotionNetDEAP(dropout_p=DROPOUT_P).to(select_device())
         return model, loader
     else:
         raise ValueError(f"{MODEL_NAME} model not supported")

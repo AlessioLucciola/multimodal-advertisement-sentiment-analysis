@@ -25,6 +25,12 @@ def wavelet_transform(x: torch.Tensor | np.ndarray):
     # print(f"coef shape is {coef.shape}")
     return coef
 
+def detrend(signal):
+    x = np.linspace(0, signal.shape[0], signal.shape[0])
+    model = np.polyfit(x, signal, 50)
+    predicted = np.polyval(model, x)
+    return signal - predicted
+
 def stft(x: np.ndarray):
     if isinstance(x, list):
         x = np.array(x)
@@ -50,7 +56,7 @@ def fft(x: np.ndarray):
     res = torch.fft.fft(x_torch)
     magnitude = torch.abs(res)
     phase = torch.angle(res)
-    out = torch.stack((x_torch, res.real, magnitude, phase), dim=0)
+    out = torch.stack((x_torch, magnitude, phase), dim=0)
     return out.numpy()
 
 def onsets_and_hr(x):
@@ -60,6 +66,28 @@ def onsets_and_hr(x):
     delta = onsets.shape[1] - hr.shape[1]
     onsets = onsets[:, :-delta]
     return torch.cat((onsets, hr), dim=0)
+
+def bandpass_filter(data, fs=128, lowcut=0.5, highcut=40, order=5):
+  """
+  Bandpass filters a PPG signal using a Butterworth filter.
+  """
+  nyquist = 0.5 * fs
+  lowcut_norm = lowcut / nyquist
+  highcut_norm = highcut / nyquist
+  b, a = butter(order, [lowcut_norm, highcut_norm], btype='band')
+  filtered_data = filtfilt(b, a, data)
+  return filtered_data
+
+def moving_average_filter(data, window_size=10):
+  """
+  Applies a moving average filter to a 1D NumPy array.
+  """
+  if window_size <= 0:
+    raise ValueError("Window size must be a positive integer.")
+  pad_size = window_size // 2
+  padded_data = np.concatenate((data[:pad_size][::-1], data, data[-pad_size:][::-1]))
+  smoothed_data = np.convolve(padded_data, np.ones(window_size) / window_size, mode='valid')
+  return smoothed_data
 
 def power_spectrum(ppg_data, fs=128):
   """
