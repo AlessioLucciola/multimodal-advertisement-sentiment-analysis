@@ -21,15 +21,15 @@ USE_POSITIVE_NEGATIVE_LABELS: bool = True
 NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes in the dataset (default: 8)
 
 # Test configurations
-PATH_MODEL_TO_TEST = [
-    "EmotionNet_2024-05-21_10-16-34_final"
+PATH_MODELS_TO_TEST = [
+    "VideoNet_vit-pretrained_2024-05-08_11-06-28_RAVDESS_WHITE_BACKGROUND_WITH_OVERLAP"
 ]
-TEST_EPOCH = "565" # Number of epoch to test or "best" to test the best model
+TEST_EPOCH = 30 # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
-RESUME_TRAINING = False
-PATH_MODEL_TO_RESUME = "VideoNet_vit-pretrained_2024-05-10_11-37-00_FER"
-RESUME_EPOCH = 60
+RESUME_TRAINING = True
+PATH_MODEL_TO_RESUME = "VideoNet_vit-pretrained_2024-05-08_11-06-28_RAVDESS_WHITE_BACKGROUND_WITH_OVERLAP"
+RESUME_EPOCH = 30
 
 # Train configurations
 BATCH_SIZE = 256 # Max (for ViT): 256 | Max (for CNN): 64
@@ -37,9 +37,6 @@ N_EPOCHS = 30
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2
-
-REG = 0.03
-DROPOUT_P = 0
 # ----------------------------
 
 # AUDIO
@@ -91,7 +88,7 @@ NORMALIZE = True # Normalize the images if True, use the original images if Fals
 OVERLAP_SUBJECTS_FRAMES = False # Overlap the frames of the subjects between train, validation and test if True, False otherwise
 
 # Test configurations
-USE_VIDEO_FOR_TESTING = False # Use test video or live video if True, use test dataset if False
+USE_VIDEO_FOR_TESTING = True # Use test video or live video if True, use test dataset if False
 USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
 OFFLINE_VIDEO_FILE = os.path.join(VIDEO_TEST_DIR, "test_video_real.mp4") # Offline video file (test_video_real)
 

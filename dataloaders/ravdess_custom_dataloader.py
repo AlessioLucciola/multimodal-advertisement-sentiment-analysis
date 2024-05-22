@@ -41,12 +41,21 @@ class ravdess_custom_dataloader(DataLoader):
                 print(f"--Dataloader-- Limit parameter set to {self.limit}. Using {self.limit*100}% of the dataset.")
 
         # Split the dataset into train, validation and test
-        if overlap_subjects_frames:
-            print("--Dataloader-- Splitting the dataset WITH overlapping between subjects")
-            self.split_datasets_overlapping_subjects()
+        USE_ALL_FRAMES = True # Use all frames from the frames dataset (for testing purposes👁️👄👁️)
+        if USE_ALL_FRAMES:
+            train_file_names = self.data["file_name"].apply(lambda x: x.split(".")[0])
+            val_file_names = self.data["file_name"].apply(lambda x: x.split(".")[0])
+            test_file_names = self.data["file_name"].apply(lambda x: x.split(".")[0])
+
+            # Load the frames dataset dataset and select the frames that contain the file_name
+            self.load_frames_from_file_names(train_file_names, val_file_names, test_file_names)
         else:
-            print("--Dataloader-- Splitting the dataset WITHOUT overlapping between subjects")
-            self.split_datasets_without_overlapping_subjects()
+            if overlap_subjects_frames:
+                print("--Dataloader-- Splitting the dataset WITH overlapping between subjects")
+                self.split_datasets_overlapping_subjects()
+            else:
+                print("--Dataloader-- Splitting the dataset WITHOUT overlapping between subjects")
+                self.split_datasets_without_overlapping_subjects()
 
     def split_datasets_overlapping_subjects(self):
         # Split the dataset using the original dataset (video), frame's subjects can overlap between train, val and test

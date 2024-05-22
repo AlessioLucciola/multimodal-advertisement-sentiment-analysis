@@ -239,19 +239,17 @@ def video_test(model, cap, device, use_positive_negative_labels):
     cap.release()
     cv2.destroyAllWindows()
 
-def main(model_path):
+def main(model_path, epoch):
     set_seed(RANDOM_SEED)
     device = select_device()
     type = model_path.split('_')[0]
 
     if type == "AudioNetCT" or type == "AudioNetCL":
         print("--Test-- Audio model test")
-        epoch = AUDIO_MODEL_EPOCH
         model, dataloader, scaler, num_classes, _ = get_model_and_dataloader(model_path, device, type)
         model = load_test_model(model, model_path, epoch, device)
     elif type == "VideoNet":
         print("--Test-- Video model test")
-        epoch = VIDEO_MODEL_EPOCH
         model, dataloader, scaler, num_classes, use_positive_negative_labels = get_model_and_dataloader(model_path, device, type)
         model = load_test_model(model, model_path, epoch, device)
 
@@ -274,6 +272,7 @@ def main(model_path):
 
 if __name__ == "__main__":
     model_paths = PATH_MODELS_TO_TEST
+    model_epochs = TEST_EPOCH
     for m in model_paths:
         print(f"--Test-- Testing model {m}")
-        main(m)
+        main(m, model_epochs)
