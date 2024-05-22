@@ -27,6 +27,7 @@ def parse_frames(frames: np.ndarray, data_format: str) -> np.ndarray:
     #     raise ValueError('Unsupported Data Format!')
         
     # frames = np.transpose(frames, (0, 3, 1, 2))
+    print(f"frames shape is: {frames.shape}")
     frames = np.transpose(frames, (0, 1, 4, 2, 3))
     return frames.astype(np.float32)
 
@@ -45,7 +46,7 @@ def read_npy_video(video_file):
                         + f'Received frames of type {frames.dtype} and range {np.min(frames)} to {np.max(frames)}.')
     return np.asarray(processed_frames)
 
-def preprocess_frames(frames: np.ndarray, config_preprocess):
+def preprocess_frames(frames: np.ndarray, config_preprocess, chunk_length: int):
     """Preprocesses a pair of data.
 
     Args:
@@ -83,7 +84,7 @@ def preprocess_frames(frames: np.ndarray, config_preprocess):
     if config_preprocess.DO_CHUNK:  # chunk data into snippets
         frames_clips = chunk(
             frames=data,
-            chunk_length=config_preprocess.CHUNK_LENGTH)
+            chunk_length=chunk_length)
     else:
         frames_clips = np.array([data])
 

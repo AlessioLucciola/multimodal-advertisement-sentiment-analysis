@@ -122,9 +122,12 @@ def second_derivative(signal):
     d2fdx2 = np.gradient(dfdx, x)
     return d2fdx2
 
+def upscale_fr(signal: np.ndarray, original_fr: int, desired_fr: int = 128) -> np.ndarray:
+    upscaled = np.empty(desired_fr)
+    indices = np.linspace(0, len(signal) - 1, desired_fr)  # Create equally spaced indices
+    upscaled[:] = np.interp(indices, np.arange(len(signal)), signal)
+    return upscaled
 
 if __name__ == "__main__":
-    pass
-    # x = np.random.rand(1000)
-    # features = differential_entropy(x)
-    # print(f"features: {features} with shape {features.shape}")
+    print(upscale_fr(np.random.randn((30)), original_fr=30).shape)
+    

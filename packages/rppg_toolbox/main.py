@@ -104,8 +104,11 @@ def extract_ppg_from_video(vid_path: Optional[str | np.ndarray] = None) -> Tuple
     if vid_path is None: 
         vid_path = "/Users/dov/Library/Mobile Documents/com~apple~CloudDocs/dovsync/Documenti Universita/Multimodal Interaction/Project/multimodal-interaction-project/packages/rppg_toolbox/data/InferenceVideos/RawData/video1/my_video.mp4"
     if isinstance(vid_path, str):
+        # Video is a path, we are in an offline demo
         video_data = read_video(vid_path)
     else:
+        # Video is an array of frames, we are in online demo
+        raise NotImplementedError("Online demo still not implemneted for PPG")
         video_data = vid_path
         # TODO: video data shape must be (num_frames, height, width, channels)
         print(f"Video data shape: {video_data.shape}")
@@ -115,7 +118,7 @@ def extract_ppg_from_video(vid_path: Optional[str | np.ndarray] = None) -> Tuple
         print(f"Extracting ppg from split at: {split_path}.")
         raw_frames = np.load(split_path)
         assert len(split_timestamps) == raw_frames.shape[0], f"ERROR: timestamps and frames must be of the same length | timestamp of length {len(split_timestamps)}, split of length {raw_frames.shape[0]}"
-        frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS)
+        frames = preprocess.preprocess_frames(raw_frames, config.TEST.DATA.PREPROCESS, chunk_length=video_data["fps"])
         # print(f"preprocessed frames shape: {frames.shape}")
         frames = preprocess.parse_frames(frames, data_format="NDCHW")
         # print(f"parsed frames shape: {frames.shape}")
