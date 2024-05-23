@@ -124,7 +124,7 @@ def extract_ppg_from_video(vid_path: Optional[str | List] = None) -> Tuple[torch
         # print(f"preprocessed frames shape: {frames.shape}")
         frames = preprocess.parse_frames(frames, data_format="NDCHW")
         # print(f"parsed frames shape: {frames.shape}")
-        output = model_trainer.test_from_frames(frames).detach() # shape: [num_chunks, 100]
+        output = model_trainer.test_from_frames(frames, frame_rate=round(video_data["fps"])).detach() # shape: [num_chunks, 100]
         # plot_signal(output.reshape(-1).numpy(), "model output")
 
         for item in output:

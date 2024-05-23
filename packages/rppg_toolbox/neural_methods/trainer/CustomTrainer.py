@@ -33,7 +33,7 @@ class CustomTrainer(BaseTrainer):
         """ Model evaluation on the validation dataset."""
         raise NotImplementedError("Custom trainer doesn't impelement a validation loop")
     
-    def test_from_frames(self, frames: torch.Tensor | np.ndarray) -> torch.Tensor:
+    def test_from_frames(self, frames: torch.Tensor | np.ndarray, frame_rate: int) -> torch.Tensor:
         """
         Performs a test loop given an array of frames that model a video as input
         """
@@ -48,21 +48,20 @@ class CustomTrainer(BaseTrainer):
         for chunk in frames:
             chunk = chunk.unsqueeze(0)
             print(f"chunk shape: {chunk.shape}")
-            predictions.extend(self.test_step(chunk))
+            predictions.extend(self.test_step(chunk, frame_rate))
         predictions = torch.cat(predictions, dim=-1).T
         # shape is: [num_chunks, 100]
         # print(f"predictions with shape: {predictions.shape}")
         return predictions
     
-    def test_step(self, frames: torch.Tensor) -> List[int]:
+    def test_step(self, frames: torch.Tensor, frame_rate: int) -> List[int]:
         predictions = []
         N, D, C, H, W = frames.shape
         frames = frames.view(N * D, C, H, W)
         pred_ppg_test = self.model(frames)
         
-        #TODO: remove this chunked stuff, since we don't do chunk anymore
         for idx in range(N):
-            predictions.append(pred_ppg_test[idx * self.chunk_len:(idx + 1) * self.chunk_len])
+            predictions.append(pred_ppg_test[idx * frame_rate:(idx + 1) * frame_rate])
         return predictions
 
     def test(self, data_loader):

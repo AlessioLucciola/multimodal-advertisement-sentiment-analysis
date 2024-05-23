@@ -28,11 +28,9 @@ show_pages(
 )
 
 # Initialize required components
-# audio_stream = get_audio_stream() #TODO: put it back
+audio_stream = get_audio_stream()
 video_stream = get_video_stream()
-# if audio_stream is not None and video_stream is not None:
-#TODO: put it back
-if video_stream is not None:
+if audio_stream is not None and video_stream is not None:
     is_components_initialized = True
     
 # Functions
@@ -62,9 +60,8 @@ def stop_listening():
 while st.session_state['run']:
     try:
         # Audio stream reading
-        #TODO: put it back
-        # data = audio_stream.read(12000)
-        # st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
+        data = audio_stream.read(12000)
+        st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
         
         # Video stream reading
         current_time = datetime.now()
