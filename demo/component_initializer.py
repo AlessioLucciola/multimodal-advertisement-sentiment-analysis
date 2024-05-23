@@ -27,8 +27,8 @@ def get_audio_stream():
         stream = p.open(format=pyaudio.paFloat32, channels=1, 
                         rate=AUDIO_SAMPLE_RATE, input=True, 
                         frames_per_buffer=2500, 
-                        input_device_index=1, # Alessio: 1 | Danilo: 1 | Domiziano: 1
-                        output_device_index=3 # Alessio: 3 | Danilo: 3 | Domiziano: 4
+                        input_device_index=0, # Alessio: 1 | Danilo: 1 | Domiziano: 1
+                        output_device_index=1 # Alessio: 3 | Danilo: 3 | Domiziano: 4
                         ) 
         return stream
     except (IOError, OSError) as e:

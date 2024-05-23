@@ -59,7 +59,8 @@ class CustomTrainer(BaseTrainer):
         N, D, C, H, W = frames.shape
         frames = frames.view(N * D, C, H, W)
         pred_ppg_test = self.model(frames)
-
+        
+        #TODO: remove this chunked stuff, since we don't do chunk anymore
         for idx in range(N):
             predictions.append(pred_ppg_test[idx * self.chunk_len:(idx + 1) * self.chunk_len])
         return predictions

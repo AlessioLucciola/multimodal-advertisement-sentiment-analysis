@@ -28,9 +28,11 @@ show_pages(
 )
 
 # Initialize required components
-audio_stream = get_audio_stream()
+# audio_stream = get_audio_stream() #TODO: put it back
 video_stream = get_video_stream()
-if audio_stream is not None and video_stream is not None:
+# if audio_stream is not None and video_stream is not None:
+#TODO: put it back
+if video_stream is not None:
     is_components_initialized = True
     
 # Functions
@@ -60,8 +62,9 @@ def stop_listening():
 while st.session_state['run']:
     try:
         # Audio stream reading
-        data = audio_stream.read(12000)
-        st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
+        #TODO: put it back
+        # data = audio_stream.read(12000)
+        # st.session_state['audio_stream_frames'].append(data)  # Append data to audio stream frames
         
         # Video stream reading
         current_time = datetime.now()
@@ -97,12 +100,17 @@ if (is_components_initialized):
         #print(st.session_state["processed_windows"])
 
         # Create the chart
-        chart, legend = create_chart(st.session_state["processed_windows"])
-
-        # Render the chart using Streamlit
-        st.altair_chart(chart, use_container_width=True)
-        st.altair_chart(legend, use_container_width=True)
+        audio_video_windows, ppg_windows = st.session_state["processed_windows"]
         
+        if audio_video_windows is not None:
+            chart, legend = create_chart(audio_video_windows, title="Emotion with Video/Audio")
+            # Render the chart using Streamlit
+            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(legend, use_container_width=True)
+        if ppg_windows is not None:
+            chart, legend = create_chart(ppg_windows, title="Emotion with PPG")
+            st.altair_chart(legend, use_container_width=True)
+
         st.text("Processed windows debug:")
-        st.write(st.session_state["processed_windows"])
+        st.write(audio_video_windows)
 
