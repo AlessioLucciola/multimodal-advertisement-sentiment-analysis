@@ -132,8 +132,8 @@ def extract_ppg_from_video(vid_path: Optional[str | List] = None) -> Tuple[torch
             bvp = torch.tensor(npy_bvp.copy()).to(torch.float32)
             bvps = torch.cat((bvps, bvp.view(1, -1)), dim=0)
 
-        # shape: [num_chunks * num_splits, 100]
-        print(f"ppgs {bvps} with shape {bvps.shape}")
+        # shape: [num_chunks * num_splits, frame_rate]
+        print(f"ppgs shape {bvps.shape}")
 
     shutil.rmtree(DUMP_FRAMES_PATH)
     print(f"Removed temp_frames directory")
@@ -156,7 +156,7 @@ def parse_live_video_frames(video_frames: list)-> Dict[Any, Any]:
     total_time = datetime.timestamp(video_frames[-1][1]) - datetime.timestamp(video_frames[0][1])
     frame_rate = len(video_frames) / total_time
     print(f"total time duration: {total_time}, frame_rate: {frame_rate}")
-    skip_ratio = frame_rate // DESIRED_FR
+    skip_ratio = frame_rate // DESIRED_FR if frame_rate > DESIRED_FR else 1
 
     for i, (frame, timestamp) in enumerate(video_frames):
         if i % skip_ratio != 0:
