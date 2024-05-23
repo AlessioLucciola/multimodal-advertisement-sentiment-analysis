@@ -32,13 +32,13 @@ def main(audio_model_path: str,
     ppg_output = ppg_main(model_path=ppg_model_path, video_frames=video_frames, epoch=ppg_model_epoch, live_demo=live_demo)
     # Audio processing
     audio_output = audio_main(model_path=audio_model_path, epoch=audio_model_epoch, audio_file=audio_frames, live_demo=live_demo)
-    # Video processing
+    # # Video processing
+    audio_output = [] #TODO remove it
     video_output = video_main(model_path=video_model_path, video_frames=video_frames, epoch=video_model_epoch, live_demo=live_demo)
     
     ppg_windows_list = None
     if len(ppg_output):
         ppg_windows_list = create_ppg_windows(ppg_output)
-    # return None, ppg_windows_list #TODO: early return just for debug
     
     if len(audio_output) == 0 and len(video_output) == 0:
         return None, ppg_windows_list

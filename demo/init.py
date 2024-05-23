@@ -97,12 +97,17 @@ if (is_components_initialized):
         #print(st.session_state["processed_windows"])
 
         # Create the chart
-        chart, legend = create_chart(st.session_state["processed_windows"])
-
-        # Render the chart using Streamlit
-        st.altair_chart(chart, use_container_width=True)
-        st.altair_chart(legend, use_container_width=True)
+        audio_video_windows, ppg_windows = st.session_state["processed_windows"]
         
+        if audio_video_windows is not None:
+            chart, legend = create_chart(audio_video_windows, title="Emotion with Video/Audio")
+            # Render the chart using Streamlit
+            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(legend, use_container_width=True)
+        if ppg_windows is not None:
+            chart, legend = create_chart(ppg_windows, title="Emotion with PPG")
+            st.altair_chart(legend, use_container_width=True)
+
         st.text("Processed windows debug:")
-        st.write(st.session_state["processed_windows"])
+        st.write(audio_video_windows)
 
