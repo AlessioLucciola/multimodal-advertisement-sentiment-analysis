@@ -111,6 +111,8 @@ def extract_ppg_from_video(vid_path: Optional[str | List] = None) -> Tuple[torch
     else:
         # Video is an array of frames, we are in online demo
         video_data = parse_live_video_frames(vid_path)
+
+    print(f"Video data: {video_data}")
     bvps = torch.tensor([])
     timestamps = video_data["splits_timestamps"]
     for split_path, split_timestamps in zip(video_data["splits_paths"], timestamps):
