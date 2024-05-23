@@ -146,6 +146,7 @@ def parse_live_video_frames(video_frames: list)-> Dict[Any, Any]:
     timestamps = []
     curr_frames = []
     curr_timestamps = []
+    curr_split = 0
     #N * 2 * 480 * 640 * 3
     if os.path.exists(DUMP_FRAMES_PATH):
         print(f"temp_frames already found, removing it!")
@@ -158,6 +159,8 @@ def parse_live_video_frames(video_frames: list)-> Dict[Any, Any]:
     print(f"total time duration: {total_time}, frame_rate: {frame_rate}")
     skip_ratio = frame_rate // DESIRED_FR if frame_rate > DESIRED_FR else 1
 
+    final_fr = DESIRED_FR if frame_rate > DESIRED_FR else round(frame_rate)
+
     for i, (frame, timestamp) in enumerate(video_frames):
         if i % skip_ratio != 0:
             continue
@@ -166,10 +169,10 @@ def parse_live_video_frames(video_frames: list)-> Dict[Any, Any]:
         curr_timestamp = datetime.timestamp(timestamp) - video_starting_time
         curr_frames.append(frame)
         curr_timestamps.append(curr_timestamp)
-        if len(curr_frames) == DESIRED_FR:
-            curr_split = i // DESIRED_FR
+        if len(curr_frames) == final_fr:
             print(f"Split {curr_split} saved!")
             split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
+            curr_split += 1
             np.save(split_path, curr_frames)
             splits.append(split_path)
             timestamps.append(curr_timestamps)
@@ -178,7 +181,7 @@ def parse_live_video_frames(video_frames: list)-> Dict[Any, Any]:
     
     return {"splits_paths": splits,
             "splits_timestamps": timestamps,
-            "fps": DESIRED_FR}
+            "fps": final_fr}
 if __name__ == "__main__":
     # run()
     extract_ppg_from_video()
