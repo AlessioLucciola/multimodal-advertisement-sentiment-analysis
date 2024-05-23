@@ -45,7 +45,7 @@ def read_video(video_file: str) -> Dict[str, Any]:
         if frames is None:
             frames = np.expand_dims(np.zeros_like(frame), 0)
             frames = np.repeat(frames, max_frames_split, axis=0)
-            print(f"Frames initialization array shape: {frames.shape}")
+            # print(f"Frames initialization array shape: {frames.shape}")
 
         timestamp = VidObj.get(cv2.CAP_PROP_POS_FRAMES) / fps
 

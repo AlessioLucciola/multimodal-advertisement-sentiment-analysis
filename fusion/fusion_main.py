@@ -32,8 +32,7 @@ def main(audio_model_path: str,
     ppg_output = ppg_main(model_path=ppg_model_path, video_frames=video_frames, epoch=ppg_model_epoch, live_demo=live_demo)
     # Audio processing
     audio_output = audio_main(model_path=audio_model_path, epoch=audio_model_epoch, audio_file=audio_frames, live_demo=live_demo)
-    # # Video processing
-    audio_output = [] #TODO remove it
+    # Video processing
     video_output = video_main(model_path=video_model_path, video_frames=video_frames, epoch=video_model_epoch, live_demo=live_demo)
     
     ppg_windows_list = None
