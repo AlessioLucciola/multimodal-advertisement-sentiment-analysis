@@ -24,7 +24,7 @@ NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes 
 PATH_MODELS_TO_TEST = [
     "VideoNet_vit-pretrained_2024-05-08_11-06-28_RAVDESS_WHITE_BACKGROUND_WITH_OVERLAP"
 ]
-TEST_EPOCH = 30 # Number of epoch to test or "best" to test the best model
+TEST_EPOCH = 100 # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
 RESUME_TRAINING = True
@@ -33,7 +33,7 @@ RESUME_EPOCH = 30
 
 # Train configurations
 BATCH_SIZE = 256 # Max (for ViT): 256 | Max (for CNN): 64
-N_EPOCHS = 30
+N_EPOCHS = 100
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2

@@ -109,6 +109,6 @@ def create_ravdess_csv_from_frames_w_pixels(path):
 if __name__ == "__main__":
     frames_path = 'RAVDESS_metadata_frames' # RAVDESS_metadata_frames | RAVDESS_metadata_frames_w_pixels
     # Comment / Uncomment the following lines to generate the desired CSV files
-    # create_ravdess_csv_from_video()
+    create_ravdess_csv_from_video()
     create_ravdess_csv_from_frames(frames_path)
     # create_ravdess_csv_from_frames_w_pixels(frames_path)
