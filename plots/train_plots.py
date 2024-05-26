@@ -68,7 +68,7 @@ def create_line_plots(metrics, data, models_name, configuration, save_plot_prefi
 
 
 # ---CONFIGURATIONS---#
-test_folders = PATH_MODEL_TO_TEST
+test_folders = PATH_MODELS_TO_TEST
 # metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'), ('precision', 'Precision'), ('f1', 'F1'), ('auroc', 'AUROC'), ('loss', 'Cross Entropy Loss')]
 metrics = [('accuracy', 'Accuracy'), ('recall', 'Recall'),('f1', 'F1'),('loss', 'Cross Entropy Loss')]
 for name in test_folders:

@@ -22,18 +22,18 @@ NUM_CLASSES: int = 3 if USE_POSITIVE_NEGATIVE_LABELS else 8 # Number of classes 
 
 # Test configurations
 PATH_MODELS_TO_TEST = [
-    "VideoNet_vit-pretrained_2024-05-08_11-06-28_RAVDESS_WHITE_BACKGROUND_WITH_OVERLAP"
+    "VideoNet_vit-pretrained_2024-05-26_15-54-15"
 ]
-TEST_EPOCH = 100 # Number of epoch to test or "best" to test the best model
+TEST_EPOCH = 15 # Number of epoch to test or "best" to test the best model
 
 # Resume training configurations
-RESUME_TRAINING = True
+RESUME_TRAINING = False
 PATH_MODEL_TO_RESUME = "VideoNet_vit-pretrained_2024-05-08_11-06-28_RAVDESS_WHITE_BACKGROUND_WITH_OVERLAP"
 RESUME_EPOCH = 30
 
 # Train configurations
 BATCH_SIZE = 256 # Max (for ViT): 256 | Max (for CNN): 64
-N_EPOCHS = 100
+N_EPOCHS = 30
 LR = 1e-3
 REG = 1e-3
 DROPOUT_P = 0.2
@@ -85,12 +85,12 @@ APPLY_TRANSFORMATIONS = True # Apply transformations if True, use the original d
 NORMALIZE = True # Normalize the images if True, use the original images if False
 
 # Train / Validation configurations (only RAVDESS dataset)
-OVERLAP_SUBJECTS_FRAMES = False # Overlap the frames of the subjects between train, validation and test if True, False otherwise
+OVERLAP_SUBJECTS_FRAMES = True # Overlap the frames of the subjects between train, validation and test if True, False otherwise
 
 # Test configurations
 USE_VIDEO_FOR_TESTING = True # Use test video or live video if True, use test dataset if False
 USE_LIVE_VIDEO_FOR_TESTING = False # If USE_VIDEO = True, use live video if True, use offline video test file if False
-OFFLINE_VIDEO_FILE = os.path.join(VIDEO_TEST_DIR, "test_video_real.mp4") # Offline video file (test_video_real)
+OFFLINE_VIDEO_FILE = os.path.join(VIDEO_TEST_DIR, "my_videos/test", "01-01-06-01-01-01-25.mp4") # Offline video file (test_video_real)
 
 # ----------------------------
 #PPG 

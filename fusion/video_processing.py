@@ -111,7 +111,7 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
                     # Extract face from the frame
                     face = frame[y:y+h, x:x+w]
 
-                    face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY) # Convert face to grayscale (FER)
+                    # face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY) # Convert face to grayscale (FER)
 
                     # Save the frame to the disk
                     cv2.imwrite(os.path.join(video_path, f"{current_datetime_str}_{frames_extracted}.jpg"), face)
@@ -120,7 +120,7 @@ def main(model_path, video_frames, epoch, use_positive_negative_labels=True, liv
                     face = cv2.resize(face, IMG_SIZE)
                     img = Image.fromarray(face)
                     img = val_transform(img).unsqueeze(0)
-                    img = img.repeat(1, 3, 1, 1)  # Repeat grayscale image to have 3 channels (FER)
+                    # img = img.repeat(1, 3, 1, 1)  # Repeat grayscale image to have 3 channels (FER)
                     img = img.to(device)
 
                     # Get prediction from mode
