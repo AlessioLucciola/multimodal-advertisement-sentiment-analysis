@@ -130,7 +130,7 @@ def extract_ppg_from_video(vid_path: Optional[str | List] = None) -> Tuple[torch
         # plot_signal(output.reshape(-1).numpy(), "model output")
 
         for item in output:
-            npy_bvp = get_bvp(item.squeeze(), diff_flag=True, bandpass=True, fs=round(video_data["fps"]))
+            npy_bvp = get_bvp(item.squeeze(), diff_flag=True, bandpass=False, fs=round(video_data["fps"]))
             bvp = torch.tensor(npy_bvp.copy()).to(torch.float32)
             bvps = torch.cat((bvps, bvp.view(1, -1)), dim=0)
 
