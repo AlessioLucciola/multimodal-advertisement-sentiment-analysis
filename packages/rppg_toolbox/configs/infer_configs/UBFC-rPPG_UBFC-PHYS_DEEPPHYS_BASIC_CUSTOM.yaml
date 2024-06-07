@@ -29,14 +29,13 @@ TEST:
     END: 1.0
     PREPROCESS:
       DATA_TYPE: ["Standardized", "DiffNormalized"]
-      DO_CHUNK: True
+      DO_CHUNK: False
       # - Chunk 100, final length 100
       # - Chunk 175, final length 170 
       # - Chunk 500, final length 180
       # - Chunk 1000, final length 180
       # Maybe max size is 180?
-      # NOTE: current video is 60fps
-      CHUNK_LENGTH: 128 #This is cool since I need a fixed length vector in input to the wavelet transform for EmotionNet.
+      CHUNK_LENGTH: 30 #This is cool since I need a fixed length vector in input to the wavelet transform for EmotionNet.
       CROP_FACE:
         DO_CROP_FACE: True
         BACKEND: 'RF'    # HC for Haar Cascade, RF for RetinaFace
@@ -44,15 +43,15 @@ TEST:
         LARGE_BOX_COEF: 1.5
         DETECTION:
           #TODO: set to True, now it's false just for the debug to be faster
-          DO_DYNAMIC_DETECTION: False #performs detection each DYNAMIC_DETECTION_FREQUENCY frames
-          DYNAMIC_DETECTION_FREQUENCY : 35
+          DO_DYNAMIC_DETECTION: True #performs detection each DYNAMIC_DETECTION_FREQUENCY frames
+          DYNAMIC_DETECTION_FREQUENCY : 30
           USE_MEDIAN_FACE_BOX: False    # This should be used ONLY if dynamic detection is used
       RESIZE:
         H: 72
         W: 72
 
-DEVICE: cpu # MPS is not supported I think since I get a strange error
-NUM_OF_GPU_TRAIN: 0
+DEVICE: cuda # MPS is not supported I think since I get a strange error
+NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp
 MODEL:

@@ -9,7 +9,8 @@ from tqdm import tqdm
 from shared.constants import ppg_emotion_mapping, SCALED_DEAP_STD, SCALED_DEAP_MEAN
 from models.EmotionNetDEAP import EmotionNet
 from packages.rppg_toolbox.main import extract_ppg_from_video
-from utils.ppg_utils import fft, detrend, bandpass_filter, moving_average_filter
+from packages.rppg_toolbox.utils.plot import plot_signal
+from utils.ppg_utils import fft, detrend, bandpass_filter, moving_average_filter, upscale_fr
 from typing import Tuple
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -37,16 +38,20 @@ def main(model_path: str,
 def preprocess_ppg(ppgs):
     preprocessed = []
     for ppg in ppgs:
-        ppg = detrend(ppg)
-        ppg = bandpass_filter(ppg)
-        ppg = moving_average_filter(ppg)
+        if ppg.shape[0] != 128:
+            ppg = upscale_fr(ppg, original_fr=ppg.shape[0], desired_fr=128)
+            # plot_signal(ppg, "debug_plots/extracted_ppg/upscaled_ppg")
+        # ppg = detrend(ppg)
+        # plot_signal(ppg, "debug_plots/extracted_ppg/detrended_ppg")
+        # ppg = bandpass_filter(ppg)
+        # plot_signal(ppg, "debug_plots/extracted_ppg/bandpassed_ppg")
+        # ppg = moving_average_filter(ppg)
+        # plot_signal(ppg, "debug_plots/extracted_ppg/mav_ppg")
         ppg = (ppg - min(ppg) / (max(ppg) - min(ppg)))
-        ppg = (ppg - SCALED_DEAP_MEAN) / SCALED_DEAP_STD 
+        # plot_signal(ppg, "debug_plots/extracted_ppg/minmaxed_ppg")
+        # ppg = (ppg - SCALED_DEAP_MEAN) / SCALED_DEAP_STD 
+        # plot_signal(ppg, "debug_plots/extracted_ppg/standardized_ppg")
         ppg = fft(ppg)
-        if ppg.shape[-1] != 128:
-            ppg = ppg[:, :128]
-
-        print(f"single ppg shape preprocessing is: {ppg.shape}")
         preprocessed.append(ppg)
     return preprocessed
 
@@ -54,12 +59,13 @@ def get_emotions_from_video(model: EmotionNet, video_frames: str | np.ndarray, d
     #ppg shape: [num_chunks * num_splits, 100]
     ppgs, timestamps = extract_ppg_from_video(vid_path=video_frames) 
     ppgs = preprocess_ppg(ppgs)
+    # [plot_signal(ppg[0], f"debug_plots/extracted_ppg/extracted_ppg_{i}") for (i, ppg) in enumerate(ppgs)]
     segment_preds = []
     for i, ppg in tqdm(enumerate(ppgs), desc="Inference..."):
         ppg = torch.from_numpy(ppg).float().to(device).unsqueeze(0)
         output =  model(ppg)
         
-        repeated_output = output.argmax(-1).squeeze().repeat(ppg.shape[-1])
+        repeated_output = output.argmax(-1).squeeze().repeat(len(timestamps[i]))
         print(f"repeated_output shape: {repeated_output.shape}")
         segment_preds.append(repeated_output)
 

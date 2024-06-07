@@ -14,9 +14,7 @@ from typing import Dict, Any
 from packages.rppg_toolbox.config import DUMP_FRAMES_PATH
 
 # Functions for reading rPPG media of interest and saving frames
-def read_video(video_file: str,
-               max_frames_split: int = 128, 
-               desired_fr: int = 60) -> Dict[str, Any]:
+def read_video(video_file: str) -> Dict[str, Any]:
     """Reads a video file, returns frames(T, H, W, 3) """
     if os.path.exists(DUMP_FRAMES_PATH):
         print(f"temp_frames already found, removing it!")
@@ -25,26 +23,21 @@ def read_video(video_file: str,
     print(f"Creating new temp_frames directory!")
     VidObj = cv2.VideoCapture(video_file)
     fps = VidObj.get(cv2.CAP_PROP_FPS)
+    max_frames_split = round(fps)
     VidObj.set(cv2.CAP_PROP_POS_MSEC, 0)
     frames = None
-    frames_step = round(fps) // desired_fr
-    print(f"frames step for {fps} and {desired_fr}: {frames_step}")
     success, frame = VidObj.read()
-    i = 0
     curr_frame = 0
     curr_split = 0
     splits_paths = []
     splits_timestamps = []
     curr_timestamps = [] 
     while success:
-        i += 1
-        if i % frames_step != 0:
-            continue
         frame = cv2.cvtColor(np.array(frame), cv2.COLOR_BGR2RGB)
         if frames is None:
             frames = np.expand_dims(np.zeros_like(frame), 0)
             frames = np.repeat(frames, max_frames_split, axis=0)
-            print(f"Frames initialization array shape: {frames.shape}")
+            # print(f"Frames initialization array shape: {frames.shape}")
 
         timestamp = VidObj.get(cv2.CAP_PROP_POS_FRAMES) / fps
 
@@ -66,22 +59,22 @@ def read_video(video_file: str,
     #The last split ended before max_frames_split
     # In this case the last last frames are 0, which is ok since we need to pad in order to have sequences of length 100.
     # We will discard the result anyway since we have 1 prediction per frame, and all the other prediction will be discarded.
-    if curr_frame != 0:
-        print(f"Split {curr_split} saved!")
-        # suppress the linting errors
-        frames: np.ndarray
-        split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
-        np.save(split_path, frames)
-        splits_paths.append(split_path)
-        # Padding curr_timestamps with -1 values
-        splits_timestamps.append(curr_timestamps + [-1 for _ in range(frames.shape[0] - len(curr_timestamps))])
+    # if curr_frame != 0:
+    #     print(f"Split {curr_split} saved!")
+    #     # suppress the linting errors
+    #     frames: np.ndarray
+    #     split_path = os.path.join(DUMP_FRAMES_PATH, f"frames_split_{curr_split}.npy")
+    #     np.save(split_path, frames)
+    #     splits_paths.append(split_path)
+    #     # Padding curr_timestamps with -1 values
+    #     splits_timestamps.append(curr_timestamps + [-1 for _ in range(frames.shape[0] - len(curr_timestamps))])
 
     print(f"read video completed! \n FPS: {fps} | Num Splits: {curr_split}")
     print(f"timestamps lengths: {[len(ts) for ts in splits_timestamps]}")
 
     return {"splits_paths": splits_paths,
             "splits_timestamps": splits_timestamps,
-            "fps": fps / frames_step}
+            "fps": fps}
 
 
 def read_png_frames(video_file):

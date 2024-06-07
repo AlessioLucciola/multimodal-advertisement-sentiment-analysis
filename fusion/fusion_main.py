@@ -38,7 +38,6 @@ def main(audio_model_path: str,
     ppg_windows_list = None
     if len(ppg_output):
         ppg_windows_list = create_ppg_windows(ppg_output)
-    # return None, ppg_windows_list #TODO: early return just for debug
     
     if len(audio_output) == 0 and len(video_output) == 0:
         return None, ppg_windows_list
