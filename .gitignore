@@ -1,11 +1,10 @@
 *.wav
 *.jpg
 __pycache__
-results
 !**/data/README.md
 **/data/*
 data
-plots.results
+plots/results
 checkpoints
 wandb
 TEMP

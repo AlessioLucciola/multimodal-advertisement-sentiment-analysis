@@ -1,0 +1,23 @@
+{
+  "architecture": "EmotionNet - LSTM Seq2Seq",
+  "scope": "EmotionNet",
+  "learning_rate": 0.0001,
+  "epochs": 5000,
+  "reg": 0.03,
+  "batch_size": 512,
+  "num_classes": 3,
+  "dataset": "CEAP",
+  "optimizer": "Adam",
+  "resumed": false,
+  "use_wandb": false,
+  "balance_dataset": true,
+  "limit": null,
+  "length": 128,
+  "step": 128,
+  "dropout_p": 0,
+  "wavelet_step": 16,
+  "lstm_config": {
+    "num_hidden": 256,
+    "num_layers": 2
+  }
+}

@@ -18,7 +18,7 @@ conda activate mi_project
 
 ## Data
 
-You can download the needed data from this [Google Drive Link](https://drive.google.com/drive/folders/1BgkLk7GfHc8lLyqnabeT4jpEQQALClcQ)
+You can download the needed data from this [Google Drive Link](https://drive.google.com/drive/folders/1hN-QhdMj36LZ2GYIsmeDr20XiVLFrzZ1)
 
 Inside the `data` folder, there should be these elements:
 - For the audio models, put these files in the `AUDIO` directory:
@@ -34,3 +34,7 @@ Inside the `data` folder, there should be these elements:
     - `RAVDESS_video_files`: A folder containing the original ravdess video files (downloadable from Google Drive);
 
 All the files required for the audio and video model are zipped in the "AUDIO" and "VIDEO" folders in Google Drive.
+
+## Demo
+
+To run the demo, execute `streamlit run demo/init.py` or `python -m streamlit run demo/init.py`.

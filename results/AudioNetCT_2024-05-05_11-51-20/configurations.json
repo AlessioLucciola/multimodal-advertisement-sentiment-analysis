@@ -1,0 +1,19 @@
+{
+  "architecture": "AudioNetCT",
+  "scope": "AudioNet",
+  "learning_rate": 0.001,
+  "epochs": 500,
+  "reg": 0.001,
+  "batch_size": 128,
+  "num_classes": 3,
+  "num_mfcc": 40,
+  "dataset": "RAVDESS",
+  "optimizer": "AdamW",
+  "resumed": false,
+  "use_wandb": true,
+  "balance_dataset": true,
+  "preload_audio_files": true,
+  "scale_audio_files": true,
+  "limit": null,
+  "dropout_p": 0.3
+}

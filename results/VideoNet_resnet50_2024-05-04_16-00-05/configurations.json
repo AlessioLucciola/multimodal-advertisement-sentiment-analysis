@@ -1,0 +1,37 @@
+{
+  "architecture": "VideoNet_resnet50",
+  "scope": "VideoNet",
+  "learning_rate": 0.001,
+  "epochs": 30,
+  "reg": 0.001,
+  "batch_size": 64,
+  "hidden_size": [
+    512,
+    256,
+    128
+  ],
+  "num_classes": 3,
+  "dataset": "RAVDESS",
+  "video_frames_files_dir": "data\\VIDEO\\RAVDESS_frames_files_black_background",
+  "video_metadata_csv": "data\\VIDEO\\RAVDESS_metadata_original.csv",
+  "video_metadata_frames_csv": "data\\VIDEO\\RAVDESS_metadata_frames.csv",
+  "optimizer": "AdamW",
+  "resumed": false,
+  "use_wandb": true,
+  "balance_dataset": true,
+  "df_splitting": [
+    0.2,
+    0.5
+  ],
+  "img_size": [
+    224,
+    224
+  ],
+  "use_positive_negative_labels": true,
+  "overlap_subjects_frames": false,
+  "preload_frames": true,
+  "apply_transformations": true,
+  "normalize": true,
+  "limit": null,
+  "dropout_p": 0.2
+}
